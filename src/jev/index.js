@@ -84,7 +84,7 @@ class JevService {
 
     passages.forEach((p, idx) => {
       const pId = `p_${idx}`;
-      passagesMap[pId] = `${p.documentName || ''} - Điều ${p.articleNumber || ''}: ${p.content}`;
+      passagesMap[pId] = `[${p.documentCode || p.documentId || ''}] ${p.documentName || ''} - Điều ${p.articleNumber || ''} (${p.title || ''}): ${p.content}`;
       questions.push(buildPassageRelevanceQuestion(pId));
     });
 
@@ -145,10 +145,10 @@ class JevService {
   _evalIntent(query = '') {
     const text = query.toLowerCase().trim();
 
-    // Chào hỏi / Help
+    // 1. Chào hỏi / Help
     if (
-      /^(chào|alo|hello|hi|bạn là ai|bot là gì|\/start|\/help|hướng dẫn)/i.test(text) &&
-      text.length < 50
+      /^(chào|alo|hello|hi|bạn là ai|bot là gì|\/start|\/help|hướng dẫn)$/i.test(text) ||
+      (/^(chào|alo|hello|hi|bạn là ai|bot là gì)/i.test(text) && text.length < 50)
     ) {
       return {
         choice: 'greeting_or_help',
@@ -157,25 +157,33 @@ class JevService {
       };
     }
 
-    // Thủ tục / Quy trình
-    if (/(hồ sơ|thủ tục|mẫu biểu|các bước|quy trình|hướng dẫn lập)/i.test(text)) {
+    // 2. Kiểm tra từ khóa ngoài phạm vi TRƯỚC (tránh nhầm các câu hỏi đời thường)
+    const outOfScopeKw = [
+      'thời tiết', 'mưa', 'nắng', 'nhiệt độ', 'nấu ăn', 'chơi game', 'bài thơ',
+      'tình yêu', 'phim', 'nhạc', 'bóng đá', 'giá vàng', 'xổ số', 'chứng khoán',
+      'lập trình', 'code', 'toán', 'vật lý', 'hóa học', 'du lịch', 'nấu phở', 'bò kho'
+    ];
+    if (outOfScopeKw.some(kw => text.includes(kw))) {
       return {
-        choice: 'party_procedure',
-        confidence: 0.88,
-        probabilities: { party_procedure: 0.88, party_regulation: 0.12 },
+        choice: 'out_of_scope',
+        confidence: 0.95,
+        probabilities: { out_of_scope: 0.95, party_regulation: 0.05 },
       };
     }
 
-    // Từ khóa Đảng, Thể thức & Văn thư lưu trữ
+    // 3. Từ khóa thuộc phạm vi Đảng, Thể thức & Văn thư lưu trữ
     const partyKeywords = [
       'đảng', 'đảng viên', 'chi bộ', 'đảng ủy', 'quy định', 'điều lệ', 'nghị quyết',
       'kết nạp', 'chính thức', 'dự bị', 'tuổi đảng', 'sinh hoạt', 'kỷ luật', 'kiểm tra',
       'giám sát', 'chi ủy', 'cấp ủy', 'trung ương', 'bộ chính trị', 'ban bí thư',
+      'biểu quyết', 'ứng cử', 'bầu cử', 'huy hiệu', 'công văn', 'tờ trình', 'giáp lai',
       '37-qđ', '24-qđ', '22-qđ', '69-qđ', '01-hd', 'những điều không được làm',
       // Thể thức & Kỹ thuật trình bày văn bản Đảng (HD 17-HD/VPTW)
       'thể thức', 'văn bản', 'vptw', 'văn phòng trung ương', '17-hd', 'trình bày văn bản',
       'thẩm quyền ký', 'ký thay', 'ký thay mặt', 'thừa lệnh', 'thừa uỷ quyền', 'thừa ủy quyền',
-      't/m', 'k/t', 't/l', 't/u', 'con dấu', 'đóng dấu', 'phông chữ', 'cỡ chữ', 'định lề', 'ký hiệu',
+      't/m', 'k/t', 't/l', 't/u', 'con dấu', 'đóng dấu', 'phông chữ', 'cỡ chữ',
+      'định lề', 'lề trái', 'lề phải', 'lề trên', 'lề dưới', 'khổ giấy', 'a4', 'ký hiệu',
+      'in nghiêng', 'in đậm', 'times new roman', 'bản sao',
       // Văn thư & Lưu trữ Đảng và Nhà nước (HD 05, HD 06, TT 02/2019/TT-BNV)
       'văn thư', 'lưu trữ', 'nộp lưu', 'hồ sơ', 'danh mục hồ sơ', 'tiêu hủy', 'hủy tài liệu',
       'thời hạn bảo quản', '05-hd', '06-hd', 'tt-bnv', 'bộ nội vụ', '02/2019', 'lưu trữ điện tử',
@@ -185,24 +193,18 @@ class JevService {
     const hasPartyKw = partyKeywords.some(kw => text.includes(kw));
 
     if (hasPartyKw) {
+      // Nếu có từ khóa Đảng + từ khóa thủ tục/hồ sơ -> party_procedure
+      if (/(hồ sơ|thủ tục|mẫu biểu|các bước|quy trình|hướng dẫn lập)/i.test(text)) {
+        return {
+          choice: 'party_procedure',
+          confidence: 0.90,
+          probabilities: { party_procedure: 0.90, party_regulation: 0.10 },
+        };
+      }
       return {
         choice: 'party_regulation',
         confidence: 0.94,
         probabilities: { party_regulation: 0.94, party_procedure: 0.06 },
-      };
-    }
-
-    // Ngoài phạm vi
-    const outOfScopeKw = [
-      'thời tiết', 'mưa', 'nắng', 'nhiệt độ', 'nấu ăn', 'chơi game', 'bài thơ',
-      'tình yêu', 'phim', 'nhạc', 'bóng đá', 'giá vàng', 'xổ số', 'chứng khoán',
-      'lập trình', 'code', 'toán', 'vật lý', 'hóa học'
-    ];
-    if (outOfScopeKw.some(kw => text.includes(kw))) {
-      return {
-        choice: 'out_of_scope',
-        confidence: 0.95,
-        probabilities: { out_of_scope: 0.95, party_regulation: 0.05 },
       };
     }
 

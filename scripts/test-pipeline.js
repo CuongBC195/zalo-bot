@@ -16,19 +16,22 @@ async function run() {
   console.log(`❓ Câu hỏi: "${query}"`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-  pipeline.init();
+  await pipeline.init();
 
   const start = Date.now();
-  const answer = await pipeline.processMessage({
+  const res = await pipeline.processMessage({
     text: query,
     senderName: 'Đồng chí thử nghiệm',
   });
+  const answer = typeof res === 'string' ? res : res.answer;
   const duration = Date.now() - start;
 
   console.log('\n💬 PHẢN HỒI TỪ HỆ THỐNG:');
   console.log('────────────────────────────────────────────────');
   console.log(answer);
   console.log('────────────────────────────────────────────────');
+  if (res.intent) console.log(`🎯 Ý định (Jev): ${res.intent}`);
+  if (res.retrievedDocs?.length) console.log(`📚 Văn bản trích dẫn: ${res.retrievedDocs.join(', ')}`);
   console.log(`⏱️ Thời gian xử lý: ${duration}ms\n`);
 }
 

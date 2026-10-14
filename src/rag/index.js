@@ -45,11 +45,42 @@ class RagEngine {
     return this.chunks.length;
   }
 
-  /**
-   * Tải lại dữ liệu (khi admin thêm/xóa/sửa văn bản)
-   */
   async reload() {
     this.chunks = this.loader.loadAll();
+
+    // Đồng bộ thêm các tài liệu từ PostgreSQL (nếu có thêm từ Web Admin)
+    try {
+      if (db.isConnected) {
+        const docs = await db.getDocuments();
+        if (docs && docs.length) {
+          const existingCodes = new Set(this.chunks.map(c => c.documentCode || c.documentId));
+          for (const doc of docs) {
+            if (!existingCodes.has(doc.document_code)) {
+              const fullDoc = await db.getDocumentById(doc.id);
+              if (fullDoc && fullDoc.articles) {
+                for (const art of fullDoc.articles) {
+                  this.chunks.push({
+                    documentId: fullDoc.document_code,
+                    documentCode: fullDoc.document_code,
+                    documentName: fullDoc.document_name,
+                    issuer: fullDoc.issuer,
+                    issueDate: fullDoc.issue_date,
+                    category: fullDoc.category,
+                    articleNumber: art.article_number,
+                    title: art.title,
+                    content: art.content,
+                    fullText: `${fullDoc.document_code} ${fullDoc.document_name} - Điều ${art.article_number}: ${art.title}. ${art.content}`,
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[RAG Engine] Cảnh báo đồng bộ chunks từ DB:', err.message);
+    }
+
     console.log(`[RAG Engine] Đã làm mới chỉ mục (${this.chunks.length} điều khoản).`);
     return this.chunks.length;
   }
@@ -166,6 +197,7 @@ class RagEngine {
     if (!str) return '';
     return str
       .toLowerCase()
+      .replace(/đ/g, 'd')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^\w\s\d]/g, ' ')

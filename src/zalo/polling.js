@@ -88,13 +88,16 @@ class PollingEngine {
 
     const startTime = Date.now();
 
-    // Gửi qua Pipeline xử lý Jev + RAG + Gemini
-    const reply = await pipeline.processMessage({
+    const pipelineResult = await pipeline.processMessage({
       text,
       chatId,
       senderId: from.id,
       senderName,
     });
+
+    const reply = typeof pipelineResult === 'string' ? pipelineResult : pipelineResult.answer;
+    const intent = pipelineResult.intent || 'party_qa';
+    const retrievedDocs = pipelineResult.retrievedDocs || [];
 
     const latencyMs = Date.now() - startTime;
 
@@ -108,8 +111,8 @@ class PollingEngine {
       displayName: senderName,
       chatId,
       queryText: text,
-      intent: 'party_qa',
-      retrievedDocs: [],
+      intent,
+      retrievedDocs,
       responseText: reply,
       latencyMs,
     }).catch(err => {

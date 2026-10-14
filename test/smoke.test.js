@@ -54,23 +54,32 @@ async function testPipelineEndToEnd() {
   console.log('🧪 [Test 3] Kiểm tra Pipeline End-to-End...');
   await pipeline.init();
 
-  const reply1 = await pipeline.processMessage({
+  const res1 = await pipeline.processMessage({
     text: 'Thẩm quyền ký T/M và K/T trong văn bản Đảng quy định ra sao?',
     senderName: 'Đồng chí Cường',
   });
+  const reply1 = typeof res1 === 'string' ? res1 : res1.answer;
   assert(typeof reply1 === 'string' && reply1.length > 20, 'Phải sinh câu trả lời hợp lệ');
   assert(reply1.includes('17-HD/VPTW') || reply1.includes('T/M'), 'Phải dẫn nguồn Hướng dẫn 17');
+  if (res1.intent) {
+    assert.strictEqual(res1.intent, 'party_regulation', 'Intent phải là party_regulation');
+  }
 
-  const reply2 = await pipeline.processMessage({
+  const res2 = await pipeline.processMessage({
     text: 'Hôm nay trời có mưa không?',
     senderName: 'Đồng chí Cường',
   });
+  const reply2 = typeof res2 === 'string' ? res2 : res2.answer;
   assert(reply2.includes('ngoài phạm vi'), 'Phải từ chối câu hỏi ngoài phạm vi');
+  if (res2.intent) {
+    assert.strictEqual(res2.intent, 'out_of_scope', 'Intent phải là out_of_scope');
+  }
 
-  const reply3 = await pipeline.processMessage({
+  const res3 = await pipeline.processMessage({
     text: '/docs',
     senderName: 'Đồng chí Cường',
   });
+  const reply3 = typeof res3 === 'string' ? res3 : res3.answer;
   assert(reply3.includes('DANH MỤC VĂN BẢN'), 'Phải xử lý lệnh /docs');
   console.log('   ✅ Pipeline End-to-End hoạt động chính xác.');
 }

@@ -60,8 +60,15 @@ class DatabaseService {
     }
   }
 
-  async checkConnection() {
+  async checkConnection(force = false) {
     if (!this.pool) return false;
+    const now = Date.now();
+    const cacheTtl = this.isConnected ? 30000 : 15000;
+    if (!force && this._lastCheck && (now - this._lastCheck < cacheTtl)) {
+      return this.isConnected;
+    }
+
+    this._lastCheck = now;
     try {
       const client = await this.pool.connect();
       await client.query('SELECT NOW()');
@@ -543,6 +550,17 @@ class DatabaseService {
     if (!isOk) return null;
 
     try {
+      // Tách các từ khóa >= 2 ký tự và nối bằng toán tử OR (|) cho to_tsquery
+      const cleanWords = queryStr
+        .toLowerCase()
+        .replace(/đ/g, 'd')
+        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+        .split(/\s+/)
+        .filter(w => w.length >= 2);
+
+      if (!cleanWords.length) return [];
+      const tsQueryStr = cleanWords.join(' | ');
+
       const searchSql = `
         SELECT 
           a.id,
@@ -554,11 +572,12 @@ class DatabaseService {
           d.issuer,
           d.issue_date as "issueDate",
           d.category,
-          ts_rank(a.tsv, plainto_tsquery('simple', $1)) as rank
+          ts_rank_cd(a.tsv, to_tsquery('simple', $1)) +
+          CASE WHEN d.document_code ILIKE $2 THEN 5.0 ELSE 0.0 END as rank
         FROM articles a
         JOIN documents d ON a.document_id = d.id
         WHERE 
-          a.tsv @@ plainto_tsquery('simple', $1)
+          a.tsv @@ to_tsquery('simple', $1)
           OR a.title ILIKE $2
           OR a.content ILIKE $2
           OR d.document_code ILIKE $2
@@ -567,8 +586,8 @@ class DatabaseService {
       `;
 
       const res = await this.pool.query(searchSql, [
-        queryStr,
-        `%${queryStr}%`,
+        tsQueryStr,
+        `%${queryStr.trim()}%`,
         topK,
       ]);
 
