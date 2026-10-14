@@ -75,7 +75,8 @@ class RagEngine {
                     documentName: fullDoc.document_name,
                     issuer: fullDoc.issuer,
                     issueDate: fullDoc.issue_date,
-                    category: fullDoc.category,
+                    category: fullDoc.category || 'quy_dinh_dang',
+                    status: fullDoc.status || 'Còn hiệu lực',
                     articleNumber: art.article_number,
                     title: art.title,
                     content: art.content,
@@ -171,6 +172,15 @@ class RagEngine {
       const matchRatio = queryTokens.length > 0 ? matchedTokens / queryTokens.length : 0;
       score += matchRatio * 5.0;
 
+      // 5. Ưu tiên văn bản Còn hiệu lực; giảm điểm các điều khoản cũ của văn bản Hết hiệu lực nếu không hỏi đích danh
+      const isExpired = (chunk.status || '').toLowerCase().includes('hết hiệu lực');
+      const explicitlyAsked = docNumbers.some(num => chunk.documentCode?.includes(num));
+      if (isExpired && !explicitlyAsked) {
+        score = chunk.articleNumber === '0' ? score * 0.6 : score * 0.2;
+      } else if (!isExpired && score > 0) {
+        score += 2.5;
+      }
+
       return {
         ...chunk,
         score,
@@ -195,6 +205,7 @@ class RagEngine {
       context += `[Tài liệu ${idx + 1}]\n`;
       context += `• Văn bản: ${c.documentName} (${c.documentCode || 'N/A'})\n`;
       context += `• Cơ quan ban hành: ${c.issuer} | Ngày: ${c.issueDate || 'N/A'}\n`;
+      context += `• Tình trạng hiệu lực: ${c.status || 'Còn hiệu lực'}\n`;
       context += `• Căn cứ: Điều ${c.articleNumber} - ${c.title}\n`;
       context += `• Nội dung trích dẫn:\n"${c.content}"\n\n`;
     });

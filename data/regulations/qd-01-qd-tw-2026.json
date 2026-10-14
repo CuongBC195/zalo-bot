@@ -2,11 +2,11 @@
   "documentId": "01-QD/TW-2026",
   "documentCode": "01-QĐ/TW",
   "documentName": "Quy định về chế độ đảng phí",
-  "issuer": "Ban Chấp hành Trung ương",
+  "issuer": "Bộ Chính trị",
   "category": "quy_dinh_dang",
   "issueDate": "2026-02-03",
   "status": "Còn hiệu lực (Hiện hành)",
-  "description": "Quy định số 01-QĐ/TW ngày 03/02/2026 của Ban Chấp hành Trung ương Đảng về chế độ đảng phí (có hiệu lực từ ngày 01/02/2026, thay thế Quyết định số 342-QĐ/TW); đổi mới căn bản cách tính mức đóng theo tiền lương đóng BHXH bắt buộc và hiện đại hóa phương thức thu nộp số hóa.",
+  "description": "Quy định số 01-QĐ/TW ngày 03/02/2026 của Bộ Chính trị về chế độ đảng phí (có hiệu lực từ ngày 01/02/2026, thay thế Quyết định số 342-QĐ/TW); đổi mới căn bản cách tính mức đóng theo tiền lương đóng BHXH bắt buộc và tỷ lệ định lượng cụ thể cho từng khối đối tượng; hiện đại hóa phương thức thu nộp số hóa.",
   "articles": [
     {
       "articleNumber": "1",
@@ -20,13 +20,13 @@
     },
     {
       "articleNumber": "3",
-      "title": "Mức đóng đảng phí của các nhóm đảng viên khác",
-      "content": "1. Bãi bỏ hoàn toàn cơ chế khoán tiền cào bằng cũ (vài nghìn đồng theo QĐ 342-QĐ/TW).\n2. Đối với đảng viên hưởng lương hưu: Đóng hằng tháng theo tỷ lệ quy định trên tiền lương hưu thực nhận.\n3. Đối với đảng viên làm nông, lâm, ngư nghiệp, lao động tự do, không tham gia BHXH bắt buộc: Đóng theo tỷ lệ căn cứ trên mức lương tối thiểu vùng hoặc mức chuẩn nghèo theo quy định của Chính phủ.\n4. Đảng viên là học sinh, sinh viên, người có hoàn cảnh đặc biệt khó khăn không có nguồn thu nhập: Được chi bộ xem xét miễn, giảm đóng đảng phí theo quy định."
+      "title": "Mức đóng đảng phí định lượng của các khối đối tượng khác theo Quy định 01-QĐ/TW",
+      "content": "1. Đảng viên hưởng lương hưu: Đóng hằng tháng bằng 0,5% tiền lương hưu hằng tháng do cơ quan BHXH chi trả.\n2. Đảng viên là học sinh, sinh viên các trường đào tạo: Mức đóng cố định là 5.000 đồng/tháng.\n3. Đảng viên ngoài khu vực nhà nước (không thuộc diện tham gia bảo hiểm xã hội bắt buộc):\n- Đảng viên chưa đến tuổi nghỉ hưu: Đóng hằng tháng bằng 0,3% mức lương tối thiểu vùng (áp dụng trong giai đoạn 2026–2027) và đóng bằng 0,5% mức lương tối thiểu vùng (áp dụng từ năm 2028 trở đi).\n- Đảng viên đã đủ tuổi nghỉ hưu: Đóng hằng tháng bằng 0,2% mức lương tối thiểu vùng (áp dụng trong giai đoạn 2026–2027) và đóng bằng 0,3% mức lương tối thiểu vùng (áp dụng từ năm 2028 trở đi).\n4. Đảng viên có hoàn cảnh đặc biệt khó khăn, không có nguồn thu nhập ổn định: Được chi ủy, chi bộ xem xét miễn hoặc giảm đóng đảng phí theo hướng dẫn cụ thể của Ban Bí thư."
     },
     {
       "articleNumber": "4",
-      "title": "Trích giữ, quản lý và sử dụng đảng phí tại chi bộ, đảng bộ cơ sở",
-      "content": "1. Đảng phí thu được là nguồn tài chính quan trọng của Đảng, phải được quản lý chặt chẽ, mở sổ sách kế toán theo dõi minh bạch.\n2. Tỷ lệ trích giữ lại cho chi bộ, đảng bộ cơ sở được thực hiện theo đúng định mức phân bổ của Trung ương để phục vụ trực tiếp cho công tác sinh hoạt đảng, khen thưởng đảng viên và hoạt động của cấp ủy cơ sở."
+      "title": "Trích giữ, quản lý và sử dụng đảng phí tại cấp ủy, tổ chức đảng cơ sở",
+      "content": "1. Đảng phí thu được là nguồn tài chính quan trọng của Đảng, phải được quản lý chặt chẽ, mở sổ sách kế toán theo dõi minh bạch, quyết toán theo niên độ tài chính.\n2. Tỷ lệ trích giữ lại: Đảng ủy cấp trên cơ sở xã, phường, đặc khu (và tương đương) được để lại 70% tổng số tiền đảng phí thu được để phục vụ trực tiếp công tác xây dựng Đảng, bồi dưỡng đảng viên và các hoạt động công tác đảng tại cơ sở; nộp lên cấp ủy cấp trên 30%.\n3. Việc sử dụng đảng phí được trích giữ lại phải đúng mục đích, công khai, minh bạch theo chế độ tài chính đảng hiện hành."
     }
   ]
 }

@@ -5,9 +5,14 @@
   "issuer": "Ban Chấp hành Trung ương",
   "category": "quy_dinh_dang",
   "issueDate": "2025-01-20",
-  "status": "Còn hiệu lực (Hiện hành)",
-  "description": "Quy định số 232-QĐ/TW ngày 20/01/2025 của Ban Chấp hành Trung ương Đảng về thi hành Điều lệ Đảng; chính thức thay thế Quy định số 24-QĐ/TW ngày 30/07/2021; hoàn thiện các quy định về tiêu chuẩn, điều kiện kết nạp đảng viên, quyền và nghĩa vụ của đảng viên, nguyên tắc tổ chức và sinh hoạt đảng trong kỷ nguyên mới.",
+  "status": "Hết hiệu lực (Được thay thế bởi Quy định số 208-QĐ/TW ngày 26/07/2026 của Ban Chấp hành Trung ương)",
+  "description": "Quy định số 232-QĐ/TW ngày 20/01/2025 của Ban Chấp hành Trung ương Đảng về thi hành Điều lệ Đảng; đã được thay thế bởi Quy định số 294-QĐ/TW ngày 26/05/2025 và mới nhất là Quy định số 208-QĐ/TW ngày 26/07/2026 của Ban Chấp hành Trung ương Đảng khóa XIV.",
   "articles": [
+    {
+      "articleNumber": "0",
+      "title": "Hiệu lực văn bản và quy định thay thế hiện hành",
+      "content": "Quy định số 232-QĐ/TW ngày 20/01/2025 của Ban Chấp hành Trung ương Đảng đã hết hiệu lực thi hành. Toàn bộ công tác thi hành Điều lệ Đảng hiện nay được thực hiện thống nhất theo Quy định số 208-QĐ/TW ngày 26/07/2026 của Ban Chấp hành Trung ương Đảng khóa XIV và Hướng dẫn số 02-HD/TW ngày 07/08/2026 của Ban Bí thư."
+    },
     {
       "articleNumber": "1",
       "title": "Tuổi đời và trình độ học vấn của người vào Đảng",

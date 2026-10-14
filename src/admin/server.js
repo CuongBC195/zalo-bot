@@ -453,6 +453,13 @@ app.post('/api/documents', requireRole('superadmin', 'admin'), async (req, res) 
       return res.json({ ok: true, message: 'Đã lưu văn bản vào PostgreSQL thành công', document: doc });
     }
 
+    if (process.env.VERCEL) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Hệ thống đang chạy trên Vercel Serverless (Read-Only Filesystem). Vui lòng cấu hình kết nối PostgreSQL (DATABASE_URL) để lưu trữ văn bản.',
+      });
+    }
+
     const filename = `custom-${documentCode.toLowerCase().replace(/[^a-z0-9]/g, '-')}.json`;
     const filePath = path.join(__dirname, '..', '..', 'data', 'regulations', filename);
     const data = {
@@ -501,6 +508,13 @@ app.delete('/api/documents/:id', requireRole('superadmin', 'admin'), async (req,
       const deleted = await db.deleteDocument(id);
       await rag.reload();
       return res.json({ ok: true, message: 'Đã xóa văn bản khỏi PostgreSQL', document: deleted });
+    }
+
+    if (process.env.VERCEL) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Hệ thống đang chạy trên Vercel Serverless (Read-Only Filesystem). Vui lòng cấu hình kết nối PostgreSQL (DATABASE_URL) để quản lý văn bản.',
+      });
     }
 
     const regDir = path.join(__dirname, '..', '..', 'data', 'regulations');

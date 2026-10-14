@@ -606,7 +606,12 @@ class DatabaseService {
           d.status,
           ts_rank_cd(a.tsv, to_tsquery('simple', $1)) +
           ${numberClause} +
-          CASE WHEN d.document_name ILIKE $2 THEN 10.0 ELSE 0.0 END as rank
+          CASE WHEN d.document_name ILIKE $2 THEN 10.0 ELSE 0.0 END +
+          CASE 
+            WHEN d.status ILIKE '%Hết hiệu lực%' AND (${numberClause} = 0) THEN -15.0 
+            WHEN d.status ILIKE '%Còn hiệu lực%' THEN 3.0 
+            ELSE 0.0 
+          END as rank
         FROM articles a
         JOIN documents d ON a.document_id = d.id
         WHERE 
@@ -646,6 +651,7 @@ class DatabaseService {
           category: c.category || 'quy_dinh_dang',
           issueDate: c.issueDate,
           status: c.status || 'Còn hiệu lực',
+          description: c.description || '',
           articles: [],
         };
       }

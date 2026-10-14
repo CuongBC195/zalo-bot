@@ -42,9 +42,9 @@ const PARTY_AND_REGULATION_KEYWORDS = [
   'thường trực ban bí thư', 'thường vụ', 'ban thường vụ', 'thường trực',
   'biểu quyết', 'ứng cử', 'bầu cử', 'huy hiệu', 'huy hiệu đảng', 'thẻ đảng', 'thẻ đảng viên',
   'chuyển sinh hoạt', 'sinh hoạt tạm thời', 'xóa tên', 'xóa tên đảng viên', 'khai trừ',
-  '37-qđ', '24-qđ', '22-qđ', '69-qđ', '01-hd', 'những điều không được làm', '19 điều cấm',
+  '37-qđ', '207-qđ', '24-qđ', '232-qđ', '294-qđ', '208-qđ', '22-qđ', '296-qđ', '21-qđ', '212-qđ', '69-qđ', '01-hd', '06-hd/tw', '02-hd/tw', '02-hd', '01-qđ', '144-qđ', '366-qđ', '383-qđ', '45-ct', '50-ct', '12-hd', '42-hd', '33/2024', 'luật lưu trữ', 'phông lưu trữ', 'đạo đức cách mạng', 'đại hội xiv', 'những điều không được làm', '19 điều cấm',
   'đảng phí', 'thu đảng phí', 'đóng đảng phí', 'mức đóng đảng phí', 'trích giữ', '342-qđ', '03-hd',
-  'đánh giá xếp loại', 'kiểm điểm cuối năm', '124-qđ', 'xếp loại chất lượng', 'hoàn thành xuất sắc',
+  'đánh giá xếp loại', 'kiểm điểm cuối năm', '124-qđ', '366-qđ', 'xếp loại chất lượng', 'hoàn thành xuất sắc',
   'tiêu chuẩn đảng viên', 'người vào đảng', 'lý lịch người vào đảng', 'thẩm tra lý lịch',
   // 2. Thể thức & Kỹ thuật trình bày văn bản Đảng (HD 05-HD/VPTW ngày 27/05/2026, QĐ 399-QĐ/TW, NĐ 30/2020)
   'thể thức', 'văn bản', 'vptw', 'văn phòng trung ương', '05-hd/vptw', '399-qđ/tw', '399-qđ', '05-hd', '17-hd', '36-hd', 'trình bày văn bản',
@@ -250,7 +250,25 @@ class JevService {
       };
     }
 
-    // 2. Chặn Blacklist: Kiểm tra từ khóa ngoài phạm vi đời thường/giải trí
+    // 2. Kiểm tra Whitelist TRƯỚC: Nếu câu hỏi chứa từ khóa nghiệp vụ Đảng, thể thức hoặc văn thư lưu trữ
+    const hasValidScopeKeyword = PARTY_AND_REGULATION_KEYWORDS.some(kw => text.includes(kw));
+
+    if (hasValidScopeKeyword) {
+      if (/(hồ sơ|thủ tục|mẫu biểu|các bước|quy trình|hướng dẫn lập|hướng dẫn viết)/i.test(text)) {
+        return {
+          choice: 'party_procedure',
+          confidence: 0.92,
+          probabilities: { party_procedure: 0.92, party_regulation: 0.08 },
+        };
+      }
+      return {
+        choice: 'party_regulation',
+        confidence: 0.95,
+        probabilities: { party_regulation: 0.95, party_procedure: 0.05 },
+      };
+    }
+
+    // 3. Chặn Blacklist: Kiểm tra từ khóa ngoài phạm vi đời thường/giải trí
     const isExplicitlyOutOfScope = OUT_OF_SCOPE_KEYWORDS.some(kw => text.includes(kw));
     if (isExplicitlyOutOfScope) {
       return {
@@ -260,29 +278,7 @@ class JevService {
       };
     }
 
-    // 3. Kiểm tra Whitelist: Bắt buộc phải chứa từ khóa nghiệp vụ Đảng, thể thức hoặc văn thư lưu trữ
-    const hasValidScopeKeyword = PARTY_AND_REGULATION_KEYWORDS.some(kw => text.includes(kw));
-
-    if (hasValidScopeKeyword) {
-      // Phân nhánh thủ tục/biểu mẫu
-      if (/(hồ sơ|thủ tục|mẫu biểu|các bước|quy trình|hướng dẫn lập|hướng dẫn viết)/i.test(text)) {
-        return {
-          choice: 'party_procedure',
-          confidence: 0.92,
-          probabilities: { party_procedure: 0.92, party_regulation: 0.08 },
-        };
-      }
-
-      // Phân nhánh quy định/điều lệ/thể thức
-      return {
-        choice: 'party_regulation',
-        confidence: 0.95,
-        probabilities: { party_regulation: 0.95, party_procedure: 0.05 },
-      };
-    }
-
-    // 4. Nếu câu hỏi không chứa bất kỳ từ khóa chuyên môn nào -> BẮT BUỘC coi là OUT OF SCOPE
-    // Tuyệt đối không để câu hỏi vu vơ chạy vào RAG hoặc Gemini
+    // 4. Nếu không chứa từ khóa chuyên môn nào -> BẮT BUỘC coi là OUT OF SCOPE
     return {
       choice: 'out_of_scope',
       confidence: 0.90,

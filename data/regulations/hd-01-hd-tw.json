@@ -5,9 +5,14 @@
   "issuer": "Ban Bí thư",
   "category": "quy_dinh_dang",
   "issueDate": "2021-09-28",
-  "status": "Còn hiệu lực",
-  "description": "Hướng dẫn số 01-HD/TW ngày 28/9/2021 của Ban Bí thư Trung ương Đảng khoá XIII hướng dẫn một số vấn đề cụ thể thi hành Điều lệ Đảng.",
+  "status": "Hết hiệu lực (Được thay thế bởi Hướng dẫn số 02-HD/TW ngày 07/08/2026 của Ban Bí thư)",
+  "description": "Hướng dẫn số 01-HD/TW ngày 28/9/2021 của Ban Bí thư khóa XIII; đã hết hiệu lực thi hành và được thay thế bởi Hướng dẫn số 06-HD/TW ngày 09/06/2025 và mới nhất là Hướng dẫn số 02-HD/TW ngày 07/08/2026 của Ban Bí thư khóa XIV.",
   "articles": [
+    {
+      "articleNumber": "0",
+      "title": "Hiệu lực văn bản và quy định thay thế hiện hành",
+      "content": "Hướng dẫn số 01-HD/TW ngày 28/09/2021 của Ban Bí thư về một số vấn đề cụ thể thi hành Điều lệ Đảng đã hết hiệu lực thi hành. Toàn bộ các nội dung về tiêu chuẩn, điều kiện, hồ sơ, thủ tục kết nạp đảng viên và công nhận đảng viên chính thức hiện nay được áp dụng thống nhất theo Hướng dẫn số 02-HD/TW ngày 07/08/2026 của Ban Bí thư khóa XIV và Quy định số 208-QĐ/TW ngày 26/07/2026 của Ban Chấp hành Trung ương Đảng."
+    },
     {
       "articleNumber": "1",
       "title": "Tiêu chuẩn và điều kiện của người vào Đảng",
@@ -16,7 +21,7 @@
     {
       "articleNumber": "2",
       "title": "Bồi dưỡng nhận thức về Đảng và phân công đảng viên giúp đỡ",
-      "content": "1. Người vào Đảng phải học lớp bồi dưỡng nhận thức về Đảng do trung tâm chính trị cấp huyện hoặc cấp ủy có thẩm quyền tổ chức và được cấp giấy chứng nhận.\n2. Chi bộ phân công một đảng viên chính thức (hoặc hai đảng viên nếu là quần chúng không sinh hoạt đoàn thể) cùng công tác, lao động, học tập theo dõi, giáo dục, giúp đỡ người vào Đảng trong thời gian ít nhất 12 tháng liên tục."
+      "content": "1. Người vào Đảng phải học lớp bồi dưỡng nhận thức về Đảng do cấp ủy có thẩm quyền hoặc cơ sở đào tạo bồi dưỡng chính trị có thẩm quyền tổ chức và được cấp giấy chứng nhận.\n2. Chi bộ phân công một đảng viên chính thức (hoặc hai đảng viên nếu là quần chúng không sinh hoạt đoàn thể) cùng công tác, lao động, học tập theo dõi, giáo dục, giúp đỡ người vào Đảng trong thời gian ít nhất 12 tháng liên tục."
     },
     {
       "articleNumber": "3",
@@ -36,27 +41,12 @@
     {
       "articleNumber": "6",
       "title": "Thủ tục xét công nhận đảng viên chính thức",
-      "content": "Hồ sơ xét công nhận đảng viên chính thức gồm có:\n1. Bản tự kiểm điểm của đảng viên dự bị (tự đánh giá ưu khuyết điểm sau 12 tháng thử thách).\n2. Bản nhận xét đảng viên dự bị của đảng viên chính thức được phân công giúp đỡ.\n3. Ý kiến nhận xét của tổ chức chính trị - xã hội nơi làm việc và ý kiến nhận xét của chi ủy nơi cư trú đối với đảng viên dự bị.\n4. Nghị quyết của chi bộ đề nghị công nhận đảng viên chính thức.\n5. Quyết định công nhận đảng viên chính thức của cấp ủy có thẩm quyền (ban thường vụ huyện ủy hoặc tương đương)."
+      "content": "Hồ sơ xét công nhận đảng viên chính thức gồm có:\n1. Bản tự kiểm điểm của đảng viên dự bị (tự đánh giá ưu khuyết điểm sau 12 tháng thử thách).\n2. Bản nhận xét đảng viên dự bị của đảng viên chính thức được phân công giúp đỡ.\n3. Ý kiến nhận xét của tổ chức chính trị - xã hội nơi làm việc và ý kiến nhận xét của chi ủy nơi cư trú đối với đảng viên dự bị.\n4. Nghị quyết của chi bộ đề nghị công nhận đảng viên chính thức.\n5. Quyết định công nhận đảng viên chính thức của cấp ủy có thẩm quyền kết nạp."
     },
     {
       "articleNumber": "7",
       "title": "Kết nạp lại vào Đảng và kết nạp người có vi phạm",
       "content": "1. Người được xét kết nạp lại phải có đủ tiêu chuẩn, điều kiện như người vào Đảng lần đầu và phải cách thời điểm ra khỏi Đảng ít nhất 36 tháng. Phải được ban thường vụ tỉnh ủy, thành ủy (hoặc tương đương) đồng ý bằng văn bản trước khi cấp ủy có thẩm quyền ra quyết định.\n2. Kết nạp người vi phạm chính sách dân số và kế hoạch hóa gia đình: Thực hiện theo Quy định riêng của Ban Bí thư Trung ương Đảng (phải có thời gian phấn đấu ít nhất 24 hoặc 36 tháng kể từ ngày vi phạm, chấp hành tốt chính sách và được tập thể tín nhiệm cao)."
-    },
-    {
-      "articleNumber": "8",
-      "title": "Tính tuổi Đảng của đảng viên",
-      "content": "1. Tuổi đảng của đảng viên được tính từ ngày cấp ủy có thẩm quyền ký quyết định kết nạp đảng viên (sau khi đã trừ thời gian bị xóa tên, bị khai trừ khỏi Đảng nếu có).\n2. Trường hợp đảng viên được kết nạp lại thì tuổi đảng tính từ ngày cấp ủy có thẩm quyền ký quyết định kết nạp lại, trừ trường hợp được ban thường vụ tỉnh ủy hoặc tương đương xem xét, công nhận lại tuổi đảng liên tục theo quy định."
-    },
-    {
-      "articleNumber": "9",
-      "title": "Thủ tục chuyển sinh hoạt đảng và quản lý hồ sơ đảng viên",
-      "content": "1. Khi đảng viên được điều động, thuyên chuyển công tác, thay đổi nơi cư trú từ 3 tháng trở lên thì chi bộ làm thủ tục giới thiệu chuyển sinh hoạt đảng chính thức hoặc tạm thời.\n2. Hồ sơ đảng viên chuyển đi phải được niêm phong, gửi qua đường công văn giao thông bảo mật của Đảng hoặc cán bộ chuyên trách chuyển giao trực tiếp, tuyệt đối không giao hồ sơ mật cho cá nhân đảng viên tự cầm."
-    },
-    {
-      "articleNumber": "10",
-      "title": "Xóa tên đảng viên và giải quyết khiếu nại về xóa tên",
-      "content": "1. Chi bộ họp xét, ra nghị quyết đề nghị xóa tên đảng viên và báo cáo cấp ủy có thẩm quyền quyết định.\n2. Quyết định xóa tên đảng viên của cấp ủy có thẩm quyền phải nêu rõ lý do và gửi cho đảng viên bị xóa tên cùng chi bộ nơi đảng viên sinh hoạt.\n3. Đảng viên bị xóa tên có quyền khiếu nại lên cấp ủy cấp trên trong thời hạn 30 ngày làm việc kể từ ngày nhận quyết định xóa tên."
     }
   ]
 }
