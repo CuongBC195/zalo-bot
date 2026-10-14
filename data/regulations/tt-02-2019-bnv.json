@@ -1,0 +1,26 @@
+{
+  "documentId": "02/2019/TT-BNV",
+  "documentCode": "02/2019/TT-BNV",
+  "documentName": "Quy định tiêu chuẩn dữ liệu thông tin đầu vào và yêu cầu bảo quản tài liệu lưu trữ điện tử",
+  "issuer": "Bộ Nội vụ",
+  "category": "van_thu_luu_tru",
+  "issueDate": "2019-01-24",
+  "status": "Còn hiệu lực",
+  "articles": [
+    {
+      "articleNumber": "4",
+      "title": "Tiêu chuẩn định dạng dữ liệu thông tin đầu vào của văn bản điện tử",
+      "content": "1. Văn bản điện tử hình thành trong hoạt động của cơ quan, tổ chức khi số hóa hoặc nộp lưu phải bảo đảm các tiêu chuẩn định dạng sau:\n- Định dạng tài liệu văn bản: PDF (khuyến nghị chuẩn PDF/A-1a hoặc PDF/A-2a).\n- Định dạng tài liệu hình ảnh: JPEG hoặc TIFF (độ phân giải tối thiểu 300 dpi, thang xám hoặc màu thực).\n- Định dạng dữ liệu có cấu trúc: XML hoặc JSON.\n2. Văn bản điện tử phải có chữ ký số hợp lệ của người có thẩm quyền và chữ ký số của cơ quan, tổ chức ban hành."
+    },
+    {
+      "articleNumber": "5",
+      "title": "Tiêu chuẩn dữ liệu đặc tả (Metadata) của tài liệu lưu trữ điện tử",
+      "content": "Tài liệu lưu trữ điện tử phải có đầy đủ các trường thông tin dữ liệu đặc tả bắt buộc bao gồm:\n1. Mã cơ quan, tổ chức ban hành.\n2. Số và ký hiệu văn bản; ngày, tháng, năm ban hành.\n3. Tên loại văn bản và trích yếu nội dung văn bản.\n4. Người ký, chức vụ người ký và chứng thư số.\n5. Độ mật, độ khẩn (nếu có).\n6. Số lượng trang, định dạng tệp tin và dung lượng tệp.\n7. Tình trạng vật lý, tình trạng chữ ký số và đường dẫn lưu trữ."
+    },
+    {
+      "articleNumber": "7",
+      "title": "Yêu cầu bảo quản và tính toàn vẹn của tài liệu lưu trữ điện tử",
+      "content": "1. Hệ thống quản lý tài liệu lưu trữ điện tử phải bảo đảm các nguyên tắc an toàn thông tin:\n- Tính xác thực (Authenticity): Chứng minh tài liệu đúng là bản gốc được tạo lập và không bị giả mạo.\n- Tính toàn vẹn (Integrity): Tài liệu còn nguyên vẹn, không bị sửa đổi, thay đổi trái phép.\n- Tính khả dụng (Accessibility): Có thể tìm kiếm, truy xuất, hiển thị và đọc được nội dung trong suốt thời hạn bảo quản.\n2. Thực hiện sao lưu định kỳ (ít nhất 02 bản sao trên các phương tiện lưu trữ vật lý độc lập hoặc lưu trữ đám mây an toàn)."
+    }
+  ]
+}

@@ -1,134 +1,113 @@
 # 🇻🇳 Zalo Đảng AI Bot (v2.0)
 
-Chatbot Zalo thông minh chuyên trách **giải đáp thắc mắc về Cương lĩnh, Điều lệ, Quy định, Thông tư và Hướng dẫn của Đảng Cộng sản Việt Nam**.
+Chatbot Zalo thông minh chuyên trách **giải đáp thắc mắc về Thể thức văn bản, Nghiệp vụ Văn thư - Lưu trữ và Cương lĩnh, Điều lệ, Quy định, Thông tư của Đảng**.
 
-Dự án áp dụng mô hình kiến trúc hai hệ thống tư duy hiện đại:
-* **Jev (TypeSafe `jev-1.13`) - System One:** Mô hình phán đoán nhanh đóng vai trò định tuyến ý định (Intent Routing), lọc/rerank đoạn trích (Relevance Gate) và kiểm duyệt chống ảo giác (Faithfulness Guardrail).
-* **RAG (Retrieval-Augmented Generation):** Bóc tách, chỉ mục và truy xuất chính xác từng Chương, Điều, Khoản từ kho dữ liệu văn bản Đảng.
-* **Google Gemini API - System Two:** Mô hình ngôn ngữ lớn tổng hợp câu trả lời theo chuẩn mực văn phong hành chính của Đảng, bắt buộc dẫn nguồn số hiệu văn bản, Điều và Khoản.
+Hệ thống tích hợp:
+* **Jev (TypeSafe `jev-1.13`) - System One:** Mô hình phán đoán nhanh đóng vai trò định tuyến ý định (`Choice`), lọc/rerank đoạn trích liên quan (`Noul`) và kiểm duyệt tính trung thực, chống ảo giác (`Faithfulness Guardrail`).
+* **PostgreSQL Database + RAG Engine:** Cơ sở dữ liệu quan hệ động lưu trữ toàn bộ văn bản và điều khoản, hỗ trợ Full-Text Search (TSVector) và bóc tách theo Chương/Điều/Khoản. Tự động hỗ trợ Local In-Memory Fallback khi chưa kết nối Database.
+* **Web Admin Dashboard (Cổng quản trị trực quan):** Giao diện web hiện đại quản lý thêm/sửa/xóa văn bản, công cụ bóc tách tự động (Auto Parser) từ văn bản thô, và AI Playground thử nghiệm truy vấn RAG tức thì.
+* **Google Gemini API - System Two:** Mô hình ngôn ngữ lớn tổng hợp câu trả lời theo chuẩn mực văn phong hành chính của Đảng, bắt buộc viện dẫn Căn cứ pháp lý (Số hiệu văn bản, Điều, Khoản).
 
 ---
 
 ## 🏗️ Kiến trúc luồng xử lý (Pipeline)
 
 ```text
-[Tin nhắn từ người dùng trên Zalo]
-                │
-                ▼
-      ┌──────────────────┐
-      │  Zalo Polling    │
-      └─────────┬────────┘
-                │
-                ▼
-      ┌──────────────────┐
-      │ 1. Jev Router    │ ──(Chào hỏi/Help)──────► [Phản hồi hướng dẫn]
-      │ (Choice primitive│ ──(Ngoài phạm vi)──────► [Lịch sự từ chối]
-      └─────────┬────────┘
-                │ (Hỏi quy định/thủ tục Đảng)
-                ▼
-      ┌──────────────────┐
-      │ 2. RAG Engine    │ ──► Tìm kiếm các Điều/Khoản trong kho văn bản Đảng
-      └─────────┬────────┘
-                │
-                ▼
-      ┌──────────────────┐
-      │ 3. Jev Reranker  │ ──► Lọc sạch nhiễu, chỉ giữ lại các đoạn trích
-      │ (Noul primitive) │     trực tiếp giải đáp câu hỏi
-      └─────────┬────────┘
-                │
-                ▼
-      ┌──────────────────┐
-      │ 4. Gemini GenAI  │ ──► Tổng hợp phản hồi trang trọng, chuẩn mực,
-      │ (System Two)     │     bắt buộc viện dẫn Căn cứ pháp lý
-      └─────────┬────────┘
-                │
-                ▼
-      ┌──────────────────┐
-      │ 5. Jev Guardrail │ ──► Kiểm tra: Có bịa đặt điều khoản ngoài context?
-      │ (Noul primitive) │
-      └─────────┬────────┘
-                │
-                ▼
-[Gửi phản hồi đã định dạng về Zalo]
+       ┌────────────────────────────────────────────────────────┐
+       │             WEB ADMIN DASHBOARD (Port 3000)            │
+       │  - Thêm / Sửa / Xóa văn bản & Điều khoản               │
+       │  - Tự động bóc tách (Parser) văn bản từ văn bản thô   │
+       │  - AI Playground: Test thử nghiệm RAG trực quan        │
+       └──────────────────────────┬─────────────────────────────┘
+                                  │ Đọc / Ghi
+                                  ▼
+       ┌────────────────────────────────────────────────────────┐
+       │             POSTGRESQL DATABASE (Hoặc Local JSON)      │
+       │  - Bảng `documents`: Số hiệu, Tên, Cơ quan, Thể loại   │
+       │  - Bảng `articles`: Điều, Khoản, Nội dung, TSVector    │
+       └──────────────────────────┬─────────────────────────────┘
+                                  │
+[Tin nhắn từ Zalo]                │ Truy xuất thời gian thực
+        │                         │
+        ▼                         ▼
+┌───────────────┐         ┌───────────────┐         ┌───────────────┐
+│ 1. Jev Router │ ──────► │ 2. RAG Engine │ ──────► │ 3. Jev Filter │
+└───────────────┘         └───────────────┘         └───────┬───────┘
+                                                            │
+                                                            ▼
+┌───────────────┐         ┌────────────────┐        ┌───────────────┐
+│ Gửi về Zalo   │ ◄────── │ 5. Guardrail   │ ◄───── │ 4. Gemini     │
+└───────────────┘         └────────────────┘        └───────────────┘
 ```
 
 ---
 
-## 📚 Kho dữ liệu văn bản Đảng tích hợp sẵn
+## 📚 Kho dữ liệu văn bản Đảng & Thể thức tích hợp sẵn
 
-Hệ thống đã nạp sẵn cơ sở dữ liệu các văn bản cốt lõi tại thư mục `data/regulations/`:
-
-| Số hiệu văn bản | Cơ quan ban hành | Ngày ban hành | Nội dung chính |
+| Số hiệu văn bản | Cơ quan ban hành | Chuyên mục | Nội dung trọng tâm |
 | :--- | :--- | :--- | :--- |
-| **Quy định 24-QĐ/TW** | Ban Chấp hành Trung ương | 30/07/2021 | Quy định thi hành Điều lệ Đảng (Tuổi đời, học vấn, đảng viên dự bị, tuổi đảng, sinh hoạt chi bộ...) |
-| **Quy định 37-QĐ/TW** | Ban Chấp hành Trung ương | 25/10/2021 | Về những điều đảng viên không được làm (19 điều cấm) |
-| **Hướng dẫn 01-HD/TW** | Ban Bí thư | 28/09/2021 | Hướng dẫn cụ thể thi hành Điều lệ Đảng (Hồ sơ kết nạp, thẩm tra lý lịch, chuyển sinh hoạt...) |
-| **Quy định 22-QĐ/TW** | Ban Chấp hành Trung ương | 28/07/2021 | Công tác kiểm tra, giám sát và kỷ luật của Đảng (Hình thức kỷ luật, thời hiệu, thẩm quyền...) |
+| **17-HD/VPTW** | Văn phòng Trung ương Đảng | **Thể thức văn bản** | Thể thức bắt buộc, thẩm quyền ký (T/M, K/T, T/L, T/U), con dấu, cỡ chữ, phông chữ, canh lề |
+| **05-HD/VPTW** | Văn phòng Trung ương Đảng | **Văn thư & Lưu trữ** | Lập hồ sơ công việc, thời hạn nộp lưu hồ sơ vào Lưu trữ cơ quan (sau 1 năm) |
+| **06-HD/VPTW** | Văn phòng Trung ương Đảng | **Văn thư & Lưu trữ** | Xây dựng danh mục hồ sơ, thời hạn bảo quản (vĩnh viễn / có thời hạn), quy trình tiêu hủy tài liệu |
+| **02/2019/TT-BNV**| Bộ Nội vụ | **Lưu trữ điện tử** | Tiêu chuẩn định dạng số hóa (PDF/A), siêu dữ liệu (metadata), tính toàn vẹn tài liệu điện tử |
+| **24-QĐ/TW** | Ban Chấp hành Trung ương | **Quy định Đảng** | Thi hành Điều lệ Đảng (Tuổi đời, học vấn, đảng viên dự bị, tính tuổi đảng, sinh hoạt chi bộ...) |
+| **37-QĐ/TW** | Ban Chấp hành Trung ương | **Quy định Đảng** | Về 19 điều đảng viên không được làm |
+| **01-HD/TW** | Ban Bí thư | **Quy định Đảng** | Hướng dẫn thi hành Điều lệ Đảng (Hồ sơ kết nạp, thẩm tra lý lịch, chuyển sinh hoạt...) |
+| **22-QĐ/TW** | Ban Chấp hành Trung ương | **Quy định Đảng** | Kiểm tra, giám sát và kỷ luật Đảng (Hình thức kỷ luật, thẩm quyền chi bộ, thời hiệu...) |
 
 ---
 
-## 🚀 Hướng dẫn cài đặt & Khởi chạy
+## 🌐 Web Admin Dashboard (Quản trị dữ liệu)
 
-### 1. Cài đặt Dependencies
-
-Yêu cầu Node.js >= 18.0.0.
-
+Khởi chạy máy chủ Web Admin:
 ```bash
-npm install
+npm run admin
+```
+Mở trình duyệt tại: `http://localhost:3000`
+
+### Tính năng trên Web Admin:
+1. **Tổng quan & Thống kê:** Theo dõi số lượng văn bản, tổng số điều khoản, phân loại thể thức, văn thư lưu trữ và trạng thái kết nối PostgreSQL.
+2. **Quản lý Văn bản:** Tìm kiếm, lọc theo chuyên mục, xem chi tiết từng Điều/Khoản, xóa văn bản tức thời.
+3. **Thêm văn bản & Bóc tách tự động (Auto Parser):** Dán văn bản toàn văn, hệ thống tự động bóc tách thành các Điều/Khoản có tiêu đề và nội dung để lưu vào DB.
+4. **AI Playground:** Thử nghiệm câu hỏi ngay trên web để xem các Điều/Khoản nào được RAG truy xuất và chấm điểm.
+5. **Nạp dữ liệu mẫu một chạm:** Đồng bộ ngay toàn bộ văn bản mẫu chuẩn vào PostgreSQL.
+
+---
+
+## 🐘 Cấu hình PostgreSQL
+
+Để kích hoạt PostgreSQL, mở file `.env` và khai báo:
+```bash
+DATABASE_URL=postgresql://user:password@localhost:5432/zalo_dang_bot
 ```
 
-### 2. Cấu hình biến môi trường (`.env`)
-
-Sao chép file `.env.example` thành `.env` và điền các khóa API:
-
+Chạy lệnh khởi tạo bảng và nạp dữ liệu:
 ```bash
-cp .env.example .env
+# Khởi tạo bảng schema
+npm run db:init
+
+# Đồng bộ toàn bộ văn bản mẫu vào PostgreSQL
+npm run db:seed
 ```
+*(Nếu chưa cấu hình PostgreSQL, hệ thống tự động chạy ở chế độ In-Memory / File JSON mà không phát sinh lỗi).*
 
-Các biến cấu hình chính trong `.env`:
-* `ZALO_BOT_TOKEN`: Token của Zalo Bot cấp trên cổng Zalo Developers.
-* `GEMINI_API_KEY`: API Key của Google Gemini.
-* `JEV_API_KEY`: API Key của TypeSafe Jev (nếu để trống, bot tự kích hoạt chế độ Heuristic Fallback nội bộ mà vẫn chạy mượt mà).
+---
 
-### 3. Kiểm tra tính toàn vẹn (Test & Lint)
+## 🚀 Khởi chạy Bot Zalo
 
 ```bash
-# Kiểm tra cú pháp mã nguồn
+# 1. Kiểm tra tính toàn vẹn (Cú pháp & Smoke Test)
 npm run check
-
-# Chạy Smoke Test kiểm tra Jev, RAG và Pipeline
 npm test
 
-# Kiểm tra kho tài liệu văn bản Đảng đã nạp
-npm run ingest
-```
-
-### 4. Thử nghiệm hỏi đáp trực tiếp trên dòng lệnh (CLI)
-
-Bạn có thể kiểm tra câu trả lời ngay trên Terminal mà không cần mở Zalo:
-
-```bash
-# Cú pháp: npm run ask "<câu hỏi>"
-npm run ask "Tuổi đời và trình độ học vấn để được kết nạp Đảng quy định ra sao?"
+# 2. Thử nghiệm hỏi đáp trên dòng lệnh (CLI)
+npm run ask "Thẩm quyền ký T/M và K/T theo hướng dẫn 17 VPTW?"
+npm run ask "Thời hạn nộp lưu hồ sơ vào lưu trữ cơ quan theo hướng dẫn 05 VPTW?"
+npm run ask "Tiêu chuẩn định dạng văn bản nộp lưu theo thông tư 02 BNV?"
 npm run ask "Đảng viên dự bị có quyền biểu quyết không?"
-npm run ask "Quy định 37 về những điều đảng viên không được làm?"
-```
 
-### 5. Khởi chạy Bot Zalo
-
-Chế độ thông thường:
-```bash
+# 3. Khởi chạy Bot Zalo chính thức
 npm start
-```
-
-Chế độ Development (tự động reload khi sửa code):
-```bash
-npm run dev
-```
-
-Chạy nền bằng `screen` trên macOS / Linux:
-```bash
-screen -dmS zalo-dang-bot bash -lc 'npm start >> logs/bot.log 2>&1'
 ```
 
 ---
@@ -137,61 +116,38 @@ screen -dmS zalo-dang-bot bash -lc 'npm start >> logs/bot.log 2>&1'
 
 ```text
 zalo-bot/
-├── .env.example              # File mẫu cấu hình biến môi trường
-├── .gitignore                # Danh sách loại trừ (bảo vệ bí mật và token)
-├── package.json              # Khai báo dependencies và scripts
+├── .env.example              # Mẫu cấu hình (Zalo, DB, Gemini, Jev)
+├── .gitignore                # Bảo mật token, biến môi trường và log
+├── package.json              # Scripts và dependencies
 ├── data/
-│   └── regulations/          # Kho dữ liệu văn bản Đảng (JSON/Markdown)
+│   └── regulations/          # Kho văn bản chuẩn bị sẵn (JSON)
+│       ├── hd-17-vptw.json   # Thể thức văn bản Đảng
+│       ├── hd-05-vptw.json   # Văn thư & Nộp lưu hồ sơ Đảng
+│       ├── hd-06-vptw.json   # Danh mục hồ sơ & Hủy tài liệu
+│       ├── tt-02-2019-bnv.json # Lưu trữ điện tử
 │       ├── qd-24-tw-2021.json
 │       ├── qd-37-tw-2021.json
 │       ├── hd-01-hd-tw.json
 │       └── qd-22-tw-2021.json
 ├── src/
-│   ├── index.js              # Entry point khởi động bot
-│   ├── config.js             # Quản lý cấu hình tập trung
-│   ├── pipeline.js           # Điều phối luồng xử lý Jev + RAG + Gemini
-│   ├── jev/                  # Module TypeSafe Jev (System 1)
-│   │   ├── index.js          # Service Jev & Local Evaluator Fallback
-│   │   ├── primitives.js     # Định nghĩa Choice, Score, Noul
-│   │   └── prompts.js        # Các bộ câu hỏi phán đoán chuẩn hóa
-│   ├── rag/                  # Module RAG Văn bản Đảng
-│   │   ├── index.js          # Search & Retrieval Engine
-│   │   └── loader.js         # Bóc tách Điều/Khoản văn bản
-│   ├── gemini/               # Module Google Gemini API (System 2)
-│   │   ├── index.js          # Client sinh phản hồi
-│   │   └── prompts.js        # Chỉ dẫn văn phong hành chính Đảng
-│   └── zalo/                 # Module kết nối Zalo Bot API
-│       ├── api.js            # Adapter bọc API Zalo (phân đoạn tin nhắn)
-│       └── polling.js        # Vòng lặp long-polling tuần tự
+│   ├── index.js              # Entry point Bot Zalo
+│   ├── config.js             # Cấu hình tập trung
+│   ├── pipeline.js           # Điều phối Jev + RAG + Gemini
+│   ├── db/                   # Quản trị PostgreSQL & Schema
+│   │   ├── index.js          # Service DB CRUD & Full-text Search
+│   │   └── schema.sql        # Cấu trúc bảng documents & articles
+│   ├── admin/                # Web Admin Dashboard
+│   │   ├── server.js         # Express REST API server
+│   │   └── public/           # Giao diện Web (HTML, CSS, JS)
+│   ├── jev/                  # TypeSafe Jev System 1
+│   ├── rag/                  # RAG Engine (Postgres + Memory Fallback)
+│   ├── gemini/               # Google Gemini System 2
+│   └── zalo/                 # Zalo API Adapter & Polling
 ├── scripts/
-│   ├── ingest.js             # CLI kiểm tra kho văn bản Đảng
-│   └── test-pipeline.js      # CLI thử nghiệm hỏi đáp trực tiếp
+│   ├── init-db.js            # Khởi tạo bảng PostgreSQL (npm run db:init)
+│   ├── seed-db.js            # Đồng bộ dữ liệu vào PostgreSQL (npm run db:seed)
+│   ├── test-pipeline.js      # CLI hỏi đáp trực tiếp (npm run ask)
+│   └── ingest.js             # CLI kiểm tra kho dữ liệu (npm run ingest)
 └── test/
-    └── smoke.test.js         # Smoke test toàn diện hệ thống
+    └── smoke.test.js         # Smoke test kiểm tra toàn diện
 ```
-
----
-
-## ➕ Cách bổ sung văn bản Đảng mới
-
-Để thêm một văn bản Đảng mới (ví dụ Quy định 69-QĐ/TW), bạn chỉ cần tạo một file JSON mới trong thư mục `data/regulations/` với cấu trúc:
-
-```json
-{
-  "documentId": "69-QD/TW-2022",
-  "documentCode": "69-QĐ/TW",
-  "documentName": "Quy định kỷ luật tổ chức đảng, đảng viên vi phạm",
-  "issuer": "Bộ Chính trị",
-  "issueDate": "2022-07-06",
-  "status": "Còn hiệu lực",
-  "articles": [
-    {
-      "articleNumber": "1",
-      "title": "Phạm vi điều chỉnh",
-      "content": "Quy định này áp dụng đối với tổ chức đảng và đảng viên vi phạm..."
-    }
-  ]
-}
-```
-
-Sau đó chạy `npm run ingest`, hệ thống sẽ tự động bóc tách và đưa vào chỉ mục RAG ngay lập tức!

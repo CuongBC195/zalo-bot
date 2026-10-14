@@ -18,8 +18,8 @@ class PipelineOrchestrator {
   /**
    * Khởi chạy nạp tài liệu cho pipeline
    */
-  init() {
-    this.rag.init();
+  async init() {
+    await this.rag.init();
   }
 
   /**
@@ -57,7 +57,7 @@ class PipelineOrchestrator {
 
     // 2. TẦNG RAG: Truy xuất các điều khoản liên quan
     console.log(`[Pipeline] Đang truy xuất tài liệu từ RAG...`);
-    const candidatePassages = this.rag.search(query, { topK: config.rag.topK });
+    const candidatePassages = await this.rag.search(query, { topK: config.rag.topK });
 
     if (!candidatePassages.length) {
       return (

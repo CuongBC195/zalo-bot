@@ -27,7 +27,7 @@ async function main() {
 
   // 2. Nạp kho dữ liệu RAG
   console.log('📚 Đang nạp cơ sở dữ liệu văn bản Đảng...');
-  const count = rag.init();
+  const count = await rag.init();
   console.log(`✅ Đã nạp thành công ${count} điều khoản quy định.`);
 
   // 3. Khởi tạo Zalo API
@@ -56,7 +56,7 @@ async function main() {
 
   // 4. Khởi động Polling Engine
   const poller = new PollingEngine(api);
-  poller.start();
+  await poller.start();
 
   console.log('\n🚀 Bot đang hoạt động! Đang lắng nghe câu hỏi từ Zalo...');
   console.log('   Nhấn Ctrl+C để dừng bot an toàn.\n');

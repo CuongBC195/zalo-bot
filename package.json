@@ -6,15 +6,20 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
+    "admin": "node src/admin/server.js",
+    "db:init": "node scripts/init-db.js",
+    "db:seed": "node scripts/seed-db.js",
     "test": "node test/smoke.test.js",
     "ask": "node scripts/test-pipeline.js",
     "ingest": "node scripts/ingest.js",
     "monitor": "node monitor.js",
-    "check": "node --check src/index.js && node --check src/config.js && node --check src/pipeline.js && node --check src/zalo/api.js && node --check src/jev/index.js && node --check src/rag/index.js && node --check src/gemini/index.js"
+    "check": "node --check src/index.js && node --check src/config.js && node --check src/pipeline.js && node --check src/zalo/api.js && node --check src/jev/index.js && node --check src/rag/index.js && node --check src/gemini/index.js && node --check src/db/index.js && node --check src/admin/server.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
-    "node-zalo-bot": "^0.1.6"
+    "express": "^5.3.0",
+    "node-zalo-bot": "^0.1.6",
+    "pg": "^8.23.1"
   },
   "engines": {
     "node": ">=18.0.0"

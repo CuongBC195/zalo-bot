@@ -13,9 +13,9 @@ class PollingEngine {
     this.seenMessageIds = new Set();
   }
 
-  start() {
+  async start() {
     this.isRunning = true;
-    pipeline.init();
+    await pipeline.init();
     console.log('🚀 Zalo Polling Engine đã bắt đầu...');
     this._pollLoop();
   }

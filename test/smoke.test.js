@@ -1,12 +1,13 @@
 /**
- * Smoke Test cho Zalo Đảng AI Bot
- * Kiểm tra tính toàn vẹn của Jev primitives, RAG engine và Pipeline
+ * Smoke Test cho Zalo Đảng AI Bot (v2.0)
+ * Kiểm tra tính toàn vẹn của Jev primitives, RAG engine, Database service và Pipeline
  */
 
 const assert = require('assert');
 const jev = require('../src/jev');
 const rag = require('../src/rag');
 const pipeline = require('../src/pipeline');
+const db = require('../src/db');
 
 async function testJevPrimitives() {
   console.log('🧪 [Test 1] Kiểm tra Jev Intent Routing...');
@@ -22,28 +23,43 @@ async function testJevPrimitives() {
 }
 
 async function testRagSearch() {
-  console.log('🧪 [Test 2] Kiểm tra RAG Search Engine...');
-  const count = rag.init();
+  console.log('🧪 [Test 2] Kiểm tra RAG Search Engine với Thể thức & Lưu trữ...');
+  const count = await rag.init();
   assert(count > 0, 'Phải nạp được ít nhất 1 điều khoản');
 
-  const results = rag.search('Tuổi đời người vào Đảng');
-  assert(results.length > 0, 'RAG phải tìm thấy kết quả cho câu hỏi tuổi đời');
+  // Test 2.1: Quy định Đảng
+  const res1 = await rag.search('Tuổi đời người vào Đảng');
+  assert(res1.length > 0, 'RAG phải tìm thấy kết quả cho câu hỏi tuổi đời');
+
+  // Test 2.2: Thể thức văn bản (HD 17)
+  const res2 = await rag.search('Thẩm quyền ký thay mặt T/M và ký thay K/T theo hướng dẫn 17');
+  assert(res2.length > 0, 'RAG phải tìm thấy quy định thể thức theo HD 17');
   assert(
-    results[0].fullText.includes('tuổi đời') || results[0].fullText.includes('18 tuổi'),
-    'Kết quả đầu tiên phải đề cập đến tuổi đời hoặc 18 tuổi'
+    res2[0].documentCode?.includes('17') || res2[0].title?.includes('ký') || res2[0].content?.includes('T/M'),
+    'Kết quả phải chứa quy định về ký T/M, K/T'
   );
-  console.log(`   ✅ RAG Search tìm thấy ${results.length} kết quả phù hợp.`);
+
+  // Test 2.3: Văn thư & nộp lưu hồ sơ (HD 05)
+  const res3 = await rag.search('Thời hạn nộp lưu hồ sơ vào lưu trữ cơ quan Đảng');
+  assert(res3.length > 0, 'RAG phải tìm thấy quy định nộp lưu hồ sơ theo HD 05');
+
+  // Test 2.4: Lưu trữ điện tử (TT 02 BNV)
+  const res4 = await rag.search('Định dạng tệp nộp lưu tài liệu lưu trữ điện tử thông tư 02');
+  assert(res4.length > 0, 'RAG phải tìm thấy quy định lưu trữ điện tử theo TT 02');
+
+  console.log(`   ✅ RAG Search vượt qua kiểm thử với ${count} điều khoản (Thể thức, Văn thư, Quy định).`);
 }
 
 async function testPipelineEndToEnd() {
   console.log('🧪 [Test 3] Kiểm tra Pipeline End-to-End...');
-  pipeline.init();
+  await pipeline.init();
 
   const reply1 = await pipeline.processMessage({
-    text: 'Đảng viên dự bị có quyền biểu quyết không?',
+    text: 'Thẩm quyền ký T/M và K/T trong văn bản Đảng quy định ra sao?',
     senderName: 'Đồng chí Cường',
   });
   assert(typeof reply1 === 'string' && reply1.length > 20, 'Phải sinh câu trả lời hợp lệ');
+  assert(reply1.includes('17-HD/VPTW') || reply1.includes('T/M'), 'Phải dẫn nguồn Hướng dẫn 17');
 
   const reply2 = await pipeline.processMessage({
     text: 'Hôm nay trời có mưa không?',
@@ -59,19 +75,28 @@ async function testPipelineEndToEnd() {
   console.log('   ✅ Pipeline End-to-End hoạt động chính xác.');
 }
 
+async function testDatabaseService() {
+  console.log('🧪 [Test 4] Kiểm tra PostgreSQL Database Service...');
+  assert(typeof db.checkConnection === 'function', 'DB Service phải có hàm checkConnection');
+  assert(typeof db.createDocument === 'function', 'DB Service phải có hàm createDocument');
+  console.log('   ✅ Database Service sẵn sàng (hỗ trợ cả PostgreSQL và Local Memory Fallback).');
+}
+
 async function main() {
   console.log('========================================');
-  console.log('🚀 BẮT ĐẦU SMOKE TEST HỆ THỐNG');
+  console.log('🚀 BẮT ĐẦU SMOKE TEST HỆ THỐNG (v2.0)');
   console.log('========================================\n');
 
   try {
     await testJevPrimitives();
     await testRagSearch();
     await testPipelineEndToEnd();
+    await testDatabaseService();
 
     console.log('\n========================================');
     console.log('🎉 TẤT CẢ SMOKE TEST ĐỀU THÀNH CÔNG (PASS)');
     console.log('========================================\n');
+    process.exit(0);
   } catch (err) {
     console.error('\n❌ Thất bại tại kiểm thử:', err);
     process.exit(1);

@@ -166,12 +166,20 @@ class JevService {
       };
     }
 
-    // Từ khóa Đảng
+    // Từ khóa Đảng, Thể thức & Văn thư lưu trữ
     const partyKeywords = [
       'đảng', 'đảng viên', 'chi bộ', 'đảng ủy', 'quy định', 'điều lệ', 'nghị quyết',
       'kết nạp', 'chính thức', 'dự bị', 'tuổi đảng', 'sinh hoạt', 'kỷ luật', 'kiểm tra',
       'giám sát', 'chi ủy', 'cấp ủy', 'trung ương', 'bộ chính trị', 'ban bí thư',
       '37-qđ', '24-qđ', '22-qđ', '69-qđ', '01-hd', 'những điều không được làm',
+      // Thể thức & Kỹ thuật trình bày văn bản Đảng (HD 17-HD/VPTW)
+      'thể thức', 'văn bản', 'vptw', 'văn phòng trung ương', '17-hd', 'trình bày văn bản',
+      'thẩm quyền ký', 'ký thay', 'ký thay mặt', 'thừa lệnh', 'thừa uỷ quyền', 'thừa ủy quyền',
+      't/m', 'k/t', 't/l', 't/u', 'con dấu', 'đóng dấu', 'phông chữ', 'cỡ chữ', 'định lề', 'ký hiệu',
+      // Văn thư & Lưu trữ Đảng và Nhà nước (HD 05, HD 06, TT 02/2019/TT-BNV)
+      'văn thư', 'lưu trữ', 'nộp lưu', 'hồ sơ', 'danh mục hồ sơ', 'tiêu hủy', 'hủy tài liệu',
+      'thời hạn bảo quản', '05-hd', '06-hd', 'tt-bnv', 'bộ nội vụ', '02/2019', 'lưu trữ điện tử',
+      'pdf/a', 'siêu dữ liệu', 'metadata', 'bảo quản tài liệu'
     ];
 
     const hasPartyKw = partyKeywords.some(kw => text.includes(kw));
@@ -179,8 +187,8 @@ class JevService {
     if (hasPartyKw) {
       return {
         choice: 'party_regulation',
-        confidence: 0.92,
-        probabilities: { party_regulation: 0.92, party_procedure: 0.08 },
+        confidence: 0.94,
+        probabilities: { party_regulation: 0.94, party_procedure: 0.06 },
       };
     }
 
