@@ -30,15 +30,7 @@ async function handleZaloUpdate(api, update) {
 
   const senderName = from.display_name || from.name || from.username || message.sender_name || 'Đồng chí';
 
-  console.log(`\n📩 [Zalo] Nhận tin nhắn từ ${senderName} (${chatId}): "${text}"`);
-
-  // Kiểm tra người dùng có bị chặn không
-  const isBlocked = await db.isZaloUserBlocked(from.id);
-  if (isBlocked) {
-    console.warn(`⛔ [Zalo] Người dùng ${senderName} (${from.id}) đang bị chặn, bỏ qua tin nhắn.`);
-    await api.sendMessage(chatId, 'Tài khoản của bạn hiện đang bị tạm khóa tương tác với trợ lý. Vui lòng liên hệ quản trị viên.');
-    return { ok: true, blocked: true };
-  }
+  console.log(`[Zalo] Nhận tin nhắn từ ${senderName} (${chatId}): "${text}"`);
 
   const startTime = Date.now();
 
@@ -57,7 +49,7 @@ async function handleZaloUpdate(api, update) {
 
   // Gửi phản hồi lại Zalo
   await api.sendMessage(chatId, reply);
-  console.log(`📤 [Zalo] Đã phản hồi thành công cho ${senderName} (${latencyMs}ms)`);
+  console.log(`[Zalo] Đã phản hồi thành công cho ${senderName} (${latencyMs}ms)`);
 
   // Ghi nhật ký tương tác và cập nhật thông tin Zalo user
   await db.recordInteraction({

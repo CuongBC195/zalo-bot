@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản Trị Văn Bản Đảng & Zalo AI Assistant</title>
+  <title>Hệ Thống Quản Trị Văn Bản Đảng & Trợ Lý Zalo AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,142 +11,284 @@
 </head>
 <body>
 
-  <!-- MÀN HÌNH ĐĂNG NHẬP (LOGIN OVERLAY) -->
+  <!-- ============================================================
+       1. MÀN HÌNH ĐĂNG NHẬP (LOGIN OVERLAY)
+       ============================================================ -->
   <div id="loginScreen" class="login-overlay">
     <div class="login-card">
       <div class="login-header">
-        <div class="login-badge">🇻🇳</div>
+        <div class="login-badge-seal">
+          <svg class="svg-seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </div>
         <h2>ĐĂNG NHẬP HỆ THỐNG</h2>
-        <p>Cổng Quản Trị Tri Thức Văn Bản Đảng & Zalo AI</p>
+        <p>Trung Tâm Quản Trị Dữ Liệu RAG Văn Bản Đảng & Zalo AI</p>
       </div>
+
       <form id="loginForm">
         <div class="form-group">
-          <label for="loginUsername">Tên đăng nhập</label>
-          <input type="text" id="loginUsername" placeholder="Ví dụ: admin" required autofocus autocomplete="username">
+          <label for="loginUsername">Tên đăng nhập cán bộ</label>
+          <div class="input-with-icon">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <input type="text" id="loginUsername" placeholder="Nhập tên tài khoản (ví dụ: admin, canbo)" required autofocus autocomplete="username">
+          </div>
         </div>
+
         <div class="form-group">
-          <label for="loginPassword">Mật khẩu</label>
-          <input type="password" id="loginPassword" placeholder="Nhập mật khẩu quản trị" required autocomplete="current-password">
+          <label for="loginPassword">Mật khẩu bảo mật</label>
+          <div class="input-with-icon">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <input type="password" id="loginPassword" placeholder="Nhập mật khẩu" required autocomplete="current-password">
+          </div>
         </div>
+
         <div id="loginError" class="login-error hidden"></div>
+
         <button type="submit" id="btnLoginSubmit" class="btn btn-primary btn-block">
-          🔐 Đăng Nhập
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+            <polyline points="10 17 15 12 10 7"></polyline>
+            <line x1="15" y1="12" x2="3" y2="12"></line>
+          </svg>
+          Xác Thực & Đăng Nhập
         </button>
       </form>
+
       <div class="login-footer">
-        <p>Hệ thống nội bộ bảo mật phục vụ công tác nghiệp vụ Đảng ủy</p>
+        <p>Hệ thống nghiệp vụ bảo mật phục vụ công tác văn phòng cấp ủy Đảng</p>
       </div>
     </div>
   </div>
 
-  <!-- GIAO DIỆN QUẢN TRỊ CHÍNH (MAIN DASHBOARD) -->
+  <!-- ============================================================
+       2. GIAO DIỆN QUẢN TRỊ CHÍNH (MAIN DASHBOARD)
+       ============================================================ -->
   <div id="mainApp" class="hidden">
     <!-- Top Navigation Bar -->
     <header class="navbar">
       <div class="nav-brand">
-        <div class="brand-badge">🇻🇳</div>
+        <div class="brand-seal-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </div>
         <div class="brand-text">
           <h1>TRUNG TÂM TRI THỨC VĂN BẢN ĐẢNG</h1>
-          <p>Hệ thống Quản trị Dữ liệu RAG cho Zalo AI Assistant</p>
+          <p>Cổng Quản Trị Cơ Sở Dữ Liệu RAG Phục Vụ Trợ Lý Zalo AI</p>
         </div>
       </div>
+
       <div class="nav-actions">
+        <!-- Trạng thái kết nối DB -->
         <div id="dbStatusBadge" class="status-pill status-checking">
           <span class="status-dot"></span>
-          <span id="dbStatusText">Đang kiểm tra DB...</span>
+          <span id="dbStatusText">Đang kiểm tra kết nối...</span>
         </div>
-        <button id="btnSeedDb" class="btn btn-outline" title="Đồng bộ toàn bộ văn bản mẫu vào PostgreSQL">
-          ⚡ Nạp Dữ Liệu Mẫu
+
+        <!-- Nút nạp dữ liệu mẫu (Cả Admin và Cán bộ nghiệp vụ đều dùng được) -->
+        <button id="btnSeedDb" class="btn btn-outline" title="Đồng bộ toàn bộ văn bản mẫu (HD 17, HD 05, TT 02...) vào PostgreSQL">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+            <path d="M16 21h5v-5"></path>
+          </svg>
+          Nạp Dữ Liệu Mẫu
         </button>
+
+        <!-- Menu hồ sơ tài khoản -->
         <div class="user-profile-menu">
-          <span class="user-avatar">👤</span>
-          <span id="currentUserName" class="user-name">Admin</span>
-          <button id="btnOpenProfileModal" class="btn btn-outline btn-sm" title="Hồ sơ & Đổi mật khẩu">⚙️ Tài khoản</button>
-          <button id="btnLogout" class="btn btn-secondary btn-sm" title="Đăng xuất">Đăng xuất</button>
+          <div class="user-avatar-badge">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div class="user-info-text">
+            <span id="currentUserName" class="user-name">Đang tải...</span>
+            <span id="currentUserRoleBadge" class="badge badge-crimson">Quản trị viên</span>
+          </div>
+
+          <button id="btnOpenProfileModal" class="btn btn-outline btn-sm" title="Hồ sơ cán bộ & Đổi mật khẩu">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            Tài Khoản
+          </button>
+
+          <button id="btnLogout" class="btn btn-secondary btn-sm" title="Đăng xuất khỏi hệ thống">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Đăng Xuất
+          </button>
         </div>
       </div>
     </header>
 
     <!-- Main Container -->
     <main class="container">
-      <!-- Stats Cards -->
+      <!-- Thống Kê Tổng Quan -->
       <section class="stats-grid">
         <div class="stat-card card-total">
-          <div class="stat-icon">📚</div>
+          <div class="stat-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+          </div>
           <div class="stat-content">
-            <span class="stat-label">Tổng Văn Bản</span>
-            <h2 id="statTotalDocs">0</h2>
-            <span class="stat-sub">Kho văn bản Đảng</span>
+            <span class="stat-label">Tổng Văn Bản Quy Định</span>
+            <h2 id="statTotalDocs" class="tabular-nums">0</h2>
+            <span class="stat-sub">Kho văn bản Đảng & Nhà nước</span>
           </div>
         </div>
+
         <div class="stat-card card-articles">
-          <div class="stat-icon">⚖️</div>
+          <div class="stat-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+          </div>
           <div class="stat-content">
-            <span class="stat-label">Tổng Điều/Khoản</span>
-            <h2 id="statTotalArticles">0</h2>
-            <span class="stat-sub">Đã lập chỉ mục RAG</span>
+            <span class="stat-label">Tổng Điều / Khoản</span>
+            <h2 id="statTotalArticles" class="tabular-nums">0</h2>
+            <span class="stat-sub">Đã lập chỉ mục truy vấn RAG</span>
           </div>
         </div>
+
         <div class="stat-card card-thethuc">
-          <div class="stat-icon">✍️</div>
+          <div class="stat-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </div>
           <div class="stat-content">
             <span class="stat-label">Thể Thức (HD 17)</span>
-            <h2 id="statTheThuc">0</h2>
-            <span class="stat-sub">Ký T/M, K/T, con dấu</span>
+            <h2 id="statTheThuc" class="tabular-nums">0</h2>
+            <span class="stat-sub">Ký T/M, K/T, đóng dấu, tiêu đề</span>
           </div>
         </div>
+
         <div class="stat-card card-vanthu">
-          <div class="stat-icon">🗄️</div>
+          <div class="stat-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <polyline points="21 8 21 21 3 21 3 8"></polyline>
+              <rect x="1" y="3" width="22" height="5"></rect>
+              <line x1="10" y1="12" x2="14" y2="12"></line>
+            </svg>
+          </div>
           <div class="stat-content">
-            <span class="stat-label">Văn Thư Lưu Trữ</span>
-            <h2 id="statVanThu">0</h2>
-            <span class="stat-sub">HD 05, 06, TT 02</span>
+            <span class="stat-label">Văn Thư & Lưu Trữ</span>
+            <h2 id="statVanThu" class="tabular-nums">0</h2>
+            <span class="stat-sub">HD 05, HD 06, TT 02 BNV</span>
           </div>
         </div>
+
         <div class="stat-card card-users">
-          <div class="stat-icon">👥</div>
+          <div class="stat-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
           <div class="stat-content">
-            <span class="stat-label">Người Dùng Zalo</span>
-            <h2 id="statZaloUsers">0</h2>
-            <span class="stat-sub">Đang tương tác với Bot</span>
+            <span class="stat-label">Cán Bộ Quản Trị</span>
+            <h2 id="statAdminCount" class="tabular-nums">0</h2>
+            <span class="stat-sub">Tài khoản truy cập trang quản trị</span>
           </div>
         </div>
       </section>
 
-      <!-- Navigation Tabs -->
-      <div class="tabs-header">
+      <!-- Thanh Điều Hướng Tab Chuyên Nghiệp -->
+      <nav class="tabs-header" aria-label="Các phân hệ quản trị">
         <button class="tab-btn active" data-tab="tab-list">
-          📋 Quản Lý Văn Bản
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          Kho Văn Bản & Quy Định
         </button>
-        <button class="tab-btn" data-tab="tab-add">
-          ➕ Thêm Văn Bản & Bóc Tách
-        </button>
-        <button class="tab-btn" data-tab="tab-users">
-          👥 Quản Lý Người Dùng
-        </button>
-        <button class="tab-btn" data-tab="tab-logs">
-          📜 Nhật Ký Hỏi Đáp (Audit)
-        </button>
-        <button class="tab-btn" data-tab="tab-playground">
-          🧪 Thử Nghiệm RAG
-        </button>
-      </div>
 
-      <!-- TAB 1: DANH SÁCH VĂN BẢN -->
+        <button class="tab-btn" data-tab="tab-add">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Thêm Văn Bản & Bóc Tách
+        </button>
+
+        <!-- Tab Quản Trị Cán Bộ: Chỉ Admin/Superadmin mới thấy (User thường sẽ bị ẩn) -->
+        <button class="tab-btn" id="tabNavUsers" data-tab="tab-users">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          Quản Trị Cán Bộ
+        </button>
+
+        <button class="tab-btn" data-tab="tab-logs">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          Nhật Ký Hỏi Đáp (Audit)
+        </button>
+
+        <button class="tab-btn" data-tab="tab-playground">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <polyline points="4 17 10 11 4 5"></polyline>
+            <line x1="12" y1="19" x2="20" y2="19"></line>
+          </svg>
+          Thử Nghiệm Truy Vấn RAG
+        </button>
+      </nav>
+
+      <!-- ============================================================
+           TAB 1: DANH SÁCH VĂN BẢN
+           ============================================================ -->
       <section id="tab-list" class="tab-content active">
         <div class="filter-bar">
           <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" placeholder="Tìm theo số hiệu (17-HD, 37-QĐ...), tên văn bản, cơ quan...">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="searchInput" placeholder="Tìm theo số hiệu (17-HD, 37-QĐ, 02/2019/TT-BNV...), tên văn bản, cơ quan...">
           </div>
+
           <div class="select-group">
             <select id="categoryFilter">
               <option value="">Tất cả chuyên mục</option>
-              <option value="the_thuc">Thể thức & Trình bày (HD 17)</option>
+              <option value="the_thuc">Thể thức & Kỹ thuật trình bày (HD 17)</option>
               <option value="van_thu_luu_tru">Văn thư & Lưu trữ (HD 05, 06, TT 02)</option>
-              <option value="quy_dinh_dang">Quy định & Điều lệ Đảng</option>
+              <option value="quy_dinh_dang">Quy định & Thi hành Điều lệ Đảng</option>
             </select>
-            <button id="btnRefresh" class="btn btn-secondary">🔄 Làm mới</button>
+            <button id="btnRefresh" class="btn btn-secondary">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              Làm Mới
+            </button>
           </div>
         </div>
 
@@ -154,13 +296,13 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Số / Ký hiệu</th>
-                <th>Tên Văn Bản</th>
-                <th>Cơ Quan Ban Hành</th>
-                <th>Chuyên Mục</th>
-                <th>Số Điều</th>
-                <th>Hiệu Lực</th>
-                <th>Thao Tác</th>
+                <th style="width: 150px;">Số / Ký Hiệu</th>
+                <th>Tên Văn Bản / Trích Yếu</th>
+                <th style="width: 200px;">Cơ Quan Ban Hành</th>
+                <th style="width: 170px;">Chuyên Mục</th>
+                <th style="width: 110px;">Quy Mô</th>
+                <th style="width: 120px;">Hiệu Lực</th>
+                <th style="width: 160px; text-align: right;">Thao Tác</th>
               </tr>
             </thead>
             <tbody id="documentsTableBody">
@@ -172,12 +314,16 @@
         </div>
       </section>
 
-      <!-- TAB 2: THÊM VĂN BẢN & AUTO PARSER -->
+      <!-- ============================================================
+           TAB 2: THÊM VĂN BẢN & AUTO PARSER (MỞ CHO CẢ USER & ADMIN)
+           ============================================================ -->
       <section id="tab-add" class="tab-content">
         <div class="card add-form-card">
           <div class="card-header">
-            <h3>Thêm Mới Văn Bản Quy Định Vào Cơ Sở Dữ Liệu</h3>
-            <p>Hỗ trợ nhập trực tiếp hoặc dán toàn văn để AI / Regex tự động bóc tách thành các Điều/Khoản.</p>
+            <div>
+              <h3>Thêm Mới Văn Bản & Bóc Tách Dữ Liệu RAG</h3>
+              <p>Hỗ trợ cán bộ nạp dữ liệu trực tiếp hoặc dán văn bản toàn văn để hệ thống tự động bóc tách thành các Điều/Khoản.</p>
+            </div>
           </div>
 
           <form id="addDocForm">
@@ -186,145 +332,159 @@
                 <label for="docCode">Số và Ký Hiệu Văn Bản <span class="required">*</span></label>
                 <input type="text" id="docCode" placeholder="Ví dụ: 17-HD/VPTW, 24-QĐ/TW, 02/2019/TT-BNV" required>
               </div>
+
               <div class="form-group">
-                <label for="docCategory">Chuyên Mục <span class="required">*</span></label>
+                <label for="docCategory">Chuyên Mục Nghiệp Vụ <span class="required">*</span></label>
                 <select id="docCategory" required>
                   <option value="the_thuc">Thể thức & Kỹ thuật trình bày văn bản (HD 17)</option>
                   <option value="van_thu_luu_tru">Công tác Văn thư & Lưu trữ (HD 05, 06, TT 02)</option>
                   <option value="quy_dinh_dang">Quy định & Thi hành Điều lệ Đảng</option>
                 </select>
               </div>
+
               <div class="form-group span-2">
-                <label for="docName">Tên Văn Bản / Trích Yếu <span class="required">*</span></label>
+                <label for="docName">Tên Văn Bản / Trích Yếu Nội Dung <span class="required">*</span></label>
                 <input type="text" id="docName" placeholder="Ví dụ: Hướng dẫn về thể thức và kỹ thuật trình bày văn bản của Đảng" required>
               </div>
+
               <div class="form-group">
                 <label for="docIssuer">Cơ Quan Ban Hành <span class="required">*</span></label>
-                <input type="text" id="docIssuer" placeholder="Ví dụ: Văn phòng Trung ương Đảng, Bộ Nội vụ, BCH Trung ương" required>
+                <input type="text" id="docIssuer" placeholder="Ví dụ: Văn phòng Trung ương Đảng, Ban Chấp hành Trung ương, Bộ Nội vụ" required>
               </div>
+
               <div class="form-group">
                 <label for="docDate">Ngày Ban Hành</label>
                 <input type="date" id="docDate">
               </div>
             </div>
 
-            <!-- Khu vực Bóc tách tự động -->
+            <!-- Khu vực Bóc tách tự động Regex/AI -->
             <div class="parser-box">
               <div class="parser-header">
                 <div>
-                  <h4>⚡ Bóc Tách Tự Động Từ Văn Bản Toàn Văn</h4>
-                  <p>Dán toàn văn văn bản có các khối "Điều 1...", "Điều 2..." vào đây, hệ thống sẽ tự động tách Điều và Tiêu đề.</p>
+                  <h4>Bóc Tách Tự Động Từ Văn Bản Toàn Văn</h4>
+                  <p>Dán toàn văn văn bản có chứa các khối "Điều 1...", "Điều 2..." vào ô bên dưới, hệ thống sẽ tự động bóc tách từng Điều khoản.</p>
                 </div>
                 <button type="button" id="btnAutoParse" class="btn btn-primary">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
                   Tự Động Bóc Tách
                 </button>
               </div>
+
               <textarea id="rawTextContent" rows="7" placeholder="Dán nội dung toàn văn văn bản vào đây...
 Ví dụ:
 Điều 1. Phạm vi điều chỉnh
-Hướng dẫn này quy định về thể thức và kỹ thuật trình bày văn bản...
+Hướng dẫn này quy định về thể thức và kỹ thuật trình bày văn bản của Đảng...
 
 Điều 2. Thẩm quyền ký văn bản
 1. Ký thay mặt (T/M)..."></textarea>
             </div>
 
-            <!-- Danh sách Điều khoản sau khi bóc tách -->
+            <!-- Danh sách Điều khoản đã bóc tách -->
             <div class="articles-preview-section">
               <div class="preview-header">
-                <h4>Danh Sách Các Điều/Khoản Sẽ Nạp (<span id="parsedCount">0</span> điều)</h4>
-                <button type="button" id="btnAddSingleArticle" class="btn btn-sm btn-outline">+ Thêm Điều Thủ Công</button>
+                <h4>Danh Sách Các Điều/Khoản Sẽ Nạp Vào CSDL (<span id="parsedCount">0</span> điều)</h4>
+                <button type="button" id="btnAddSingleArticle" class="btn btn-sm btn-outline">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  Thêm Điều Thủ Công
+                </button>
               </div>
+
               <div id="articlesListContainer" class="articles-list">
-                <p class="empty-hint">Chưa có điều khoản nào. Dán văn bản vào ô trên và bấm "Tự Động Bóc Tách" hoặc thêm thủ công.</p>
+                <p class="empty-hint">Chưa có điều khoản nào. Dán văn bản vào ô trên và bấm "Tự Động Bóc Tách" hoặc bấm "Thêm Điều Thủ Công".</p>
               </div>
             </div>
 
             <div class="form-actions">
               <button type="submit" id="btnSubmitDoc" class="btn btn-success btn-lg">
-                💾 Lưu Vào Cơ Sở Dữ Liệu
+                <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                  <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                Lưu Vào Cơ Sở Dữ Liệu PostgreSQL
               </button>
-              <button type="reset" class="btn btn-secondary btn-lg">Làm lại</button>
+              <button type="reset" class="btn btn-secondary btn-lg">Làm Lại</button>
             </div>
           </form>
         </div>
       </section>
 
-      <!-- TAB 3: QUẢN LÝ NGƯỜI DÙNG (USERS & ZALO USERS) -->
+      <!-- ============================================================
+           TAB 3: QUẢN TRỊ CÁN BỘ (CHỈ DÀNH CHO ADMIN)
+           ============================================================ -->
       <section id="tab-users" class="tab-content">
-        <div class="users-management-grid">
-          <!-- Bảng Admin Users -->
-          <div class="card">
-            <div class="card-header flex-between">
-              <div>
-                <h3>Quản Trị Viên Hệ Thống (Admins)</h3>
-                <p>Danh sách tài khoản có quyền truy cập trang quản trị.</p>
-              </div>
-              <button id="btnOpenAddAdminModal" class="btn btn-primary btn-sm">+ Thêm Admin</button>
+        <div class="card">
+          <div class="card-header flex-between">
+            <div>
+              <h3>Danh Sách Cán Bộ Quản Trị Hệ Thống</h3>
+              <p>Quản lý tài khoản cán bộ có quyền truy cập trang quản trị web để nạp dữ liệu và vận hành hệ thống.</p>
             </div>
-            <div class="table-container">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Tên Đăng Nhập</th>
-                    <th>Họ Tên</th>
-                    <th>Vai Trò</th>
-                    <th>Trạng Thái</th>
-                    <th>Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody id="adminUsersTableBody">
-                  <tr><td colspan="5" class="text-center py-4">Đang tải...</td></tr>
-                </tbody>
-              </table>
-            </div>
+            <button id="btnOpenAddAdminModal" class="btn btn-primary btn-sm">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <line x1="20" y1="8" x2="20" y2="14"></line>
+                <line x1="23" y1="11" x2="17" y2="11"></line>
+              </svg>
+              Thêm Cán Bộ Mới
+            </button>
           </div>
 
-          <!-- Bảng Người Dùng Zalo -->
-          <div class="card">
-            <div class="card-header">
-              <h3>Người Dùng Zalo Tương Tác Với Bot</h3>
-              <p>Danh sách người dùng Zalo đã gửi câu hỏi cho trợ lý AI.</p>
-            </div>
-            <div class="table-container">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Tên / ID Zalo</th>
-                    <th>Số Câu Hỏi</th>
-                    <th>Lần Cuối Hoạt Động</th>
-                    <th>Trạng Thái</th>
-                    <th>Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody id="zaloUsersTableBody">
-                  <tr><td colspan="5" class="text-center py-4">Đang tải...</td></tr>
-                </tbody>
-              </table>
-            </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 160px;">Tên Đăng Nhập</th>
+                  <th>Họ và Tên Cán Bộ</th>
+                  <th style="width: 200px;">Email</th>
+                  <th style="width: 170px;">Vai Trò</th>
+                  <th style="width: 130px;">Trạng Thái</th>
+                  <th style="width: 120px; text-align: right;">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTableBody">
+                <tr><td colspan="6" class="text-center py-4">Đang tải danh sách cán bộ...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
 
-      <!-- TAB 4: NHẬT KÝ HỎI ĐÁP (AUDIT LOGS) -->
+      <!-- ============================================================
+           TAB 4: NHẬT KÝ HỎI ĐÁP (AUDIT LOGS)
+           ============================================================ -->
       <section id="tab-logs" class="tab-content">
         <div class="card">
           <div class="card-header flex-between">
             <div>
               <h3>Nhật Ký Hỏi Đáp Thời Gian Thực (Audit Logs)</h3>
-              <p>Xem toàn bộ câu hỏi người dùng đã gửi vào Zalo Bot và câu trả lời tương ứng.</p>
+              <p>Theo dõi lịch sử câu hỏi từ Zalo và kết quả xử lý của trợ lý AI để liên tục tối ưu hóa độ chính xác.</p>
             </div>
-            <button id="btnRefreshLogs" class="btn btn-secondary btn-sm">🔄 Tải lại</button>
+            <button id="btnRefreshLogs" class="btn btn-secondary btn-sm">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              Tải Lại
+            </button>
           </div>
+
           <div class="table-container">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Thời Gian</th>
-                  <th>Người Hỏi</th>
-                  <th>Nội Dung Câu Hỏi</th>
-                  <th>Ý Định (Jev)</th>
-                  <th>Độ Trễ</th>
-                  <th>Xem Phản Hồi</th>
+                  <th style="width: 150px;">Thời Gian</th>
+                  <th style="width: 160px;">Người Hỏi</th>
+                  <th>Nội Dung Câu Hỏi Tra Cứu</th>
+                  <th style="width: 140px;">Ý Định (Intent)</th>
+                  <th style="width: 100px;">Độ Trễ</th>
+                  <th style="width: 110px; text-align: right;">Chi Tiết</th>
                 </tr>
               </thead>
               <tbody id="queryLogsTableBody">
@@ -335,24 +495,30 @@ Hướng dẫn này quy định về thể thức và kỹ thuật trình bày v
         </div>
       </section>
 
-      <!-- TAB 5: THỬ NGHIỆM TRUY VẤN RAG -->
+      <!-- ============================================================
+           TAB 5: THỬ NGHIỆM TRUY VẤN RAG PLAYGROUND
+           ============================================================ -->
       <section id="tab-playground" class="tab-content">
         <div class="card playground-card">
           <div class="card-header">
-            <h3>🧪 Thử Nghiệm Truy Vấn RAG Trực Tiếp</h3>
-            <p>Nhập câu hỏi để kiểm tra ngay những Điều/Khoản nào trong PostgreSQL/RAG được truy xuất và xếp hạng.</p>
+            <h3>Thử Nghiệm Truy Vấn RAG Trực Tiếp</h3>
+            <p>Nhập câu hỏi để kiểm tra ngay những Điều/Khoản nào trong cơ sở dữ liệu được bộ máy RAG truy xuất và xếp hạng.</p>
           </div>
 
           <div class="playground-input-row">
-            <input type="text" id="playgroundQuery" placeholder="Ví dụ: Thẩm quyền ký thay mặt T/M và ký thay K/T quy định ra sao?">
+            <input type="text" id="playgroundQuery" placeholder="Ví dụ: Thẩm quyền ký thay mặt T/M và ký thay K/T trong văn bản Đảng quy định ra sao?">
             <button id="btnRunQueryTest" class="btn btn-primary">
-              🚀 Kiểm Tra Truy Vấn
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              Kiểm Tra Truy Vấn
             </button>
           </div>
 
-          <div class="quick-sample-chips">
-            <span>Gợi ý mẫu:</span>
-            <button class="chip" data-q="Thẩm quyền ký T/M và K/T trong văn bản Đảng theo hướng dẫn 17?">Ký T/M & K/T (HD 17)</button>
+          <div class="chips-group">
+            <span style="font-size: 0.8rem; color: var(--text-muted); align-self: center; margin-right: 0.25rem;">Gợi ý mẫu:</span>
+            <button class="chip" data-q="Thẩm quyền ký T/M và K/T trong văn bản Đảng theo hướng dẫn 17?">Ký T/M &amp; K/T (HD 17)</button>
             <button class="chip" data-q="Quy định con dấu trên văn bản Đảng như thế nào?">Con dấu văn bản (HD 17)</button>
             <button class="chip" data-q="Thời hạn nộp lưu hồ sơ vào lưu trữ cơ quan Đảng là bao lâu?">Nộp lưu hồ sơ (HD 05)</button>
             <button class="chip" data-q="Tiêu chuẩn định dạng PDF và siêu dữ liệu theo thông tư 02 BNV?">Lưu trữ điện tử (TT 02)</button>
@@ -368,140 +534,179 @@ Hướng dẫn này quy định về thể thức và kỹ thuật trình bày v
     </main>
   </div>
 
-  <!-- Modal Xem Chi Tiết Điều Khoản -->
+  <!-- ============================================================
+       MODAL: XEM CHI TIẾT ĐIỀU KHOẢN VĂN BẢN
+       ============================================================ -->
   <div id="detailModal" class="modal hidden">
     <div class="modal-backdrop"></div>
     <div class="modal-card">
       <div class="modal-header">
         <div>
-          <span id="modalDocCode" class="badge badge-primary"></span>
-          <h3 id="modalDocName"></h3>
+          <span id="modalDocCode" class="badge badge-crimson"></span>
+          <h3 id="modalDocName" style="margin-top: 0.25rem;"></h3>
         </div>
-        <button id="btnCloseModal" class="btn-close">&times;</button>
+        <button id="btnCloseModal" class="btn-close" title="Đóng">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="meta-row">
+        <div class="meta-row" style="display: flex; gap: 1.5rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-secondary);">
           <div><strong>Cơ quan:</strong> <span id="modalIssuer"></span></div>
           <div><strong>Chuyên mục:</strong> <span id="modalCategory"></span></div>
           <div><strong>Ngày ban hành:</strong> <span id="modalDate"></span></div>
         </div>
-        <hr class="divider">
-        <h4>Chi Tiết Các Điều/Khoản:</h4>
+        <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin: 1rem 0;">
+        <h4 style="margin-bottom: 0.75rem;">Chi Tiết Các Điều/Khoản:</h4>
         <div id="modalArticlesList" class="modal-articles-list"></div>
       </div>
     </div>
   </div>
 
-  <!-- Modal Thêm Admin Mới -->
+  <!-- ============================================================
+       MODAL: THÊM CÁN BỘ QUẢN TRỊ / NGHIỆP VỤ (CHỈ ADMIN THAO TÁC)
+       ============================================================ -->
   <div id="addAdminModal" class="modal hidden">
     <div class="modal-backdrop"></div>
-    <div class="modal-card" style="max-width: 500px;">
+    <div class="modal-card" style="max-width: 520px;">
       <div class="modal-header">
-        <h3>Thêm Tài Khoản Quản Trị Viên</h3>
-        <button id="btnCloseAdminModal" class="btn-close">&times;</button>
+        <h3>Thêm Tài Khoản Cán Bộ Mới</h3>
+        <button id="btnCloseAdminModal" class="btn-close" title="Đóng">&times;</button>
       </div>
       <form id="createAdminForm" class="modal-body">
-        <div class="form-group" style="margin-bottom: 1rem;">
+        <div class="form-group">
           <label for="adminUsername">Tên đăng nhập <span class="required">*</span></label>
-          <input type="text" id="adminUsername" required>
+          <input type="text" id="adminUsername" placeholder="Ví dụ: canbo_nghiepvụ, admin_thanhuy" required>
         </div>
-        <div class="form-group" style="margin-bottom: 1rem;">
-          <label for="adminFullName">Họ và tên</label>
-          <input type="text" id="adminFullName" placeholder="Nguyễn Văn A">
+
+        <div class="form-group">
+          <label for="adminFullName">Họ và tên cán bộ</label>
+          <input type="text" id="adminFullName" placeholder="Ví dụ: Nguyễn Văn A">
         </div>
-        <div class="form-group" style="margin-bottom: 1rem;">
-          <label for="adminEmail">Email</label>
-          <input type="email" id="adminEmail" placeholder="admin@party.gov.vn">
+
+        <div class="form-group">
+          <label for="adminEmail">Email cơ quan</label>
+          <input type="email" id="adminEmail" placeholder="canbo@danguy.gov.vn">
         </div>
-        <div class="form-group" style="margin-bottom: 1rem;">
+
+        <div class="form-group">
           <label for="adminPassword">Mật khẩu khởi tạo <span class="required">*</span></label>
-          <input type="password" id="adminPassword" required minlength="6">
+          <input type="password" id="adminPassword" placeholder="Tối thiểu 6 ký tự" required minlength="6">
         </div>
-        <div class="form-group" style="margin-bottom: 1.5rem;">
-          <label for="adminRole">Vai trò</label>
-          <select id="adminRole">
-            <option value="admin">Quản trị viên (Admin)</option>
+
+        <div class="form-group">
+          <label for="adminRole">Phân Quyền Vai Trò <span class="required">*</span></label>
+          <select id="adminRole" required>
+            <option value="user">Cán bộ nghiệp vụ (User - Quyền nạp &amp; sửa văn bản, không quản trị user khác)</option>
+            <option value="admin">Quản trị viên (Admin - Toàn quyền quản trị hệ thống và người dùng)</option>
             <option value="superadmin">Quản trị tối cao (Superadmin)</option>
-            <option value="viewer">Người xem (Viewer)</option>
           </select>
+          <small style="display: block; margin-top: 0.35rem; color: var(--text-muted); font-size: 0.75rem;">
+            Cán bộ nghiệp vụ đăng nhập vào có thể thêm văn bản, nạp data khi Admin bận, nhưng không có quyền tạo hoặc xóa người dùng khác.
+          </small>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Tạo Tài Khoản</button>
+
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1rem;">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          Khởi Tạo Tài Khoản Cán Bộ
+        </button>
       </form>
     </div>
   </div>
 
-  <!-- Modal Xem Chi Tiết Log Phản Hồi -->
+  <!-- ============================================================
+       MODAL: CHI TIẾT AUDIT LOG PHẢN HỒI
+       ============================================================ -->
   <div id="logDetailModal" class="modal hidden">
     <div class="modal-backdrop"></div>
     <div class="modal-card">
       <div class="modal-header">
-        <h3>Chi Tiết Câu Hỏi & Phản Hồi Từ Trợ Lý</h3>
-        <button id="btnCloseLogModal" class="btn-close">&times;</button>
+        <h3>Chi Tiết Câu Hỏi &amp; Phản Hồi Từ Trợ Lý</h3>
+        <button id="btnCloseLogModal" class="btn-close" title="Đóng">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="meta-row">
+        <div class="meta-row" style="display: flex; gap: 1.5rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-secondary);">
           <div><strong>Người hỏi:</strong> <span id="logUser"></span></div>
           <div><strong>Thời gian:</strong> <span id="logTime"></span></div>
-          <div><strong>Độ trễ xử lý:</strong> <span id="logLatency"></span></div>
+          <div><strong>Độ trễ:</strong> <span id="logLatency" style="color: var(--accent-blue);"></span></div>
         </div>
-        <hr class="divider">
-        <h4>Câu hỏi:</h4>
+        <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin: 1rem 0;">
+        <h4 style="margin-bottom: 0.5rem;">Nội dung câu hỏi:</h4>
         <div id="logQueryText" class="passage-card" style="margin-bottom: 1rem; border-left-color: var(--accent-blue);"></div>
-        <h4>Câu trả lời từ trợ lý:</h4>
-        <div id="logResponseText" class="passage-card" style="border-left-color: var(--accent-emerald); white-space: pre-wrap;"></div>
+        <h4 style="margin-bottom: 0.5rem;">Câu trả lời từ trợ lý AI:</h4>
+        <div id="logResponseText" class="passage-card" style="border-left-color: var(--accent-emerald); white-space: pre-wrap; font-family: inherit;"></div>
       </div>
     </div>
   </div>
 
-  <!-- Modal Hồ Sơ & Đổi Mật Khẩu -->
+  <!-- ============================================================
+       MODAL: HỒ SƠ CÁ NHÂN & ĐỔI MẬT KHẨU
+       ============================================================ -->
   <div id="profileModal" class="modal hidden">
     <div class="modal-backdrop"></div>
     <div class="modal-card" style="max-width: 520px;">
       <div class="modal-header">
-        <h3>Cài Đặt Tài Khoản & Bảo Mật</h3>
-        <button id="btnCloseProfileModal" class="btn-close">&times;</button>
+        <h3>Cài Đặt Tài Khoản &amp; Bảo Mật</h3>
+        <button id="btnCloseProfileModal" class="btn-close" title="Đóng">&times;</button>
       </div>
-      <div class="modal-body" style="padding: 1.5rem;">
-        <!-- Section 1: Thông tin cá nhân -->
+      <div class="modal-body">
+        <!-- Section 1: Thông tin cán bộ -->
         <form id="updateProfileForm" style="margin-bottom: 2rem;">
           <h4 style="margin-bottom: 1rem; color: var(--accent-blue); display: flex; align-items: center; gap: 0.5rem;">
-            <span>👤</span> Thông Tin Cá Nhân
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Thông Tin Cá Nhân Cán Bộ
           </h4>
-          <div class="form-group" style="margin-bottom: 1rem;">
+          <div class="form-group">
             <label for="profileUsername">Tên đăng nhập</label>
             <input type="text" id="profileUsername" disabled style="background-color: var(--bg-card); opacity: 0.7; cursor: not-allowed;">
           </div>
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label for="profileFullName">Họ và tên</label>
-            <input type="text" id="profileFullName" placeholder="Nhập họ và tên cán bộ" required>
+          <div class="form-group">
+            <label for="profileFullName">Họ và tên cán bộ</label>
+            <input type="text" id="profileFullName" placeholder="Nhập họ và tên" required>
           </div>
-          <div class="form-group" style="margin-bottom: 1rem;">
+          <div class="form-group">
             <label for="profileEmail">Email liên hệ</label>
-            <input type="email" id="profileEmail" placeholder="canbo@party.gov.vn">
+            <input type="email" id="profileEmail" placeholder="canbo@danguy.gov.vn">
           </div>
-          <button type="submit" id="btnSaveProfile" class="btn btn-primary btn-sm">💾 Lưu Thay Đổi</button>
+          <button type="submit" id="btnSaveProfile" class="btn btn-primary btn-sm">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            </svg>
+            Lưu Thay Đổi
+          </button>
         </form>
 
-        <hr class="divider" style="margin: 1.5rem 0;">
+        <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin: 1.5rem 0;">
 
         <!-- Section 2: Đổi mật khẩu -->
         <form id="changePasswordForm">
           <h4 style="margin-bottom: 1rem; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.5rem;">
-            <span>🔐</span> Đổi Mật Khẩu Đăng Nhập
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Đổi Mật Khẩu Đăng Nhập
           </h4>
-          <div class="form-group" style="margin-bottom: 1rem;">
+          <div class="form-group">
             <label for="pwdCurrent">Mật khẩu hiện tại <span class="required">*</span></label>
             <input type="password" id="pwdCurrent" placeholder="Nhập mật khẩu đang dùng" required>
           </div>
-          <div class="form-group" style="margin-bottom: 1rem;">
+          <div class="form-group">
             <label for="pwdNew">Mật khẩu mới <span class="required">*</span></label>
-            <input type="password" id="pwdNew" placeholder="Ít nhất 6 ký tự" required minlength="6">
+            <input type="password" id="pwdNew" placeholder="Tối thiểu 6 ký tự" required minlength="6">
           </div>
-          <div class="form-group" style="margin-bottom: 1.25rem;">
+          <div class="form-group">
             <label for="pwdConfirm">Xác nhận mật khẩu mới <span class="required">*</span></label>
             <input type="password" id="pwdConfirm" placeholder="Nhập lại mật khẩu mới" required minlength="6">
           </div>
-          <button type="submit" id="btnSavePassword" class="btn btn-primary btn-sm" style="background-color: var(--accent-emerald); border-color: var(--accent-emerald);">🔑 Đổi Mật Khẩu</button>
+          <button type="submit" id="btnSavePassword" class="btn btn-success btn-sm">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Cập Nhật Mật Khẩu
+          </button>
         </form>
       </div>
     </div>

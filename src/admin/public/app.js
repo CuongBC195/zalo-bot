@@ -1,6 +1,9 @@
 /**
  * Frontend Application Logic cho Web Admin Dashboard
- * Hỗ trợ Đăng nhập JWT, Quản lý Người dùng, Quản trị Văn bản & Nhật ký Audit
+ * Thiết kế chuẩn mực Institutional Executive (Anti-Slop, Zero Emoji, Pure SVG)
+ * Hỗ trợ Phân Quyền RBAC:
+ * - Admin/Superadmin: Quản trị toàn hệ thống & quản trị cán bộ (thêm, sửa, xóa cán bộ).
+ * - Cán bộ nghiệp vụ (User): Thêm văn bản, bóc tách tài liệu, nạp dữ liệu mẫu, thử nghiệm RAG khi Admin bận. Ẩn hoàn toàn tab quản lý cán bộ.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -12,9 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginError = document.getElementById('loginError');
   const mainApp = document.getElementById('mainApp');
   const currentUserName = document.getElementById('currentUserName');
+  const currentUserRoleBadge = document.getElementById('currentUserRoleBadge');
   const btnLogout = document.getElementById('btnLogout');
 
-  // Status & Seed
+  // Status & Seed Elements
   const dbStatusBadge = document.getElementById('dbStatusBadge');
   const dbStatusText = document.getElementById('dbStatusText');
   const btnSeedDb = document.getElementById('btnSeedDb');
@@ -24,11 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const statTotalArticles = document.getElementById('statTotalArticles');
   const statTheThuc = document.getElementById('statTheThuc');
   const statVanThu = document.getElementById('statVanThu');
-  const statZaloUsers = document.getElementById('statZaloUsers');
+  const statAdminCount = document.getElementById('statAdminCount');
 
   // Tabs
   const tabBtns = document.querySelectorAll('.tab-btn');
   const tabContents = document.querySelectorAll('.tab-content');
+  const tabNavUsers = document.getElementById('tabNavUsers');
 
   // Tab 1: Documents list
   const searchInput = document.getElementById('searchInput');
@@ -36,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnRefresh = document.getElementById('btnRefresh');
   const documentsTableBody = document.getElementById('documentsTableBody');
 
-  // Tab 2: Add Document
+  // Tab 2: Add Document & Auto Parser
   const addDocForm = document.getElementById('addDocForm');
   const btnAutoParse = document.getElementById('btnAutoParse');
   const rawTextContent = document.getElementById('rawTextContent');
@@ -44,9 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const parsedCount = document.getElementById('parsedCount');
   const btnAddSingleArticle = document.getElementById('btnAddSingleArticle');
 
-  // Tab 3: Users Management
+  // Tab 3: Users Management (Chỉ dành cho Admin)
   const adminUsersTableBody = document.getElementById('adminUsersTableBody');
-  const zaloUsersTableBody = document.getElementById('zaloUsersTableBody');
   const btnOpenAddAdminModal = document.getElementById('btnOpenAddAdminModal');
   const addAdminModal = document.getElementById('addAdminModal');
   const btnCloseAdminModal = document.getElementById('btnCloseAdminModal');
@@ -71,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resCount = document.getElementById('resCount');
   const sampleChips = document.querySelectorAll('.chip');
 
-  // Modals
+  // Document Detail Modal
   const detailModal = document.getElementById('detailModal');
   const btnCloseModal = document.getElementById('btnCloseModal');
   const modalDocCode = document.getElementById('modalDocCode');
@@ -100,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentUser = null;
 
   // ============================================================
-  // KHỞI ĐỘNG & KIỂM TRA PHIÊN ĐĂNG NHẬP
+  // 1. KHỞI ĐỘNG & KIỂM TRA PHIÊN ĐĂNG NHẬP (AUTH SESSION)
   // ============================================================
   checkAuth();
 
@@ -137,11 +141,44 @@ document.addEventListener('DOMContentLoaded', () => {
     currentUser = user;
     loginScreen.classList.add('hidden');
     mainApp.classList.remove('hidden');
-    currentUserName.textContent = user.fullName || user.full_name || user.username;
+
+    // Hiển thị tên cán bộ
+    const displayName = user.fullName || user.full_name || user.username;
+    currentUserName.textContent = displayName;
+
+    // Hiển thị badge vai trò & Áp dụng chính sách phân quyền RBAC
+    const isAdmin = user.role === 'admin' || user.role === 'superadmin';
+
+    if (currentUserRoleBadge) {
+      if (user.role === 'superadmin') {
+        currentUserRoleBadge.textContent = 'Quản trị tối cao';
+        currentUserRoleBadge.className = 'badge badge-crimson';
+      } else if (user.role === 'admin') {
+        currentUserRoleBadge.textContent = 'Quản trị viên';
+        currentUserRoleBadge.className = 'badge badge-crimson';
+      } else {
+        currentUserRoleBadge.textContent = 'Cán bộ nghiệp vụ';
+        currentUserRoleBadge.className = 'badge badge-blue';
+      }
+    }
+
+    // Ẩn/Hiện Tab Quản trị Cán bộ theo quyền
+    if (tabNavUsers) {
+      if (isAdmin) {
+        tabNavUsers.style.display = 'inline-flex';
+      } else {
+        tabNavUsers.style.display = 'none';
+        // Nếu đang ở tab quản trị cán bộ mà không có quyền thì tự động lùi về tab văn bản
+        const activeTab = document.querySelector('.tab-btn.active');
+        if (activeTab && activeTab.dataset.tab === 'tab-users') {
+          document.querySelector('[data-tab="tab-list"]')?.click();
+        }
+      }
+    }
   }
 
   // ============================================================
-  // ĐĂNG NHẬP & ĐĂNG XUẤT
+  // 2. ĐĂNG NHẬP & ĐĂNG XUẤT
   // ============================================================
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -179,11 +216,11 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await authFetch('/api/auth/logout', { method: 'POST' });
     } catch (err) {}
-    showToast('Đã đăng xuất.', 'success');
+    showToast('Đã đăng xuất khỏi hệ thống.', 'info');
     showLogin();
   });
 
-  // Wrapper gọi API có đính kèm Bearer Token
+  // Wrapper gọi API có gắn Bearer Token
   function authFetch(url, options = {}) {
     options.headers = options.headers || {};
     if (authToken) {
@@ -193,14 +230,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ============================================================
-  // KHỞI TẠO DASHBOARD
+  // 3. KHỞI TẠO DASHBOARD & SỰ KIỆN
   // ============================================================
+  let hasInitialized = false;
+
   function initDashboard() {
-    setupTabSwitching();
-    setupEventListeners();
+    if (!hasInitialized) {
+      setupTabSwitching();
+      setupEventListeners();
+      hasInitialized = true;
+    }
     loadStats();
     loadDocuments();
-    loadUsers();
+    if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin')) {
+      loadUsers();
+    }
     loadQueryLogs();
   }
 
@@ -214,14 +258,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetId = btn.dataset.tab;
         document.getElementById(targetId)?.classList.add('active');
 
-        // Tải dữ liệu tương ứng khi bấm tab
+        // Tải lại dữ liệu tương ứng khi chuyển tab
         if (targetId === 'tab-users') loadUsers();
         if (targetId === 'tab-logs') loadQueryLogs();
+        if (targetId === 'tab-list') loadDocuments();
       });
     });
   }
 
   function setupEventListeners() {
+    // Tab Danh sách Văn bản
     btnRefresh.addEventListener('click', () => {
       loadStats();
       loadDocuments();
@@ -230,17 +276,17 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.addEventListener('input', debounce(loadDocuments, 300));
     categoryFilter.addEventListener('change', loadDocuments);
 
-    // Auto Parse button
+    // Tab Thêm Văn bản & Auto Parse
     btnAutoParse.addEventListener('click', handleAutoParse);
-    btnAddSingleArticle.addEventListener('click', () => addArticleRow({ articleNumber: currentArticles.length + 1, title: '', content: '' }));
-
-    // Form Submit
+    btnAddSingleArticle.addEventListener('click', () => {
+      addArticleRow({ articleNumber: currentArticles.length + 1, title: '', content: '' });
+    });
     addDocForm.addEventListener('submit', handleAddDocumentSubmit);
 
-    // Seed Database
+    // Đồng bộ Dữ liệu mẫu
     btnSeedDb.addEventListener('click', handleSeedDatabase);
 
-    // Playground
+    // Tab Thử nghiệm RAG Playground
     btnRunQueryTest.addEventListener('click', handleRagTest);
     playgroundQuery.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') handleRagTest();
@@ -253,21 +299,30 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Modals
+    // Modal Xem Chi Tiết Văn Bản
     btnCloseModal.addEventListener('click', () => detailModal.classList.add('hidden'));
     detailModal.querySelector('.modal-backdrop').addEventListener('click', () => detailModal.classList.add('hidden'));
 
-    btnOpenAddAdminModal.addEventListener('click', () => addAdminModal.classList.remove('hidden'));
-    btnCloseAdminModal.addEventListener('click', () => addAdminModal.classList.add('hidden'));
-    addAdminModal.querySelector('.modal-backdrop').addEventListener('click', () => addAdminModal.classList.add('hidden'));
+    // Modal Thêm Cán Bộ (Chỉ Admin)
+    if (btnOpenAddAdminModal) {
+      btnOpenAddAdminModal.addEventListener('click', () => addAdminModal.classList.remove('hidden'));
+    }
+    if (btnCloseAdminModal) {
+      btnCloseAdminModal.addEventListener('click', () => addAdminModal.classList.add('hidden'));
+    }
+    if (addAdminModal) {
+      addAdminModal.querySelector('.modal-backdrop').addEventListener('click', () => addAdminModal.classList.add('hidden'));
+    }
+    if (createAdminForm) {
+      createAdminForm.addEventListener('submit', handleCreateAdminSubmit);
+    }
 
-    createAdminForm.addEventListener('submit', handleCreateAdminSubmit);
-
+    // Modal Chi Tiết Nhật Ký Audit
     btnRefreshLogs.addEventListener('click', loadQueryLogs);
     btnCloseLogModal.addEventListener('click', () => logDetailModal.classList.add('hidden'));
     logDetailModal.querySelector('.modal-backdrop').addEventListener('click', () => logDetailModal.classList.add('hidden'));
 
-    // Profile & Password Change Modals
+    // Modal Hồ Sơ Cán Bộ & Đổi Mật Khẩu
     if (btnOpenProfileModal) {
       btnOpenProfileModal.addEventListener('click', () => {
         if (currentUser) {
@@ -301,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           const data = await res.json();
           if (data.ok) {
-            showToast(data.message || 'Cập nhật thông tin thành công!', 'success');
+            showToast(data.message || 'Cập nhật thông tin cán bộ thành công!', 'success');
             if (currentUser) {
               currentUser.fullName = fullName;
               currentUser.full_name = fullName;
@@ -331,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (newPassword.length < 6) {
-          showToast('Mật khẩu mới phải có ít nhất 6 ký tự!', 'error');
+          showToast('Mật khẩu mới phải có tối thiểu 6 ký tự!', 'error');
           return;
         }
 
@@ -343,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           const data = await res.json();
           if (data.ok) {
-            showToast(data.message || 'Đổi mật khẩu thành công!', 'success');
+            showToast(data.message || 'Đổi mật khẩu bảo mật thành công!', 'success');
             pwdCurrent.value = '';
             pwdNew.value = '';
             pwdConfirm.value = '';
@@ -359,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ============================================================
-  // LOADERS
+  // 4. TẢI THỐNG KÊ (STATS LOADER)
   // ============================================================
   async function loadStats() {
     try {
@@ -369,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (data.isDbConnected) {
         dbStatusBadge.className = 'status-pill status-connected';
-        dbStatusText.textContent = 'PostgreSQL: Đang kết nối';
+        dbStatusText.textContent = 'PostgreSQL: Đã kết nối';
       } else {
         dbStatusBadge.className = 'status-pill status-fallback';
         dbStatusText.textContent = 'Chế độ Local File / Cache';
@@ -379,12 +434,15 @@ document.addEventListener('DOMContentLoaded', () => {
       statTotalArticles.textContent = data.stats.totalArticles;
       statTheThuc.textContent = data.stats.theThucCount;
       statVanThu.textContent = data.stats.vanThuCount;
-      statZaloUsers.textContent = data.stats.zaloUserCount || 0;
+      statAdminCount.textContent = data.stats.adminCount || 0;
     } catch (err) {
       console.error('Lỗi tải thống kê:', err);
     }
   }
 
+  // ============================================================
+  // 5. QUẢN LÝ VĂN BẢN (DOCUMENTS TABLE)
+  // ============================================================
   async function loadDocuments() {
     try {
       const search = searchInput.value.trim();
@@ -401,13 +459,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       renderDocumentsTable(data.documents);
     } catch (err) {
-      documentsTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-danger">Lỗi kết nối máy chủ: ${err.message}</td></tr>`;
+      documentsTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-8" style="color: var(--accent-rose);">Lỗi kết nối máy chủ: ${escapeHtml(err.message)}</td></tr>`;
     }
   }
 
   function renderDocumentsTable(docs) {
     if (!docs.length) {
-      documentsTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-8">Không có dữ liệu.</td></tr>`;
+      documentsTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-8">Chưa có văn bản nào trong hệ thống.</td></tr>`;
       return;
     }
 
@@ -415,15 +473,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const catBadge = getCategoryBadge(doc.category);
       return `
         <tr>
-          <td><span class="badge badge-primary">${escapeHtml(doc.document_code)}</span></td>
+          <td><span class="badge badge-crimson font-mono">${escapeHtml(doc.document_code)}</span></td>
           <td><strong>${escapeHtml(doc.document_name)}</strong></td>
           <td>${escapeHtml(doc.issuer || 'N/A')}</td>
           <td>${catBadge}</td>
           <td><span class="badge badge-blue">${doc.articles_count || 0} điều</span></td>
-          <td><span class="badge badge-success">${escapeHtml(doc.status || 'Còn hiệu lực')}</span></td>
-          <td>
-            <button class="btn-info-sm" onclick="window.viewDocDetails('${escapeHtml(doc.id || doc.document_code)}')">Xem điều khoản</button>
-            <button class="btn-danger-sm" onclick="window.deleteDoc('${escapeHtml(doc.id || doc.document_code)}')">Xóa</button>
+          <td><span class="badge badge-emerald">${escapeHtml(doc.status || 'Còn hiệu lực')}</span></td>
+          <td style="text-align: right;">
+            <div style="display: inline-flex; gap: 0.35rem;">
+              <button class="btn btn-outline btn-sm" onclick="window.viewDocDetails('${escapeHtml(doc.id || doc.document_code)}')">Xem Chi Tiết</button>
+              <button class="btn btn-danger btn-sm" onclick="window.deleteDoc('${escapeHtml(doc.id || doc.document_code)}')">Xóa</button>
+            </div>
           </td>
         </tr>
       `;
@@ -435,67 +495,53 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'the_thuc':
         return '<span class="badge badge-gold">Thể thức (HD 17)</span>';
       case 'van_thu_luu_tru':
-        return '<span class="badge badge-indigo">Văn thư - Lưu trữ</span>';
+        return '<span class="badge badge-blue">Văn thư & Lưu trữ</span>';
       case 'quy_dinh_dang':
       default:
-        return '<span class="badge badge-primary">Quy định Đảng</span>';
+        return '<span class="badge badge-crimson">Quy định Đảng</span>';
     }
   }
 
   // ============================================================
-  // QUẢN LÝ NGƯỜI DÙNG (USERS & ZALO USERS)
+  // 6. QUẢN TRỊ CÁN BỘ (CHỈ DÀNH CHO ADMIN)
   // ============================================================
   async function loadUsers() {
-    // 1. Tải Admin Users
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'superadmin')) {
+      return;
+    }
+
     try {
       const res = await authFetch('/api/users');
       const data = await res.json();
-      if (data.ok && data.users) {
-        adminUsersTableBody.innerHTML = data.users.map(u => `
+
+      if (!data.ok || !data.users) {
+        adminUsersTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Không thể tải danh sách cán bộ.</td></tr>`;
+        return;
+      }
+
+      adminUsersTableBody.innerHTML = data.users.map(u => {
+        const isSelf = currentUser && currentUser.id === u.id;
+        let roleBadge = '<span class="badge badge-blue">Cán bộ nghiệp vụ</span>';
+        if (u.role === 'superadmin') roleBadge = '<span class="badge badge-crimson">Quản trị tối cao</span>';
+        else if (u.role === 'admin') roleBadge = '<span class="badge badge-crimson">Quản trị viên</span>';
+
+        return `
           <tr>
-            <td><strong>${escapeHtml(u.username)}</strong></td>
+            <td><strong>${escapeHtml(u.username)}</strong> ${isSelf ? '<small style="color: var(--accent-blue);">(Bạn)</small>' : ''}</td>
             <td>${escapeHtml(u.full_name || 'N/A')}</td>
-            <td><span class="badge ${u.role === 'superadmin' ? 'badge-primary' : 'badge-blue'}">${escapeHtml(u.role)}</span></td>
-            <td><span class="badge ${u.is_active ? 'badge-success' : 'badge-danger'}">${u.is_active ? 'Hoạt động' : 'Đã khóa'}</span></td>
-            <td>
-              <button class="btn-danger-sm" onclick="window.deleteAdminUser(${u.id})">Xóa</button>
+            <td>${escapeHtml(u.email || 'N/A')}</td>
+            <td>${roleBadge}</td>
+            <td><span class="badge ${u.is_active ? 'badge-emerald' : 'badge-slate'}">${u.is_active ? 'Hoạt động' : 'Đã khóa'}</span></td>
+            <td style="text-align: right;">
+              ${isSelf ? '<span style="font-size: 0.75rem; color: var(--text-muted);">Đang đăng nhập</span>' : `
+                <button class="btn btn-danger btn-sm" onclick="window.deleteAdminUser(${u.id})">Xóa</button>
+              `}
             </td>
           </tr>
-        `).join('');
-      }
+        `;
+      }).join('');
     } catch (err) {
-      adminUsersTableBody.innerHTML = `<tr><td colspan="5">Lỗi tải danh sách admin: ${err.message}</td></tr>`;
-    }
-
-    // 2. Tải Zalo Users
-    try {
-      const res = await authFetch('/api/zalo-users');
-      const data = await res.json();
-      if (data.ok && data.users) {
-        if (!data.users.length) {
-          zaloUsersTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">Chưa có tương tác nào từ Zalo.</td></tr>`;
-          return;
-        }
-
-        zaloUsersTableBody.innerHTML = data.users.map(u => `
-          <tr>
-            <td>
-              <strong>${escapeHtml(u.display_name || 'Đồng chí')}</strong><br>
-              <small style="color: var(--text-dim);">${escapeHtml(u.zalo_id)}</small>
-            </td>
-            <td><span class="badge badge-blue">${u.query_count || 0} câu</span></td>
-            <td>${u.last_active ? new Date(u.last_active).toLocaleString('vi-VN') : 'N/A'}</td>
-            <td><span class="badge ${u.is_blocked ? 'badge-danger' : 'badge-success'}">${u.is_blocked ? 'Bị chặn' : 'Bình thường'}</span></td>
-            <td>
-              <button class="${u.is_blocked ? 'btn-info-sm' : 'btn-danger-sm'}" onclick="window.toggleBlockUser('${escapeHtml(u.zalo_id)}', ${!u.is_blocked})">
-                ${u.is_blocked ? 'Mở khóa' : 'Chặn'}
-              </button>
-            </td>
-          </tr>
-        `).join('');
-      }
-    } catch (err) {
-      zaloUsersTableBody.innerHTML = `<tr><td colspan="5">Lỗi tải danh sách Zalo users: ${err.message}</td></tr>`;
+      adminUsersTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4" style="color: var(--accent-rose);">Lỗi tải danh sách cán bộ: ${escapeHtml(err.message)}</td></tr>`;
     }
   }
 
@@ -517,10 +563,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json();
       if (!data.ok) {
-        showToast(data.error || 'Lỗi tạo admin', 'error');
+        showToast(data.error || 'Lỗi tạo tài khoản cán bộ', 'error');
         return;
       }
-      showToast('Tạo tài khoản quản trị viên thành công!', 'success');
+      showToast('Khởi tạo tài khoản cán bộ thành công!', 'success');
       createAdminForm.reset();
       addAdminModal.classList.add('hidden');
       loadUsers();
@@ -531,15 +577,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.deleteAdminUser = async (id) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa tài khoản quản trị này?')) return;
+    if (!confirm('Bạn có chắc chắn muốn xóa tài khoản cán bộ này khỏi hệ thống?')) return;
     try {
       const res = await authFetch(`/api/users/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (!data.ok) {
-        showToast(data.error || 'Lỗi xóa admin', 'error');
+        showToast(data.error || 'Lỗi xóa tài khoản', 'error');
         return;
       }
-      showToast('Đã xóa tài khoản admin.', 'success');
+      showToast('Đã xóa tài khoản cán bộ thành công.', 'success');
       loadUsers();
       loadStats();
     } catch (err) {
@@ -547,37 +593,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  window.toggleBlockUser = async (zaloId, isBlocked) => {
-    const actionText = isBlocked ? 'chặn' : 'mở khóa';
-    if (!confirm(`Bạn có chắc muốn ${actionText} người dùng Zalo này?`)) return;
-
-    try {
-      const res = await authFetch(`/api/zalo-users/${encodeURIComponent(zaloId)}/toggle-block`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isBlocked }),
-      });
-      const data = await res.json();
-      if (!data.ok) {
-        showToast(data.error || 'Lỗi thao tác', 'error');
-        return;
-      }
-      showToast(data.message, 'success');
-      loadUsers();
-    } catch (err) {
-      showToast('Lỗi: ' + err.message, 'error');
-    }
-  };
-
   // ============================================================
-  // NHẬT KÝ HỎI ĐÁP (AUDIT LOGS)
+  // 7. NHẬT KÝ HỎI ĐÁP (AUDIT LOGS)
   // ============================================================
   async function loadQueryLogs() {
     try {
       const res = await authFetch('/api/query-logs?limit=50');
       const data = await res.json();
-      if (!data.ok || !data.logs) {
-        queryLogsTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Chưa có nhật ký nào.</td></tr>`;
+      if (!data.ok || !data.logs || !data.logs.length) {
+        queryLogsTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-8">Chưa có câu hỏi nào được ghi nhận.</td></tr>`;
         return;
       }
 
@@ -585,18 +609,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
       queryLogsTableBody.innerHTML = data.logs.map((log, idx) => `
         <tr>
-          <td><small>${new Date(log.created_at).toLocaleString('vi-VN')}</small></td>
-          <td><strong>${escapeHtml(log.user_name || log.zalo_user_id || 'Đồng chí')}</strong></td>
-          <td>${escapeHtml(log.query_text.length > 60 ? log.query_text.slice(0, 60) + '...' : log.query_text)}</td>
-          <td><span class="badge badge-indigo">${escapeHtml(log.intent || 'N/A')}</span></td>
-          <td><small style="color: #38bdf8;">${log.latency_ms || 0}ms</small></td>
-          <td>
-            <button class="btn-info-sm" onclick="window.viewLogDetail(${idx})">Chi tiết</button>
+          <td><small class="tabular-nums" style="color: var(--text-secondary);">${new Date(log.created_at).toLocaleString('vi-VN')}</small></td>
+          <td><strong>${escapeHtml(log.user_name || log.zalo_user_id || 'Cán bộ / Đảng viên')}</strong></td>
+          <td>${escapeHtml(log.query_text.length > 70 ? log.query_text.slice(0, 70) + '...' : log.query_text)}</td>
+          <td><span class="badge badge-slate">${escapeHtml(log.intent || 'Tra cứu')}</span></td>
+          <td><span class="tabular-nums" style="color: var(--accent-blue);">${log.latency_ms || 0}ms</span></td>
+          <td style="text-align: right;">
+            <button class="btn btn-outline btn-sm" onclick="window.viewLogDetail(${idx})">Chi Tiết</button>
           </td>
         </tr>
-      `).join('') || `<tr><td colspan="6" class="text-center py-4">Chưa có câu hỏi nào được ghi nhận.</td></tr>`;
+      `).join('');
     } catch (err) {
-      queryLogsTableBody.innerHTML = `<tr><td colspan="6">Lỗi tải nhật ký: ${err.message}</td></tr>`;
+      queryLogsTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-8" style="color: var(--accent-rose);">Lỗi tải nhật ký: ${escapeHtml(err.message)}</td></tr>`;
     }
   }
 
@@ -614,12 +638,12 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ============================================================
-  // AUTO PARSER & THÊM VĂN BẢN
+  // 8. AUTO PARSER & THÊM VĂN BẢN (MỞ CHO CẢ USER & ADMIN)
   // ============================================================
   async function handleAutoParse() {
     const text = rawTextContent.value.trim();
     if (!text) {
-      showToast('Vui lòng dán nội dung văn bản vào ô trước khi bóc tách', 'error');
+      showToast('Vui lòng dán nội dung toàn văn văn bản vào ô trước khi bóc tách.', 'error');
       return;
     }
 
@@ -632,14 +656,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
 
       if (!data.ok || !data.articles) {
-        showToast(data.error || 'Lỗi bóc tách văn bản', 'error');
+        showToast(data.error || 'Lỗi bóc tách văn bản.', 'error');
         return;
       }
 
       currentArticles = data.articles;
       parsedCount.textContent = currentArticles.length;
       renderArticlesList();
-      showToast(`Đã tự động nhận diện và bóc tách ${currentArticles.length} điều khoản!`, 'success');
+      showToast(`Đã tự động nhận diện và bóc tách ${currentArticles.length} điều khoản thành công!`, 'success');
     } catch (err) {
       showToast('Lỗi bóc tách: ' + err.message, 'error');
     }
@@ -647,22 +671,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderArticlesList() {
     if (!currentArticles.length) {
-      articlesListContainer.innerHTML = `<p class="empty-hint">Chưa có điều khoản nào.</p>`;
+      articlesListContainer.innerHTML = `<p class="empty-hint">Chưa có điều khoản nào. Dán văn bản vào ô trên và bấm "Tự Động Bóc Tách".</p>`;
       return;
     }
 
     articlesListContainer.innerHTML = currentArticles.map((art, idx) => `
-      <div class="article-item" data-idx="${idx}">
-        <div class="article-num-col">
-          <label style="font-size: 0.75rem; color: var(--text-dim);">Số điều:</label>
-          <input type="text" value="${escapeHtml(art.articleNumber)}" onchange="window.updateArticleField(${idx}, 'articleNumber', this.value)" style="padding: 0.4rem; font-weight: bold;">
+      <div class="article-item" data-idx="${idx}" style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem; background: var(--bg-card); padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+        <div style="width: 100px; flex-shrink: 0;">
+          <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Số điều:</label>
+          <input type="text" value="${escapeHtml(art.articleNumber)}" onchange="window.updateArticleField(${idx}, 'articleNumber', this.value)" style="font-weight: 600; padding: 0.4rem;">
         </div>
-        <div class="article-content-col">
-          <input type="text" placeholder="Tiêu đề điều (nếu có)" value="${escapeHtml(art.title)}" onchange="window.updateArticleField(${idx}, 'title', this.value)" style="padding: 0.4rem;">
-          <textarea rows="3" placeholder="Nội dung điều khoản..." onchange="window.updateArticleField(${idx}, 'content', this.value)">${escapeHtml(art.content)}</textarea>
+        <div style="flex: 1;">
+          <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Tiêu đề điều:</label>
+          <input type="text" placeholder="Tiêu đề điều (nếu có)" value="${escapeHtml(art.title)}" onchange="window.updateArticleField(${idx}, 'title', this.value)" style="margin-bottom: 0.4rem; padding: 0.4rem;">
+          <textarea rows="3" placeholder="Nội dung chi tiết điều khoản..." onchange="window.updateArticleField(${idx}, 'content', this.value)">${escapeHtml(art.content)}</textarea>
         </div>
-        <div class="article-actions-col">
-          <button type="button" class="btn-danger-sm" onclick="window.removeArticle(${idx})">Xóa</button>
+        <div style="align-self: center;">
+          <button type="button" class="btn btn-danger btn-sm" onclick="window.removeArticle(${idx})">Xóa</button>
         </div>
       </div>
     `).join('');
@@ -714,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      showToast('Đã lưu văn bản vào hệ thống thành công!', 'success');
+      showToast('Đã lưu văn bản vào cơ sở dữ liệu thành công!', 'success');
       addDocForm.reset();
       currentArticles = [];
       parsedCount.textContent = '0';
@@ -729,7 +754,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ============================================================
-  // MODAL CHI TIẾT & XÓA VĂN BẢN
+  // 9. MODAL CHI TIẾT & XÓA VĂN BẢN
   // ============================================================
   window.viewDocDetails = async (id) => {
     try {
@@ -746,9 +771,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const articles = doc.articles || [];
       modalArticlesList.innerHTML = articles.map(a => `
-        <div class="modal-article-item">
-          <h5>Điều ${escapeHtml(a.article_number)}: ${escapeHtml(a.title)}</h5>
-          <p>${escapeHtml(a.content)}</p>
+        <div class="passage-card" style="margin-bottom: 0.75rem;">
+          <h5 style="color: var(--text-primary); margin-bottom: 0.4rem;">Điều ${escapeHtml(a.article_number)}: ${escapeHtml(a.title)}</h5>
+          <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6;">${escapeHtml(a.content)}</p>
         </div>
       `).join('') || '<p>Chưa có điều khoản nào.</p>';
 
@@ -759,7 +784,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.deleteDoc = async (id) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa văn bản "${id}" khỏi hệ thống?`)) return;
+    if (!confirm(`Bạn có chắc chắn muốn xóa văn bản "${id}" khỏi cơ sở dữ liệu?`)) return;
 
     try {
       const res = await authFetch(`/api/documents/${encodeURIComponent(id)}`, { method: 'DELETE' });
@@ -768,7 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast(data.error || 'Lỗi xóa văn bản', 'error');
         return;
       }
-      showToast('Đã xóa văn bản thành công!', 'success');
+      showToast('Đã xóa văn bản khỏi hệ thống thành công.', 'success');
       loadStats();
       loadDocuments();
     } catch (err) {
@@ -777,17 +802,17 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ============================================================
-  // THỬ NGHIỆM TRUY VẤN RAG PLAYGROUND
+  // 10. THỬ NGHIỆM TRUY VẤN RAG PLAYGROUND
   // ============================================================
   async function handleRagTest() {
     const query = playgroundQuery.value.trim();
     if (!query) {
-      showToast('Vui lòng nhập câu hỏi thử nghiệm', 'error');
+      showToast('Vui lòng nhập câu hỏi thử nghiệm tra cứu.', 'error');
       return;
     }
 
     btnRunQueryTest.disabled = true;
-    btnRunQueryTest.textContent = '⏳ Đang truy vấn...';
+    btnRunQueryTest.textContent = 'Đang truy vấn...';
 
     try {
       const res = await authFetch('/api/rag-test', {
@@ -798,64 +823,92 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
 
       btnRunQueryTest.disabled = false;
-      btnRunQueryTest.textContent = '🚀 Kiểm Tra Truy Vấn';
+      btnRunQueryTest.innerHTML = `
+        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        Kiểm Tra Truy Vấn
+      `;
 
       if (!data.ok) {
-        showToast(data.error || 'Lỗi truy vấn', 'error');
+        showToast(data.error || 'Lỗi truy vấn RAG', 'error');
         return;
       }
 
       resCount.textContent = data.resultsCount;
       passagesList.innerHTML = data.passages.map((p, i) => `
         <div class="passage-card">
-          <div class="passage-card-header">
-            <h5>[#${i + 1}] ${escapeHtml(p.documentName || p.documentCode)} - Điều ${escapeHtml(p.articleNumber)}: ${escapeHtml(p.title)}</h5>
-            <span class="passage-score">Độ khớp: ${(p.score ? p.score.toFixed(1) : 'Reranked')}</span>
+          <div class="passage-header">
+            <strong style="color: var(--text-primary);">[#${i + 1}] ${escapeHtml(p.documentName || p.documentCode)} - Điều ${escapeHtml(p.articleNumber)}: ${escapeHtml(p.title)}</strong>
+            <span class="badge badge-blue">Điểm khớp: ${(p.score ? p.score.toFixed(1) : 'Reranked')}</span>
           </div>
-          <div class="passage-text">${escapeHtml(p.content)}</div>
+          <div class="passage-content">${escapeHtml(p.content)}</div>
         </div>
-      `).join('') || '<p>Không tìm thấy đoạn trích nào đạt ngưỡng.</p>';
+      `).join('') || '<p style="color: var(--text-muted); font-size: 0.85rem;">Không tìm thấy đoạn trích nào đạt ngưỡng tin cậy.</p>';
 
       playgroundResults.classList.remove('hidden');
     } catch (err) {
       btnRunQueryTest.disabled = false;
-      btnRunQueryTest.textContent = '🚀 Kiểm Tra Truy Vấn';
-      showToast('Lỗi: ' + err.message, 'error');
+      btnRunQueryTest.innerHTML = `
+        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        Kiểm Tra Truy Vấn
+      `;
+      showToast('Lỗi truy vấn: ' + err.message, 'error');
     }
   }
 
   // ============================================================
-  // SEED DATABASE
+  // 11. SEED DATABASE (NẠP DỮ LIỆU MẪU)
   // ============================================================
   async function handleSeedDatabase() {
     if (!confirm('Bạn có muốn đồng bộ toàn bộ văn bản mẫu (HD 17, HD 05, HD 06, TT 02, QĐ 24, QĐ 37...) vào PostgreSQL không?')) return;
 
     btnSeedDb.disabled = true;
-    btnSeedDb.textContent = '⏳ Đang nạp...';
+    btnSeedDb.textContent = 'Đang nạp...';
 
     try {
       const res = await authFetch('/api/seed-db', { method: 'POST' });
       const data = await res.json();
       btnSeedDb.disabled = false;
-      btnSeedDb.textContent = '⚡ Nạp Dữ Liệu Mẫu';
+      btnSeedDb.innerHTML = `
+        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+          <path d="M16 21h5v-5"></path>
+        </svg>
+        Nạp Dữ Liệu Mẫu
+      `;
 
       if (!data.ok) {
-        showToast(data.error || 'Lỗi nạp dữ liệu', 'error');
+        showToast(data.error || 'Lỗi nạp dữ liệu mẫu.', 'error');
         return;
       }
 
-      showToast(data.message, 'success');
+      showToast(data.message || 'Nạp toàn bộ văn bản mẫu thành công!', 'success');
       loadStats();
       loadDocuments();
     } catch (err) {
       btnSeedDb.disabled = false;
-      btnSeedDb.textContent = '⚡ Nạp Dữ Liệu Mẫu';
+      btnSeedDb.innerHTML = `
+        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+          <path d="M16 21h5v-5"></path>
+        </svg>
+        Nạp Dữ Liệu Mẫu
+      `;
       showToast('Lỗi: ' + err.message, 'error');
     }
   }
 
   // ============================================================
-  // HELPERS
+  // 12. UTILITIES & TOAST
   // ============================================================
   function showToast(msg, type = 'success') {
     const toast = document.getElementById('toast');

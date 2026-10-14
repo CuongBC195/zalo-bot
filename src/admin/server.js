@@ -10,10 +10,60 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const rag = require('../rag');
-const { generateToken, authMiddleware } = require('./auth');
+const { generateToken, authMiddleware, requireRole } = require('./auth');
 
 const app = express();
 const PORT = process.env.ADMIN_PORT || 3000;
+
+// ============================================================
+// SECURITY HEADERS & DEFENSE-IN-DEPTH
+// ============================================================
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
+// Rate Limiter chống Brute-Force đăng nhập (5 lần sai -> khóa tạm thời 15 phút)
+const loginAttempts = new Map();
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_TIME_MS = 15 * 60 * 1000;
+
+function loginRateLimiter(req, res, next) {
+  const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const attempt = loginAttempts.get(clientIp);
+
+  if (attempt && attempt.count >= MAX_FAILED_ATTEMPTS) {
+    if (now - attempt.lastAttempt < LOCKOUT_TIME_MS) {
+      const waitMinutes = Math.ceil((LOCKOUT_TIME_MS - (now - attempt.lastAttempt)) / 60000);
+      return res.status(429).json({
+        ok: false,
+        error: `Phát hiện nhiều lần đăng nhập không thành công. Hệ thống tạm khóa truy cập trong ${waitMinutes} phút để phòng chống tấn công.`,
+      });
+    } else {
+      loginAttempts.delete(clientIp);
+    }
+  }
+  next();
+}
+
+function recordFailedLogin(req) {
+  const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const attempt = loginAttempts.get(clientIp) || { count: 0, lastAttempt: now };
+  attempt.count += 1;
+  attempt.lastAttempt = now;
+  loginAttempts.set(clientIp, attempt);
+}
+
+function clearFailedLogin(req) {
+  const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+  loginAttempts.delete(clientIp);
+}
 
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
@@ -23,7 +73,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // AUTHENTICATION ROUTES (PUBLIC)
 // ============================================================
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginRateLimiter, async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ ok: false, error: 'Vui lòng nhập tên đăng nhập và mật khẩu.' });
@@ -41,9 +91,11 @@ app.post('/api/auth/login', async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
+      recordFailedLogin(req);
       return res.status(401).json({ ok: false, error: 'Mật khẩu không chính xác.' });
     }
 
+    clearFailedLogin(req);
     await db.updateUserLastLogin(user.id);
     const token = generateToken(user);
 
@@ -226,14 +278,14 @@ app.get('/api/stats', async (req, res) => {
 });
 
 // ============================================================
-// QUẢN LÝ TÀI KHOẢN ADMIN (USERS)
+// QUẢN LÝ TÀI KHOẢN HỆ THỐNG (CHỈ ADMIN MỚI CÓ QUYỀN)
 // ============================================================
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', requireRole('superadmin', 'admin'), async (req, res) => {
   const users = await db.getAllUsers();
   res.json({ ok: true, users });
 });
 
-app.post('/api/users', async (req, res) => {
+app.post('/api/users', requireRole('superadmin', 'admin'), async (req, res) => {
   const { username, password, fullName, email, role } = req.body;
   if (!username || !password) {
     return res.status(400).json({ ok: false, error: 'Tên đăng nhập và mật khẩu là bắt buộc.' });
@@ -245,24 +297,24 @@ app.post('/api/users', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Tên đăng nhập này đã được sử dụng.' });
     }
 
-    const user = await db.createUser({ username, password, fullName, email, role });
-    res.json({ ok: true, message: 'Tạo tài khoản quản trị thành công', user });
+    const user = await db.createUser({ username, password, fullName, email, role: role || 'user' });
+    res.json({ ok: true, message: 'Tạo tài khoản cán bộ thành công', user });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(500).json({ ok: false, error: 'Không thể tạo tài khoản.' });
   }
 });
 
-app.put('/api/users/:id', async (req, res) => {
+app.put('/api/users/:id', requireRole('superadmin', 'admin'), async (req, res) => {
   const { id } = req.params;
   try {
     const updated = await db.updateUser(id, req.body);
     res.json({ ok: true, message: 'Cập nhật tài khoản thành công', user: updated });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(500).json({ ok: false, error: 'Không thể cập nhật tài khoản.' });
   }
 });
 
-app.delete('/api/users/:id', async (req, res) => {
+app.delete('/api/users/:id', requireRole('superadmin', 'admin'), async (req, res) => {
   const { id } = req.params;
   if (req.user.id === Number(id)) {
     return res.status(400).json({ ok: false, error: 'Không thể tự xóa tài khoản của chính mình.' });
@@ -270,9 +322,9 @@ app.delete('/api/users/:id', async (req, res) => {
 
   try {
     await db.deleteUser(id);
-    res.json({ ok: true, message: 'Đã xóa tài khoản quản trị.' });
+    res.json({ ok: true, message: 'Đã xóa tài khoản cán bộ.' });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(500).json({ ok: false, error: 'Không thể xóa tài khoản quản trị.' });
   }
 });
 
@@ -285,7 +337,7 @@ app.get('/api/zalo-users', async (req, res) => {
   res.json({ ok: true, users });
 });
 
-app.post('/api/zalo-users/:zaloId/toggle-block', async (req, res) => {
+app.post('/api/zalo-users/:zaloId/toggle-block', requireRole('superadmin', 'admin'), async (req, res) => {
   const { zaloId } = req.params;
   const { isBlocked } = req.body;
   try {
@@ -377,7 +429,7 @@ app.get('/api/documents/:id', async (req, res) => {
   res.json({ ok: true, document: doc });
 });
 
-app.post('/api/documents', async (req, res) => {
+app.post('/api/documents', requireRole('superadmin', 'admin'), async (req, res) => {
   const { documentCode, documentName, issuer, category, issueDate, status, description, articles } = req.body;
 
   if (!documentCode || !documentName || !articles?.length) {
@@ -423,7 +475,7 @@ app.post('/api/documents', async (req, res) => {
   }
 });
 
-app.put('/api/documents/:id', async (req, res) => {
+app.put('/api/documents/:id', requireRole('superadmin', 'admin'), async (req, res) => {
   const { id } = req.params;
   const isDbConnected = await db.checkConnection();
 
@@ -440,7 +492,7 @@ app.put('/api/documents/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/documents/:id', async (req, res) => {
+app.delete('/api/documents/:id', requireRole('superadmin', 'admin'), async (req, res) => {
   const { id } = req.params;
   const isDbConnected = await db.checkConnection();
 

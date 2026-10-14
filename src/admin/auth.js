@@ -58,8 +58,30 @@ function authMiddleware(req, res, next) {
   next();
 }
 
+/**
+ * Middleware phân quyền vai trò (Role-Based Access Control)
+ * @param  {...string} roles - Danh sách vai trò được phép (ví dụ: 'superadmin', 'admin')
+ */
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ ok: false, error: 'Chưa xác thực người dùng.' });
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        ok: false,
+        error: `Bạn không có quyền thực hiện thao tác này. Yêu cầu quyền: [${roles.join(', ')}].`,
+      });
+    }
+
+    next();
+  };
+}
+
 module.exports = {
   generateToken,
   verifyToken,
   authMiddleware,
+  requireRole,
 };
