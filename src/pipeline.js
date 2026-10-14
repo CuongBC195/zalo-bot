@@ -8,6 +8,28 @@ const rag = require('./rag');
 const gemini = require('./gemini');
 const config = require('./config');
 
+// Bảng ánh xạ tự động mở rộng truy vấn từ văn bản hết hiệu lực sang văn bản hiện hành (Legacy Replacement Map)
+const LEGACY_REPLACEMENT_MAP = [
+  { pattern: /(24-q[đd]|232-q[đd]|294-q[đd]|quy\s*[đd][iị]nh\s*24\b|quy\s*[đd][iị]nh\s*232\b)/i, expansion: ' 208-QĐ/TW ' },
+  { pattern: /(37-q[đd]|quy\s*[đd][iị]nh\s*37\b)/i, expansion: ' 207-QĐ/TW ' },
+  { pattern: /(22-q[đd]|296-q[đd]|quy\s*[đd][iị]nh\s*22\b)/i, expansion: ' 21-QĐ/TW ' },
+  { pattern: /(342-q[đd]|quy[eế]t\s*[đd][iị]nh\s*342\b)/i, expansion: ' 01-QĐ/TW ' },
+  { pattern: /(17-h[dđ]|36-h[dđ]|66-q[đd]|h[uư][oơ]ng\s*d[aẫ]n\s*17\b)/i, expansion: ' 05-HD/VPTW 399-QĐ/TW ' },
+  { pattern: /(01-h[dđ]|h[uư][oơ]ng\s*d[aẫ]n\s*01\b)/i, expansion: ' 02-HD/TW ' },
+  { pattern: /(12-h[dđ]|h[uư][oơ]ng\s*d[aẫ]n\s*12\b)/i, expansion: ' 42-HD/BTCTW ' },
+  { pattern: /(124-q[đd]|quy\s*[đd][iị]nh\s*124\b)/i, expansion: ' 366-QĐ/TW ' },
+];
+
+function expandLegacyQuery(queryText) {
+  let expanded = queryText;
+  for (const item of LEGACY_REPLACEMENT_MAP) {
+    if (item.pattern.test(queryText)) {
+      expanded += item.expansion;
+    }
+  }
+  return expanded;
+}
+
 class PipelineResult {
   constructor(answer, intent, retrievedDocs = []) {
     this.answer = answer;
@@ -60,19 +82,27 @@ class PipelineOrchestrator {
    * @returns {Promise<PipelineResult>} Kết quả câu trả lời kèm metadata
    */
   async processMessage({ text = '', senderName = 'Đồng chí' }) {
-    const query = text.trim();
-    if (!query) {
+    const rawQuery = text.trim();
+    if (!rawQuery) {
       return new PipelineResult('Vui lòng nhập câu hỏi hoặc nội dung quy định cần tra cứu.', 'empty', []);
     }
 
     // Xử lý các lệnh nhanh
-    if (query.startsWith('/')) {
-      const cmdAnswer = await this._handleCommand(query);
+    if (rawQuery.startsWith('/')) {
+      const cmdAnswer = await this._handleCommand(rawQuery);
       return new PipelineResult(cmdAnswer, 'command', []);
     }
 
+    // 0. TẦNG SMART QUERY REWRITER: Chuẩn hóa câu hỏi nếu là tiếng Việt không dấu
+    let query = rawQuery;
+    const hasVietnameseAccent = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(rawQuery);
+    if (!hasVietnameseAccent) {
+      console.log(`[Pipeline] Phát hiện câu hỏi không dấu, đang kích hoạt Smart Query Rewriter...`);
+      query = await this.gemini.rewriteQuery(rawQuery);
+    }
+
     // 1. TẦNG JEV: Phân loại ý định & Ràng buộc đầu vào (Strict Scope Gatekeeper)
-    console.log(`[Pipeline] Đang phân loại ý định cho câu hỏi: "${query}"`);
+    console.log(`[Pipeline] Đang phân loại ý định cho câu hỏi: "${query}" (Gốc: "${rawQuery}")`);
     const route = await this.jev.routeIntent(query);
     console.log(`[Pipeline] Ý định nhận diện: ${route.intent} (độ tin cậy: ${Math.round(route.confidence * 100)}%)`);
 
@@ -98,15 +128,16 @@ class PipelineOrchestrator {
         `Tôi là Trợ lý AI chuyên trách hỗ trợ tra cứu về Cương lĩnh, Điều lệ, Quy định của Đảng, Thể thức văn bản và Công tác văn thư lưu trữ.\n\n` +
         `Nội dung câu hỏi của đồng chí nằm ngoài phạm vi nghiệp vụ được phân công. Đồng chí vui lòng đặt các câu hỏi thuộc các lĩnh vực sau:\n` +
         `• Thể thức và kỹ thuật trình bày văn bản Đảng (HD 05-HD/VPTW ngày 27/05/2026, QĐ 399-QĐ/TW, thẩm quyền ký T/M, K/T, con dấu, chữ ký số...)\n` +
-        `• Công tác văn thư và lưu trữ cơ quan Đảng (HD 05, HD 06, Thông tư 02 BNV, nộp lưu hồ sơ...)\n` +
-        `• Quy định, điều lệ và thi hành Điều lệ Đảng (Quy định 24, Quy định 37, Hướng dẫn 01, Quy định 22...)`
+        `• Công tác văn thư và lưu trữ cơ quan Đảng (HD 06-HD/VPTW ngày 29/05/2026, QĐ 383-QĐ/TW về Phông lưu trữ Đảng, Luật Lưu trữ 2024, nộp lưu hồ sơ...)\n` +
+        `• Điều lệ, kỷ luật và nghiệp vụ công tác Đảng (Quy định 208-QĐ/TW, Quy định 207-QĐ/TW, Hướng dẫn 02-HD/TW, Quy định 21-QĐ/TW, Quy định 01-QĐ/TW...)`
       );
       return new PipelineResult(outText, route.intent, []);
     }
 
-    // 2. TẦNG RAG: Truy xuất các điều khoản liên quan
-    console.log(`[Pipeline] Đang truy xuất tài liệu từ RAG...`);
-    const candidatePassages = await this.rag.search(query, { topK: config.rag.topK });
+    // 2. TẦNG RAG: Truy xuất các điều khoản liên quan (kèm mở rộng truy vấn văn bản hết hiệu lực)
+    const searchQuery = expandLegacyQuery(query);
+    console.log(`[Pipeline] Đang truy xuất tài liệu từ RAG với truy vấn: "${searchQuery}"`);
+    const candidatePassages = await this.rag.search(searchQuery, { topK: config.rag.topK });
 
     if (!candidatePassages.length) {
       const notFoundText = (

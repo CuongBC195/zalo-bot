@@ -6,7 +6,7 @@
   "category": "quy_dinh_dang",
   "issueDate": "2026-04-11",
   "status": "Còn hiệu lực (Hiện hành)",
-  "description": "Quy định số 21-QĐ/TW ngày 11/04/2026 của Ban Chấp hành Trung ương Đảng về công tác kiểm tra, giám sát và kỷ luật của Đảng; thay thế Quy định số 296-QĐ/TW ngày 30/05/2025 và Quy định số 22-QĐ/TW ngày 28/07/2021; hoàn thiện thẩm quyền kiểm tra, thi hành kỷ luật của chi bộ, đảng ủy cơ sở và ủy ban kiểm tra các cấp trong mô hình chính quyền địa phương 2 cấp.",
+  "description": "Quy định số 21-QĐ/TW ngày 11/04/2026 của Ban Chấp hành Trung ương Đảng về công tác kiểm tra, giám sát và kỷ luật của Đảng; thay thế Quy định số 296-QĐ/TW ngày 30/05/2025 và Quy định số 22-QĐ/TW ngày 28/07/2021; quy định rõ ràng về hình thức kỷ luật, thẩm quyền thi hành kỷ luật của chi bộ và thời hiệu kỷ luật đảng viên.",
   "articles": [
     {
       "articleNumber": "1",
@@ -20,18 +20,23 @@
     },
     {
       "articleNumber": "3",
-      "title": "Thẩm quyền và trách nhiệm kiểm tra, giám sát của chi bộ",
-      "content": "1. Chi bộ xây dựng kế hoạch kiểm tra, giám sát chuyên đề và thường xuyên đối với đảng viên trong việc thực hiện nhiệm vụ đảng viên, việc rèn luyện đạo đức lối sống, chấp hành Quy định 207-QĐ/TW về những điều đảng viên không được làm.\n2. Chi bộ có thẩm quyền quyết định thi hành kỷ luật đối với đảng viên vi phạm bằng hình thức Khiển trách hoặc Cảnh cáo (trừ trường hợp cán bộ thuộc diện cấp ủy cấp trên quản lý thì chi bộ đề nghị cấp có thẩm quyền xem xét).\n3. Trường hợp đảng viên vi phạm đến mức phải cách chức (nếu có chức vụ trong Đảng) hoặc khai trừ ra khỏi Đảng: Chi bộ thảo luận, lập hồ sơ và ra nghị quyết đề nghị đảng ủy cơ sở hoặc cấp ủy có thẩm quyền quyết định."
+      "title": "Thẩm quyền thi hành kỷ luật đảng của Chi bộ",
+      "content": "1. Chi bộ có thẩm quyền quyết định thi hành kỷ luật đối với đảng viên trong chi bộ bằng hình thức Khiển trách hoặc Cảnh cáo (trừ trường hợp cán bộ thuộc diện cấp ủy cấp trên quản lý thì chi bộ làm quy trình báo cáo cấp ủy có thẩm quyền quyết định).\n2. Chi bộ KHÔNG có thẩm quyền quyết định hình thức kỷ luật Cách chức (đối với đảng viên có chức vụ) hoặc Khai trừ ra khỏi Đảng.\n3. Khi đảng viên vi phạm đến mức phải áp dụng hình thức Cách chức hoặc Khai trừ: Chi bộ tiến hành thảo luận, bỏ phiếu kín đề nghị cấp ủy có thẩm quyền xem xét, ra quyết định kỷ luật theo quy định."
     },
     {
       "articleNumber": "4",
       "title": "Các hình thức kỷ luật trong Đảng theo Quy định 21-QĐ/TW",
-      "content": "1. Đối với tổ chức đảng: Khiển trách, Cảnh cáo, Giải tán.\n2. Đối với đảng viên chính thức: Khiển trách, Cảnh cáo, Cách chức (đối với đảng viên có chức vụ), Khai trừ.\n3. Đối với đảng viên dự bị: Khiển trách, Cảnh cáo (nếu vi phạm đến mức không còn đủ tư cách đảng viên thì xóa tên khỏi danh sách đảng viên dự bị, không áp dụng hình thức Khai trừ).\n4. Quyết định kỷ luật có hiệu lực ngay sau khi công bố."
+      "content": "1. Đối với tổ chức đảng gồm 03 hình thức: Khiển trách, Cảnh cáo, Giải tán.\n2. Đối với đảng viên chính thức gồm 04 hình thức: Khiển trách, Cảnh cáo, Cách chức (chỉ áp dụng đối với đảng viên có chức vụ), Khai trừ.\n3. Đối với đảng viên dự bị gồm 02 hình thức: Khiển trách, Cảnh cáo (nếu đảng viên dự bị vi phạm đến mức không còn đủ tư cách đảng viên thì chi bộ họp đề nghị cấp ủy có thẩm quyền xóa tên khỏi danh sách đảng viên dự bị, không áp dụng hình thức Cách chức hoặc Khai trừ)."
     },
     {
       "articleNumber": "5",
-      "title": "Quyền của tổ chức đảng và đảng viên khi bị kiểm tra, xem xét kỷ luật",
-      "content": "1. Được thông báo quyết định kiểm tra, giám sát; được trình bày ý kiến, cung cấp tài liệu, chứng cứ giải trình bảo vệ quyền lợi hợp pháp của mình.\n2. Được nhận văn bản kết luận kiểm tra, quyết định kỷ luật; có quyền khiếu nại kỷ luật lên cấp ủy, ủy ban kiểm tra cấp trên theo đúng thời hạn quy định nếu thấy quyết định chưa thỏa đáng.\n3. Trong thời gian chờ giải quyết khiếu nại, tổ chức đảng và đảng viên vẫn phải chấp hành nghiêm chỉnh quyết định kỷ luật đã ban hành."
+      "title": "Thời hiệu kỷ luật đảng viên theo Quy định 21-QĐ/TW",
+      "content": "1. Thời hiệu kỷ luật đảng là thời hạn mà khi hết thời hạn đó thì tổ chức đảng hoặc đảng viên có hành vi vi phạm không bị kỷ luật.\n2. Các mức thời hiệu kỷ luật cụ thể:\n- Thời hiệu kỷ luật là 05 năm đối với những hành vi vi phạm đến mức phải áp dụng hình thức Khiển trách.\n- Thời hiệu kỷ luật là 10 năm đối với những hành vi vi phạm đến mức phải áp dụng hình thức Cảnh cáo hoặc Cách chức.\n3. Các trường hợp KHÔNG áp dụng thời hiệu kỷ luật:\n- Hành vi vi phạm đến mức phải áp dụng hình thức kỷ luật Khai trừ.\n- Hành vi vi phạm về chính trị nội bộ, an ninh quốc gia, bảo vệ nền tảng tư tưởng của Đảng.\n- Hành vi vi phạm về phòng, chống tham nhũng, lãng phí, tiêu cực gây hậu quả đặc biệt nghiêm trọng.\n- Hành vi làm mất thẻ đảng viên hoặc sử dụng thẻ đảng viên trái quy định."
+    },
+    {
+      "articleNumber": "6",
+      "title": "Hiệu lực thi hành và thay thế Quy định 22-QĐ/TW",
+      "content": "1. Quy định này có hiệu lực từ ngày 11/04/2026, thay thế toàn bộ Quy định số 296-QĐ/TW ngày 30/05/2025 và Quy định số 22-QĐ/TW ngày 28/07/2021 của Ban Chấp hành Trung ương Đảng khóa XIII.\n2. Các cấp ủy, tổ chức đảng và ủy ban kiểm tra các cấp có trách nhiệm lãnh đạo, chỉ đạo và tổ chức thực hiện nghiêm túc Quy định này."
     }
   ]
 }

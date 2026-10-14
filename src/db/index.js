@@ -581,15 +581,17 @@ class DatabaseService {
         for (const num of docNumbers) {
           // Bỏ qua các số năm đơn lẻ 19xx, 20xx khi xét boost số hiệu chính
           if (parseInt(num, 10) > 1900 && parseInt(num, 10) < 2100) continue;
-          params.push(`%${num}%`);
-          conds.push(`d.document_code ILIKE $${params.length}`);
+          params.push(num);
+          conds.push(`d.document_code ~ ('(^|[^0-9])0*' || $${params.length} || '([^0-9]|$)')`);
         }
         if (conds.length > 0) {
           numberClause = `CASE WHEN (${conds.join(' OR ')}) THEN 30.0 ELSE 0.0 END`;
         }
       }
 
-      params.push(topK);
+      // Lấy dư số lượng để sau đó áp dụng Diversity Cap chống 1 văn bản độc chiếm topK
+      const fetchLimit = Math.max(topK * 2, 12);
+      params.push(fetchLimit);
       const limitParamIdx = params.length;
 
       const searchSql = `
@@ -604,8 +606,10 @@ class DatabaseService {
           d.issue_date as "issueDate",
           d.category,
           d.status,
+          d.description,
           ts_rank_cd(a.tsv, to_tsquery('simple', $1)) +
           ${numberClause} +
+          CASE WHEN a.article_number = '0' THEN 8.0 ELSE 0.0 END +
           CASE WHEN d.document_name ILIKE $2 THEN 10.0 ELSE 0.0 END +
           CASE 
             WHEN d.status ILIKE '%Hết hiệu lực%' AND (${numberClause} = 0) THEN -15.0 
@@ -626,7 +630,25 @@ class DatabaseService {
 
       const res = await this.pool.query(searchSql, params);
 
-      return res.rows.map(row => ({
+      // Diversity Cap: Nếu câu hỏi nhắc tới >= 2 số hiệu văn bản, giới hạn mỗi văn bản tối đa 3 điều khoản
+      const validDocNums = docNumbers.filter(n => !(parseInt(n, 10) > 1900 && parseInt(n, 10) < 2100));
+      let finalRows = res.rows;
+      if (validDocNums.length >= 2) {
+        const docCount = {};
+        finalRows = [];
+        for (const row of res.rows) {
+          const code = row.documentCode;
+          docCount[code] = (docCount[code] || 0) + 1;
+          if (docCount[code] <= 3) {
+            finalRows.push(row);
+          }
+          if (finalRows.length >= topK) break;
+        }
+      } else {
+        finalRows = finalRows.slice(0, topK);
+      }
+
+      return finalRows.map(row => ({
         ...row,
         fullText: `${row.documentCode} ${row.documentName} - Điều ${row.articleNumber}: ${row.title}. ${row.content}`,
       }));

@@ -64,7 +64,9 @@ const PARTY_AND_REGULATION_KEYWORDS = [
   'đảng ủy xã', 'đảng bộ xã', 'văn phòng đảng ủy', 'chuyên viên', 'thường trực đảng ủy',
   '299-qđ', 'tham mưu cấp ủy', 'lịch công tác', 'tiếp công dân', 'mặt trận tổ quốc',
   'đoàn thanh niên', 'hội phụ nữ', 'hội nông dân', 'hội cựu chiến binh', 'công đoàn cơ sở',
-  'ủy ban nhân dân', 'hội đồng nhân dân'
+  'ủy ban nhân dân', 'hội đồng nhân dân',
+  // Bộ từ khóa tiếng Việt không dấu bổ trợ
+  'dang vien', 'du bi', 'bieu quyet', 'ket nap', 'chi bo', 'ky luat', 'dang phi', 'the thuc', 'luu tru'
 ];
 
 function stripAccents(str) {
@@ -307,13 +309,44 @@ class JevService {
     };
   }
 
-  _evalRelevance(query = '', passage = '') {
-    const qTokens = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-    const pText = passage.toLowerCase();
+  _normalizeText(str) {
+    if (!str) return '';
+    return str
+      .toLowerCase()
+      .replace(/đ/g, 'd')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
 
+  _evalRelevance(query = '', passage = '') {
+    const normQ = this._normalizeText(query);
+    const normP = this._normalizeText(passage);
+
+    // 1. Kiểm tra nếu câu hỏi có chứa số hiệu văn bản và passage thuộc đúng văn bản có số hiệu đó
+    const queryWithoutDates = query.replace(/\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b/g, ' ');
+    const docNumbers = queryWithoutDates.match(/\b\d{1,3}\b/g) || [];
+
+    for (const num of docNumbers) {
+      if (parseInt(num, 10) > 1900 && parseInt(num, 10) < 2100) continue;
+      const numBoundaryRegex = new RegExp('(^|[^0-9])0*' + num + '([^0-9]|$)');
+      // Trích xuất mã văn bản ở đầu passage dạng [MÃ_VĂN_BẢN]
+      const codeMatch = passage.match(/^\[([^\]]+)\]/);
+      const docCode = codeMatch ? codeMatch[1] : '';
+      if (docCode && numBoundaryRegex.test(docCode)) {
+        return {
+          noul: 0.95,
+          confidence: 0.95,
+        };
+      }
+    }
+
+    // 2. So sánh từ khóa trên chuỗi đã chuẩn hóa bỏ dấu
+    const qTokens = normQ.split(/\s+/).filter(w => w.length > 2);
     let matchCount = 0;
     for (const t of qTokens) {
-      if (pText.includes(t)) matchCount++;
+      if (normP.includes(t)) matchCount++;
     }
 
     const ratio = qTokens.length > 0 ? matchCount / qTokens.length : 0;

@@ -15,8 +15,66 @@ const { SYSTEM_INSTRUCTION, buildPrompt } = require('./prompts');
 class GeminiService {
   constructor() {
     this.apiKey = config.gemini.apiKey;
-    this.primaryModel = config.gemini.model || 'gemini-flash-latest';
+    this.primaryModel = config.gemini.model || 'gemini-3.1-flash-lite';
     this.baseUrl = config.gemini.baseUrl;
+  }
+
+  /**
+   * Smart Query Rewriter
+   * Chuẩn hóa câu hỏi tiếng Việt không dấu hoặc câu viết tắt thành văn phong hành chính Đảng
+   * @param {string} rawQuery
+   * @returns {Promise<string>}
+   */
+  async rewriteQuery(rawQuery = '') {
+    const text = (rawQuery || '').trim();
+    if (!text) return text;
+
+    // Điều kiện kích hoạt: Chỉ gọi API khi là tiếng Việt KHÔNG DẤU hoặc viết tắt ngắn
+    const hasVietnameseAccent = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(text);
+    const isVeryShort = text.split(/\s+/).length <= 2;
+
+    // Nếu đã có dấu rõ ràng và không quá ngắn -> trả về ngay 0ms
+    if (hasVietnameseAccent && !isVeryShort) {
+      return text;
+    }
+
+    if (!this.apiKey) return text;
+
+    const rewriteCandidates = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest'];
+    for (const model of rewriteCandidates) {
+      try {
+        const prompt = `Hãy viết lại câu hỏi sau thành câu tiếng Việt có dấu đầy đủ, chuẩn thuật ngữ hành chính Đảng Cộng sản Việt Nam, giữ nguyên các con số/ký hiệu văn bản, chỉ trả về đúng 1 câu hỏi đã chuẩn hóa, không giải thích gì thêm: "${text}"`;
+        const endpoint = `${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`;
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': this.apiKey,
+          },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 120,
+            },
+          }),
+          signal: AbortSignal.timeout(4000),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const rewritten = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+          if (rewritten && rewritten.length > 5) {
+            console.log(`[SmartRewriter] "${text}" -> "${rewritten}" (model: ${model})`);
+            return rewritten.replace(/^["'\s]+|["'\s]+$/g, '');
+          }
+        }
+      } catch (err) {
+        // Thử model tiếp theo
+      }
+    }
+
+    return text;
   }
 
   /**
@@ -30,12 +88,12 @@ class GeminiService {
       return this._fallbackFormat(query, context);
     }
 
-    // Danh sách model ưu tiên (gemini-3.1-flash-lite phản hồi cực nhanh ~1.6s, ổn định 100%)
+    // Danh sách model ưu tiên (phản hồi cực nhanh < 2s, dự phòng đa tầng ổn định 100%)
     const modelCandidates = Array.from(new Set([
-      this.primaryModel,
       'gemini-3.1-flash-lite',
-      'gemini-3-flash-preview',
-      'gemini-3.8-flash',
+      'gemini-3.5-flash-lite',
+      'gemini-flash-lite-latest',
+      this.primaryModel,
       'gemini-flash-latest',
     ]));
 
@@ -65,7 +123,7 @@ class GeminiService {
               maxOutputTokens: config.gemini.maxOutputTokens,
             },
           }),
-          signal: AbortSignal.timeout(15000),
+          signal: AbortSignal.timeout(8000),
         });
 
         if (response.ok) {

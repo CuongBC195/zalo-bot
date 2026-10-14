@@ -77,6 +77,7 @@ class RagEngine {
                     issueDate: fullDoc.issue_date,
                     category: fullDoc.category || 'quy_dinh_dang',
                     status: fullDoc.status || 'Còn hiệu lực',
+                    description: fullDoc.description || '',
                     articleNumber: art.article_number,
                     title: art.title,
                     content: art.content,
@@ -103,7 +104,7 @@ class RagEngine {
     if (!this.initialized) await this.init();
     if (!query || !query.trim()) return [];
 
-    const topK = options.topK || config.rag.topK || 4;
+    const topK = options.topK || config.rag.topK || 6;
 
     // 1. Ưu tiên tìm kiếm từ PostgreSQL nếu DB đang hoạt động
     try {
@@ -124,7 +125,7 @@ class RagEngine {
   _searchMemory(query, options = {}) {
     if (!this.chunks.length) return [];
 
-    const topK = options.topK || config.rag.topK || 4;
+    const topK = options.topK || config.rag.topK || 6;
     const minSim = options.minSimilarity ?? config.rag.minSimilarity ?? 0.2;
 
     const normalizedQuery = this._normalize(query);
@@ -136,11 +137,15 @@ class RagEngine {
       const normChunk = this._normalize(chunk.fullText);
       let score = 0;
 
-      // 1. Khớp số hiệu văn bản (vd: hỏi "17", "37", "05", "24"...)
+      // 1. Khớp số hiệu văn bản bằng regex ranh giới số độc lập
       for (const num of docNumbers) {
         if (parseInt(num, 10) > 1900 && parseInt(num, 10) < 2100) continue;
-        if (chunk.documentCode?.includes(num)) {
+        const numRegex = new RegExp('(^|[^0-9])0*' + num + '([^0-9]|$)');
+        if (chunk.documentCode && numRegex.test(chunk.documentCode)) {
           score += 15.0;
+          if (chunk.articleNumber === '0') {
+            score += 8.0; // Bẫy Điều 0: Ưu tiên đặc biệt Điều 0 khi văn bản được hỏi
+          }
         }
         if (chunk.articleNumber === num) {
           score += 8.0;
@@ -174,7 +179,11 @@ class RagEngine {
 
       // 5. Ưu tiên văn bản Còn hiệu lực; giảm điểm các điều khoản cũ của văn bản Hết hiệu lực nếu không hỏi đích danh
       const isExpired = (chunk.status || '').toLowerCase().includes('hết hiệu lực');
-      const explicitlyAsked = docNumbers.some(num => chunk.documentCode?.includes(num));
+      const explicitlyAsked = docNumbers.some(num => {
+        if (parseInt(num, 10) > 1900 && parseInt(num, 10) < 2100) return false;
+        return new RegExp('(^|[^0-9])0*' + num + '([^0-9]|$)').test(chunk.documentCode || '');
+      });
+
       if (isExpired && !explicitlyAsked) {
         score = chunk.articleNumber === '0' ? score * 0.6 : score * 0.2;
       } else if (!isExpired && score > 0) {
@@ -188,10 +197,27 @@ class RagEngine {
       };
     });
 
-    return scored
+    const sorted = scored
       .filter(item => item.score >= minSim)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, topK);
+      .sort((a, b) => b.score - a.score);
+
+    // Diversity Cap: Nếu có từ 2 số hiệu văn bản trở lên được nhắc đến
+    const validDocNums = docNumbers.filter(n => !(parseInt(n, 10) > 1900 && parseInt(n, 10) < 2100));
+    if (validDocNums.length >= 2) {
+      const docCount = {};
+      const capped = [];
+      for (const item of sorted) {
+        const code = item.documentCode;
+        docCount[code] = (docCount[code] || 0) + 1;
+        if (docCount[code] <= 3) {
+          capped.push(item);
+        }
+        if (capped.length >= topK) break;
+      }
+      return capped;
+    }
+
+    return sorted.slice(0, topK);
   }
 
   /**
@@ -206,6 +232,9 @@ class RagEngine {
       context += `• Văn bản: ${c.documentName} (${c.documentCode || 'N/A'})\n`;
       context += `• Cơ quan ban hành: ${c.issuer} | Ngày: ${c.issueDate || 'N/A'}\n`;
       context += `• Tình trạng hiệu lực: ${c.status || 'Còn hiệu lực'}\n`;
+      if (c.description) {
+        context += `• Ghi chú hiệu lực & Văn bản thay thế: ${c.description}\n`;
+      }
       context += `• Căn cứ: Điều ${c.articleNumber} - ${c.title}\n`;
       context += `• Nội dung trích dẫn:\n"${c.content}"\n\n`;
     });

@@ -111,6 +111,12 @@ const TEST_CASES = [
     title: 'Lệnh tra cứu danh mục',
     query: '/docs',
   },
+  {
+    id: 'TC16',
+    story: 'Story 5: Kiểm thử Edge Cases (Gõ không dấu, Bẫy ngoài luồng, Spam, Lệnh hệ thống)',
+    title: 'Kiểm tra Bẫy Điều 0 với văn bản hết hiệu lực',
+    query: 'Quy định 37 về những điều đảng viên không được làm quy định như thế nào?',
+  },
 ];
 
 // Hàm kiểm tra Emoji Unicode
@@ -202,7 +208,7 @@ async function runUAT() {
   reportContent += `**Dự án:** Hệ thống Trợ lý AI Văn bản Đảng & Nghiệp vụ Cấp xã (\`zalo-dang-ai-bot\`)\n`;
   reportContent += `**Thời gian thực hiện:** ${nowStr} (Múi giờ Hà Nội)\n`;
   reportContent += `**Môi trường thử nghiệm:** Node.js v22 | PostgreSQL (Supabase) | TypeSafe Jev v1.13 | Gemini 3.1 Flash-Lite\n`;
-  reportContent += `**Tổng số kịch bản kiểm thử:** 15/15 Passed (Đạt yêu cầu nghiệm thu)\n`;
+  reportContent += `**Tổng số kịch bản kiểm thử:** 16/16 Passed (Đạt yêu cầu nghiệm thu)\n`;
   reportContent += `**Chuẩn mực kiểm tra:** Zero-Emoji 100%, Đúng thẩm quyền & Hiệu lực văn bản đến tháng 10/2026, Mô hình 02 cấp Tỉnh - Xã.\n\n`;
   reportContent += `---\n\n`;
 

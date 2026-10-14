@@ -33,7 +33,7 @@ const config = {
 
   // RAG (Retrieval-Augmented Generation)
   rag: {
-    topK: parseInt(process.env.RAG_TOP_K || '4', 10),
+    topK: parseInt(process.env.RAG_TOP_K || '6', 10),
     minSimilarity: parseFloat(process.env.RAG_MIN_SIMILARITY || '0.25'),
   },
 };

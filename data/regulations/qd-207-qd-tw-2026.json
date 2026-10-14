@@ -6,7 +6,7 @@
   "category": "quy_dinh_dang",
   "issueDate": "2026-07-26",
   "status": "Còn hiệu lực (Hiện hành)",
-  "description": "Quy định số 207-QĐ/TW ngày 26/07/2026 của Ban Chấp hành Trung ương Đảng về những điều đảng viên không được làm; chính thức thay thế Quy định số 37-QĐ/TW ngày 25/10/2021; bổ sung nghiêm cấm sử dụng AI, internet, mạng xã hội để tạo dựng, phát tán tin sai sự thật; cấm tư duy nhiệm kỳ; tăng cường minh bạch tài sản, thu nhập.",
+  "description": "Quy định số 207-QĐ/TW ngày 26/07/2026 của Ban Chấp hành Trung ương Đảng (khóa XIV) về 19 điều đảng viên không được làm; chính thức thay thế Quy định số 37-QĐ/TW ngày 25/10/2021; cập nhật nghiêm cấm các hành vi vi phạm đạo đức, lối sống, đánh bạc, du lịch bằng tài trợ của doanh nghiệp, tư duy nhiệm kỳ và lợi dụng trí tuệ nhân tạo, không gian mạng.",
   "articles": [
     {
       "articleNumber": "1",
@@ -15,28 +15,43 @@
     },
     {
       "articleNumber": "2",
-      "title": "Không chấp hành các nguyên tắc tổ chức và hoạt động của Đảng; vi phạm đoàn kết nội bộ",
+      "title": "Không chấp hành các nguyên tắc tổ chức và sinh hoạt đảng",
       "content": "Không chấp hành các nguyên tắc tổ chức và hoạt động của Đảng; độc đoán, chuyên quyền, vi phạm nguyên tắc tập trung dân chủ; không thực hiện trách nhiệm nêu gương; gây chia rẽ nội bộ, bè phái, cục bộ địa phương; không chấp hành sự phân công, điều động của tổ chức."
     },
     {
       "articleNumber": "3",
-      "title": "Cấm lợi dụng internet, mạng xã hội, nền tảng số và trí tuệ nhân tạo (AI) để phát tán thông tin sai lệch",
-      "content": "Sử dụng internet, mạng xã hội, các nền tảng truyền thông số, công nghệ trí tuệ nhân tạo (AI) để tạo dựng, tán phát, chia sẻ thông tin, hình ảnh sai sự thật, chưa được kiểm chứng, xuyên tạc đường lối của Đảng, chính sách pháp luật của Nhà nước; bôi nhọ, xúc phạm danh dự của đồng chí, cơ quan, tổ chức hoặc làm lộ bí mật của Đảng và Nhà nước."
+      "title": "Lợi dụng mạng xã hội, internet và trí tuệ nhân tạo (AI) để phát tán thông tin sai lệch",
+      "content": "Sử dụng internet, mạng xã hội, các nền tảng truyền thông số, công nghệ trí tuệ nhân tạo (AI) để tạo dựng, tán phát, chia sẻ thông tin, hình ảnh sai sự thật, chưa được kiểm chứng, xuyên tạc đường lối của Đảng, chính sách pháp luật của Nhà nước; bôi nhọ danh dự của cán bộ, đảng viên, tổ chức hoặc làm lộ bí mật của Đảng và Nhà nước."
     },
     {
       "articleNumber": "4",
-      "title": "Cấm tư duy nhiệm kỳ, can thiệp trái thẩm quyền, tham nhũng, lãng phí và tiêu cực",
+      "title": "Tư duy nhiệm kỳ, can thiệp trái thẩm quyền, tham nhũng, lãng phí và tiêu cực",
       "content": "Tư duy nhiệm kỳ, lợi ích nhóm; quyết định chủ trương đầu tư dàn trải gây thất thoát, lãng phí ngân sách; can thiệp, tác động trái quy định vào hoạt động thanh tra, kiểm tra, kiểm toán, điều tra, truy tố, xét xử; nhận hối lộ, đưa hối lộ hoặc môi giới hối lộ dưới mọi hình thức."
     },
     {
       "articleNumber": "5",
-      "title": "Minh bạch tài sản, thu nhập và trách nhiệm giải trình",
+      "title": "Kê khai tài sản, thu nhập không trung thực và tẩu tán tài sản",
       "content": "Không kê khai, kê khai không trung thực hoặc không giải trình được nguồn gốc tài sản, thu nhập tăng thêm theo quy định; mở tài khoản hoặc tẩu tán tài sản ra nước ngoài trái pháp luật; để vợ (chồng), con, người thân lợi dụng chức vụ, quyền hạn của mình để trục lợi."
     },
     {
-      "articleNumber": "6",
-      "title": "Hiệu lực thi hành và thay thế văn bản",
-      "content": "1. Quy định này có hiệu lực từ ngày ký (26/07/2026), thay thế toàn bộ Quy định số 37-QĐ/TW ngày 25/10/2021 của Ban Chấp hành Trung ương Đảng khóa XIII.\n2. Tất cả đảng viên Đảng Cộng sản Việt Nam có trách nhiệm thực hiện nghiêm túc; đảng viên vi phạm đều phải bị xem xét, xử lý kỷ luật nghiêm minh theo Quy định kỷ luật của Đảng."
+      "articleNumber": "17",
+      "title": "Can thiệp, tác động để bản thân hoặc người thân đi du lịch bằng tài trợ của doanh nghiệp",
+      "content": "Can thiệp, tác động để vợ (chồng), con, bố, mẹ, anh, chị, em ruột mình, bên vợ (chồng), bản thân và người khác đi du lịch, học tập, chữa bệnh bằng nguồn tài trợ của các cơ quan, tổ chức, doanh nghiệp, cá nhân có liên quan đến ngành, lĩnh vực, địa bàn theo dõi, phụ trách hoặc quản lý; nhận hoa hồng, quà tặng trái quy định của các đối tượng thuộc diện quản lý."
+    },
+    {
+      "articleNumber": "18",
+      "title": "Tổ chức, tham gia đánh bạc, cho vay nặng lãi và sử dụng ma túy, rượu bia",
+      "content": "Tổ chức hoặc tham gia đánh bạc dưới mọi hình thức; cho vay nặng lãi, tham gia bảo kê, tín dụng đen; sử dụng, tàng trữ, vận chuyển, mua bán trái phép các chất ma túy; uống rượu, bia đến mức bê tha hoặc sử dụng rượu, bia không đúng quy định trong giờ làm việc và tại nơi làm việc."
+    },
+    {
+      "articleNumber": "19",
+      "title": "Vi phạm nếp sống văn minh, tổ chức việc cưới, tang xa hoa và mê tín dị đoan",
+      "content": "Tổ chức việc cưới, việc tang và các sự kiện khác của cá nhân, gia đình xa hoa, lãng phí hoặc nhằm mục đích vụ lợi; bạo lực gia đình; vi phạm chính sách dân số; tham gia hoặc tổ chức các hoạt động mê tín, dị đoan; có hành vi vi phạm đạo đức, lối sống, thuần phong mỹ tục, làm ảnh hưởng nghiêm trọng đến uy tín của Đảng và hình ảnh người đảng viên."
+    },
+    {
+      "articleNumber": "20",
+      "title": "Hiệu lực thi hành và thay thế Quy định 37-QĐ/TW",
+      "content": "1. Quy định số 207-QĐ/TW có hiệu lực từ ngày 26/07/2026, thay thế toàn bộ Quy định số 37-QĐ/TW ngày 25/10/2021 của Ban Chấp hành Trung ương Đảng khóa XIII.\n2. Mọi đảng viên vi phạm 19 điều không được làm đều phải được chi bộ, cấp ủy và ủy ban kiểm tra các cấp xem xét, xử lý kỷ luật nghiêm minh, công bằng, không có vùng cấm, không có ngoại lệ."
     }
   ]
 }
