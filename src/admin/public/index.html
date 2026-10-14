@@ -61,6 +61,7 @@
         <div class="user-profile-menu">
           <span class="user-avatar">👤</span>
           <span id="currentUserName" class="user-name">Admin</span>
+          <button id="btnOpenProfileModal" class="btn btn-outline btn-sm" title="Hồ sơ & Đổi mật khẩu">⚙️ Tài khoản</button>
           <button id="btnLogout" class="btn btn-secondary btn-sm" title="Đăng xuất">Đăng xuất</button>
         </div>
       </div>
@@ -448,6 +449,60 @@ Hướng dẫn này quy định về thể thức và kỹ thuật trình bày v
         <div id="logQueryText" class="passage-card" style="margin-bottom: 1rem; border-left-color: var(--accent-blue);"></div>
         <h4>Câu trả lời từ trợ lý:</h4>
         <div id="logResponseText" class="passage-card" style="border-left-color: var(--accent-emerald); white-space: pre-wrap;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Hồ Sơ & Đổi Mật Khẩu -->
+  <div id="profileModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>Cài Đặt Tài Khoản & Bảo Mật</h3>
+        <button id="btnCloseProfileModal" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.5rem;">
+        <!-- Section 1: Thông tin cá nhân -->
+        <form id="updateProfileForm" style="margin-bottom: 2rem;">
+          <h4 style="margin-bottom: 1rem; color: var(--accent-blue); display: flex; align-items: center; gap: 0.5rem;">
+            <span>👤</span> Thông Tin Cá Nhân
+          </h4>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="profileUsername">Tên đăng nhập</label>
+            <input type="text" id="profileUsername" disabled style="background-color: var(--bg-card); opacity: 0.7; cursor: not-allowed;">
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="profileFullName">Họ và tên</label>
+            <input type="text" id="profileFullName" placeholder="Nhập họ và tên cán bộ" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="profileEmail">Email liên hệ</label>
+            <input type="email" id="profileEmail" placeholder="canbo@party.gov.vn">
+          </div>
+          <button type="submit" id="btnSaveProfile" class="btn btn-primary btn-sm">💾 Lưu Thay Đổi</button>
+        </form>
+
+        <hr class="divider" style="margin: 1.5rem 0;">
+
+        <!-- Section 2: Đổi mật khẩu -->
+        <form id="changePasswordForm">
+          <h4 style="margin-bottom: 1rem; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.5rem;">
+            <span>🔐</span> Đổi Mật Khẩu Đăng Nhập
+          </h4>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="pwdCurrent">Mật khẩu hiện tại <span class="required">*</span></label>
+            <input type="password" id="pwdCurrent" placeholder="Nhập mật khẩu đang dùng" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="pwdNew">Mật khẩu mới <span class="required">*</span></label>
+            <input type="password" id="pwdNew" placeholder="Ít nhất 6 ký tự" required minlength="6">
+          </div>
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="pwdConfirm">Xác nhận mật khẩu mới <span class="required">*</span></label>
+            <input type="password" id="pwdConfirm" placeholder="Nhập lại mật khẩu mới" required minlength="6">
+          </div>
+          <button type="submit" id="btnSavePassword" class="btn btn-primary btn-sm" style="background-color: var(--accent-emerald); border-color: var(--accent-emerald);">🔑 Đổi Mật Khẩu</button>
+        </form>
       </div>
     </div>
   </div>

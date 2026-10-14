@@ -133,6 +133,46 @@ app.get('/api/webhook/status', async (req, res) => {
 // ============================================================
 app.use('/api', authMiddleware);
 
+// ============================================================
+// HỒ SƠ CÁ NHÂN & ĐỔI MẬT KHẨU
+// ============================================================
+app.put('/api/auth/profile', async (req, res) => {
+  const { fullName, email } = req.body;
+  try {
+    const updated = await db.updateUser(req.user.id, { fullName, email });
+    res.json({ ok: true, message: 'Cập nhật thông tin thành công!', user: updated });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.put('/api/auth/change-password', async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ ok: false, error: 'Vui lòng nhập mật khẩu hiện tại và mật khẩu mới.' });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ ok: false, error: 'Mật khẩu mới phải có ít nhất 6 ký tự.' });
+  }
+
+  try {
+    const user = await db.getUserByUsername(req.user.username);
+    if (!user) {
+      return res.status(404).json({ ok: false, error: 'Không tìm thấy tài khoản.' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isMatch) {
+      return res.status(400).json({ ok: false, error: 'Mật khẩu hiện tại không chính xác.' });
+    }
+
+    await db.updateUser(user.id, { password: newPassword });
+    res.json({ ok: true, message: 'Đổi mật khẩu thành công! Mật khẩu mới đã được mã hóa an toàn.' });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // 1. Thống kê tổng quan (Dashboard)
 app.get('/api/stats', async (req, res) => {
   try {

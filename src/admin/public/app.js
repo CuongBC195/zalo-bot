@@ -81,9 +81,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalDate = document.getElementById('modalDate');
   const modalArticlesList = document.getElementById('modalArticlesList');
 
+  // Profile & Password Elements
+  const btnOpenProfileModal = document.getElementById('btnOpenProfileModal');
+  const profileModal = document.getElementById('profileModal');
+  const btnCloseProfileModal = document.getElementById('btnCloseProfileModal');
+  const updateProfileForm = document.getElementById('updateProfileForm');
+  const changePasswordForm = document.getElementById('changePasswordForm');
+  const profileUsername = document.getElementById('profileUsername');
+  const profileFullName = document.getElementById('profileFullName');
+  const profileEmail = document.getElementById('profileEmail');
+  const pwdCurrent = document.getElementById('pwdCurrent');
+  const pwdNew = document.getElementById('pwdNew');
+  const pwdConfirm = document.getElementById('pwdConfirm');
+
   // Local State
   let currentArticles = [];
   let authToken = localStorage.getItem('auth_token') || null;
+  let currentUser = null;
 
   // ============================================================
   // KHỞI ĐỘNG & KIỂM TRA PHIÊN ĐĂNG NHẬP
@@ -113,15 +127,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showLogin() {
     authToken = null;
+    currentUser = null;
     localStorage.removeItem('auth_token');
     loginScreen.classList.remove('hidden');
     mainApp.classList.add('hidden');
   }
 
   function showApp(user) {
+    currentUser = user;
     loginScreen.classList.add('hidden');
     mainApp.classList.remove('hidden');
-    currentUserName.textContent = user.fullName || user.username;
+    currentUserName.textContent = user.fullName || user.full_name || user.username;
   }
 
   // ============================================================
@@ -250,6 +266,96 @@ document.addEventListener('DOMContentLoaded', () => {
     btnRefreshLogs.addEventListener('click', loadQueryLogs);
     btnCloseLogModal.addEventListener('click', () => logDetailModal.classList.add('hidden'));
     logDetailModal.querySelector('.modal-backdrop').addEventListener('click', () => logDetailModal.classList.add('hidden'));
+
+    // Profile & Password Change Modals
+    if (btnOpenProfileModal) {
+      btnOpenProfileModal.addEventListener('click', () => {
+        if (currentUser) {
+          profileUsername.value = currentUser.username || '';
+          profileFullName.value = currentUser.fullName || currentUser.full_name || '';
+          profileEmail.value = currentUser.email || '';
+        }
+        pwdCurrent.value = '';
+        pwdNew.value = '';
+        pwdConfirm.value = '';
+        profileModal.classList.remove('hidden');
+      });
+    }
+
+    if (btnCloseProfileModal) {
+      btnCloseProfileModal.addEventListener('click', () => profileModal.classList.add('hidden'));
+      profileModal.querySelector('.modal-backdrop').addEventListener('click', () => profileModal.classList.add('hidden'));
+    }
+
+    if (updateProfileForm) {
+      updateProfileForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fullName = profileFullName.value.trim();
+        const email = profileEmail.value.trim();
+
+        try {
+          const res = await authFetch('/api/auth/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fullName, email }),
+          });
+          const data = await res.json();
+          if (data.ok) {
+            showToast(data.message || 'Cập nhật thông tin thành công!', 'success');
+            if (currentUser) {
+              currentUser.fullName = fullName;
+              currentUser.full_name = fullName;
+              currentUser.email = email;
+              currentUserName.textContent = fullName || currentUser.username;
+            }
+            profileModal.classList.add('hidden');
+          } else {
+            showToast(data.error || 'Lỗi cập nhật thông tin.', 'error');
+          }
+        } catch (err) {
+          showToast('Lỗi mạng: ' + err.message, 'error');
+        }
+      });
+    }
+
+    if (changePasswordForm) {
+      changePasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const currentPassword = pwdCurrent.value;
+        const newPassword = pwdNew.value;
+        const confirmPassword = pwdConfirm.value;
+
+        if (newPassword !== confirmPassword) {
+          showToast('Mật khẩu xác nhận không trùng khớp!', 'error');
+          return;
+        }
+
+        if (newPassword.length < 6) {
+          showToast('Mật khẩu mới phải có ít nhất 6 ký tự!', 'error');
+          return;
+        }
+
+        try {
+          const res = await authFetch('/api/auth/change-password', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ currentPassword, newPassword }),
+          });
+          const data = await res.json();
+          if (data.ok) {
+            showToast(data.message || 'Đổi mật khẩu thành công!', 'success');
+            pwdCurrent.value = '';
+            pwdNew.value = '';
+            pwdConfirm.value = '';
+            profileModal.classList.add('hidden');
+          } else {
+            showToast(data.error || 'Lỗi đổi mật khẩu.', 'error');
+          }
+        } catch (err) {
+          showToast('Lỗi mạng: ' + err.message, 'error');
+        }
+      });
+    }
   }
 
   // ============================================================
