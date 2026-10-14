@@ -92,3 +92,17 @@ CREATE TRIGGER trg_articles_tsv
 BEFORE INSERT OR UPDATE ON articles
 FOR EACH ROW
 EXECUTE FUNCTION update_article_tsv();
+
+-- 6. Bảng lưu trữ bộ đệm câu trả lời (Smart Response Cache với TTL)
+CREATE TABLE IF NOT EXISTS response_cache (
+    cache_key VARCHAR(300) PRIMARY KEY,
+    original_query TEXT NOT NULL,
+    intent VARCHAR(50),
+    retrieved_doc_codes TEXT[],
+    response_text TEXT NOT NULL,
+    hit_count INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_response_cache_expires ON response_cache(expires_at);
+

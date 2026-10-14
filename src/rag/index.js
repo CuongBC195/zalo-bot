@@ -6,6 +6,7 @@
 const DocumentLoader = require('./loader');
 const db = require('../db');
 const config = require('../config');
+const { extractDocNumbers } = require('./abbreviations');
 
 class RagEngine {
   constructor() {
@@ -69,6 +70,7 @@ class RagEngine {
               const fullDoc = await db.getDocumentById(doc.id);
               if (fullDoc && fullDoc.articles) {
                 for (const art of fullDoc.articles) {
+                  const descPart = fullDoc.description ? ` ${fullDoc.description}` : '';
                   this.chunks.push({
                     documentId: fullDoc.document_code,
                     documentCode: fullDoc.document_code,
@@ -81,7 +83,7 @@ class RagEngine {
                     articleNumber: art.article_number,
                     title: art.title,
                     content: art.content,
-                    fullText: `${fullDoc.document_code} ${fullDoc.document_name} - Điều ${art.article_number}: ${art.title}. ${art.content}`,
+                    fullText: `${fullDoc.document_code} ${fullDoc.document_name}${descPart} - Điều ${art.article_number}: ${art.title}. ${art.content}`,
                   });
                 }
               }
@@ -130,15 +132,13 @@ class RagEngine {
 
     const normalizedQuery = this._normalize(query);
     const queryTokens = this._tokenize(normalizedQuery);
-    const queryWithoutDates = query.replace(/\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b/g, ' ');
-    const docNumRegex = /(?:quy\s*[đd][iị]nh|quy[eế]t\s*[đd][iị]nh|h[uư][oơ]ng\s*d[aẫ]n|ch[iỉ]\s*th[iị]|th[oô]ng\s*t[uư]|k[eế]t\s*lu[aậ]n|ngh[iị]\s*quy[eế]t|lu[aậ]t|q[đd]|h[dđ]|ct|tt|kl|nq)\s*(?:s[oố]\s*)?(\d{1,4})\b|\b(\d{1,4})(?=[-\/](?:q[đd]|h[dđ]|ct|tt|kl|nq|tw|vptw|btctw|bnv|qh))/gi;
-    const docNumbers = [];
-    let m;
-    while ((m = docNumRegex.exec(queryWithoutDates)) !== null) {
-      const num = m[1] || m[2];
-      if (num && !docNumbers.includes(num)) {
-        const nInt = parseInt(num, 10);
-        if (!(nInt > 1900 && nInt < 2100)) docNumbers.push(num);
+    const docNumbers = extractDocNumbers(query);
+
+    // Xây dựng danh sách bigrams cho việc nhận diện đa ý định / đa hành vi
+    const bigrams = [];
+    for (let i = 0; i < queryTokens.length - 1; i++) {
+      if (queryTokens[i].length > 1 && queryTokens[i + 1].length > 1) {
+        bigrams.push(`${queryTokens[i]} ${queryTokens[i + 1]}`);
       }
     }
 
@@ -165,15 +165,24 @@ class RagEngine {
         score += 10.0;
       }
 
-      // 3. Khớp tiêu đề điều khoản
+      // 3. Khớp cụm từ khóa liên tiếp (bigrams) - Phục vụ truy xuất đa ý định / đa hành vi
       const normTitle = this._normalize(chunk.title);
+      for (const bg of bigrams) {
+        if (normTitle.includes(bg)) {
+          score += 4.0;
+        } else if (normChunk.includes(bg)) {
+          score += 2.0;
+        }
+      }
+
+      // 4. Khớp tiêu đề điều khoản
       for (const token of queryTokens) {
         if (token.length > 1 && normTitle.includes(token)) {
           score += 3.0;
         }
       }
 
-      // 4. Khớp từ khóa trong nội dung
+      // 5. Khớp từ khóa trong nội dung
       let matchedTokens = 0;
       for (const token of queryTokens) {
         if (token.length > 1 && normChunk.includes(token)) {

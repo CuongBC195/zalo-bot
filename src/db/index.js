@@ -7,6 +7,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
+const { extractDocNumbers } = require('../rag/abbreviations');
 
 class DatabaseService {
   constructor() {
@@ -17,6 +18,7 @@ class DatabaseService {
     this.localUsers = [];
     this.localZaloUsers = new Map();
     this.localQueryLogs = [];
+    this.localResponseCache = new Map(); // Bộ đệm phản hồi nhanh giới hạn 500 mục
 
     this._initLocalAdmin();
     this.initPool();
@@ -402,6 +404,134 @@ class DatabaseService {
   }
 
   // ============================================================
+  // QUẢN LÝ BỘ ĐỆM CÂU TRẢ LỜI (RESPONSE CACHE - TTL 48H)
+  // ============================================================
+
+  _setLocalResponseCache(cacheKey, item) {
+    if (this.localResponseCache.has(cacheKey)) {
+      this.localResponseCache.delete(cacheKey);
+    } else if (this.localResponseCache.size >= 500) {
+      const oldestKey = this.localResponseCache.keys().next().value;
+      this.localResponseCache.delete(oldestKey);
+    }
+    this.localResponseCache.set(cacheKey, item);
+  }
+
+  async getCachedResponse(cacheKey) {
+    if (!cacheKey) return null;
+
+    // 1. Kiểm tra trong In-Memory LRU Cache trước (0ms)
+    const localHit = this.localResponseCache.get(cacheKey);
+    if (localHit) {
+      if (localHit.expiresAt > Date.now()) {
+        localHit.hit_count = (localHit.hit_count || 1) + 1;
+        this.localResponseCache.delete(cacheKey);
+        this.localResponseCache.set(cacheKey, localHit);
+        return localHit;
+      }
+      this.localResponseCache.delete(cacheKey);
+    }
+
+    // 2. Nếu chưa có trong RAM, kiểm tra bảng response_cache trong PostgreSQL
+    const isOk = await this.checkConnection();
+    if (isOk) {
+      try {
+        const res = await this.pool.query(
+          'SELECT * FROM response_cache WHERE cache_key = $1 AND expires_at > NOW()',
+          [cacheKey]
+        );
+        if (res.rows.length > 0) {
+          const row = res.rows[0];
+          this.pool.query(
+            'UPDATE response_cache SET hit_count = hit_count + 1 WHERE cache_key = $1',
+            [cacheKey]
+          ).catch(() => {});
+
+          const cachedItem = {
+            cache_key: row.cache_key,
+            original_query: row.original_query,
+            intent: row.intent,
+            retrieved_doc_codes: row.retrieved_doc_codes || [],
+            response_text: row.response_text,
+            hit_count: (row.hit_count || 1) + 1,
+            created_at: row.created_at,
+            expires_at: row.expires_at,
+            expiresAt: new Date(row.expires_at).getTime(),
+          };
+
+          this._setLocalResponseCache(cacheKey, cachedItem);
+          return cachedItem;
+        }
+      } catch (err) {
+        console.warn('[Postgres] Lỗi getCachedResponse:', err.message);
+      }
+    }
+
+    return null;
+  }
+
+  async setCachedResponse({ cacheKey, originalQuery, intent, retrievedDocs = [], responseText, ttlHours = 48 }) {
+    if (!cacheKey || !responseText) return;
+
+    // Chỉ lưu cache khi câu trả lời hợp lệ
+    const isInvalid = (
+      responseText.includes('Lưu ý: Hệ thống đang hoạt động ở chế độ dự phòng') ||
+      responseText.includes('Hiện tại các API Key cấu hình cho Gemini đều tạm thời bị giới hạn') ||
+      responseText.includes('Lỗi hệ thống khi tạo câu trả lời')
+    );
+    if (isInvalid) return;
+
+    const expiresDate = new Date(Date.now() + ttlHours * 3600 * 1000);
+    const item = {
+      cache_key: cacheKey,
+      original_query: originalQuery,
+      intent,
+      retrieved_doc_codes: retrievedDocs,
+      response_text: responseText,
+      hit_count: 1,
+      created_at: new Date(),
+      expires_at: expiresDate,
+      expiresAt: expiresDate.getTime(),
+    };
+
+    // 1. Lưu vào In-Memory LRU Cache
+    this._setLocalResponseCache(cacheKey, item);
+
+    // 2. Lưu vào PostgreSQL response_cache
+    const isOk = await this.checkConnection();
+    if (isOk) {
+      try {
+        await this.pool.query(
+          `INSERT INTO response_cache (cache_key, original_query, intent, retrieved_doc_codes, response_text, hit_count, created_at, expires_at)
+           VALUES ($1, $2, $3, $4, $5, 1, NOW(), $6)
+           ON CONFLICT (cache_key) DO UPDATE
+           SET original_query = EXCLUDED.original_query,
+               intent = EXCLUDED.intent,
+               retrieved_doc_codes = EXCLUDED.retrieved_doc_codes,
+               response_text = EXCLUDED.response_text,
+               expires_at = EXCLUDED.expires_at`,
+          [cacheKey, originalQuery, intent, retrievedDocs, responseText, expiresDate]
+        );
+      } catch (err) {
+        console.warn('[Postgres] Lỗi setCachedResponse:', err.message);
+      }
+    }
+  }
+
+  async clearResponseCache() {
+    this.localResponseCache.clear();
+    const isOk = await this.checkConnection();
+    if (isOk) {
+      try {
+        await this.pool.query('DELETE FROM response_cache');
+        console.log('🧹 [Postgres] Đã xóa sạch bộ đệm response_cache.');
+      } catch (err) {
+        console.warn('[Postgres] Lỗi clearResponseCache:', err.message);
+      }
+    }
+  }
+
+  // ============================================================
   // QUẢN LÝ VĂN BẢN (DOCUMENTS & ARTICLES)
   // ============================================================
 
@@ -486,7 +616,8 @@ class DatabaseService {
       await client.query('DELETE FROM articles WHERE document_id = $1', [docId]);
 
       for (const art of articles) {
-        const fullText = `${documentCode} ${documentName} - Điều ${art.articleNumber || ''}: ${art.title || ''}. ${art.content || ''}`;
+        const descPart = description ? ` ${description}` : '';
+        const fullText = `${documentCode} ${documentName}${descPart} - Điều ${art.articleNumber || ''}: ${art.title || ''}. ${art.content || ''}`;
         await client.query(
           `INSERT INTO articles (document_id, article_number, title, content, full_text)
            VALUES ($1, $2, $3, $4, $5)`,
@@ -495,6 +626,7 @@ class DatabaseService {
       }
 
       await client.query('COMMIT');
+      await this.clearResponseCache();
       return docRes.rows[0];
     } catch (err) {
       await client.query('ROLLBACK');
@@ -527,7 +659,8 @@ class DatabaseService {
       if (Array.isArray(articles)) {
         await client.query('DELETE FROM articles WHERE document_id = $1', [id]);
         for (const art of articles) {
-          const fullText = `${documentCode} ${documentName} - Điều ${art.articleNumber || ''}: ${art.title || ''}. ${art.content || ''}`;
+          const descPart = description ? ` ${description}` : '';
+          const fullText = `${documentCode} ${documentName}${descPart} - Điều ${art.articleNumber || ''}: ${art.title || ''}. ${art.content || ''}`;
           await client.query(
             `INSERT INTO articles (document_id, article_number, title, content, full_text)
              VALUES ($1, $2, $3, $4, $5)`,
@@ -537,6 +670,7 @@ class DatabaseService {
       }
 
       await client.query('COMMIT');
+      await this.clearResponseCache();
       return docRes.rows[0];
     } catch (err) {
       await client.query('ROLLBACK');
@@ -551,6 +685,7 @@ class DatabaseService {
     if (!isOk) throw new Error('Chưa kết nối được tới PostgreSQL');
 
     const res = await this.pool.query('DELETE FROM documents WHERE id = $1 RETURNING *', [id]);
+    await this.clearResponseCache();
     return res.rows[0] || null;
   }
 
@@ -569,18 +704,8 @@ class DatabaseService {
       if (!cleanWords.length) return [];
       const tsQueryStr = cleanWords.join(' | ');
 
-      // Tìm số hiệu văn bản trong câu hỏi (chỉ lấy số sau loại văn bản hoặc có gạch nối ký hiệu)
-      const queryWithoutDates = queryStr.replace(/\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b/g, ' ');
-      const docNumRegex = /(?:quy\s*[đd][iị]nh|quy[eế]t\s*[đd][iị]nh|h[uư][oơ]ng\s*d[aẫ]n|ch[iỉ]\s*th[iị]|th[oô]ng\s*t[uư]|k[eế]t\s*lu[aậ]n|ngh[iị]\s*quy[eế]t|lu[aậ]t|q[đd]|h[dđ]|ct|tt|kl|nq)\s*(?:s[oố]\s*)?(\d{1,4})\b|\b(\d{1,4})(?=[-\/](?:q[đd]|h[dđ]|ct|tt|kl|nq|tw|vptw|btctw|bnv|qh))/gi;
-      const docNumbers = [];
-      let m;
-      while ((m = docNumRegex.exec(queryWithoutDates)) !== null) {
-        const num = m[1] || m[2];
-        if (num && !docNumbers.includes(num)) {
-          const nInt = parseInt(num, 10);
-          if (!(nInt > 1900 && nInt < 2100)) docNumbers.push(num);
-        }
-      }
+      // Tìm số hiệu văn bản trong câu hỏi bằng hàm chuẩn ngữ pháp dùng chung
+      const docNumbers = extractDocNumbers(queryStr);
 
       let numberClause = '0.0';
       const params = [tsQueryStr, `%${queryStr.trim()}%`];
@@ -655,10 +780,13 @@ class DatabaseService {
         finalRows = finalRows.slice(0, topK);
       }
 
-      return finalRows.map(row => ({
-        ...row,
-        fullText: `${row.documentCode} ${row.documentName} - Điều ${row.articleNumber}: ${row.title}. ${row.content}`,
-      }));
+      return finalRows.map(row => {
+        const descPart = row.description ? ` ${row.description}` : '';
+        return {
+          ...row,
+          fullText: `${row.documentCode} ${row.documentName}${descPart} - Điều ${row.articleNumber}: ${row.title}. ${row.content}`,
+        };
+      });
     } catch (err) {
       console.warn('[Postgres] Lỗi searchArticles:', err.message);
       return null;
@@ -695,6 +823,7 @@ class DatabaseService {
       await this.createDocument(doc);
     }
 
+    await this.clearResponseCache();
     console.log(`✅ [Postgres] Đã đồng bộ ${Object.keys(docsMap).length} văn bản vào PostgreSQL.`);
     return true;
   }

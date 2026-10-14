@@ -6,6 +6,7 @@
  */
 
 const config = require('../config');
+const { extractDocNumbers } = require('../rag/abbreviations');
 const {
   buildIntentRoutingQuestion,
   buildPassageRelevanceQuestion,
@@ -325,8 +326,7 @@ class JevService {
     const normP = this._normalizeText(passage);
 
     // 1. Kiểm tra nếu câu hỏi có chứa số hiệu văn bản và passage thuộc đúng văn bản có số hiệu đó
-    const queryWithoutDates = query.replace(/\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b/g, ' ');
-    const docNumbers = queryWithoutDates.match(/\b\d{1,3}\b/g) || [];
+    const docNumbers = extractDocNumbers(query);
 
     for (const num of docNumbers) {
       if (parseInt(num, 10) > 1900 && parseInt(num, 10) < 2100) continue;

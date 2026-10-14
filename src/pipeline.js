@@ -6,9 +6,10 @@
 const jev = require('./jev');
 const rag = require('./rag');
 const gemini = require('./gemini');
+const db = require('./db');
 const config = require('./config');
 
-const { expandAbbreviations } = require('./rag/abbreviations');
+const { expandAbbreviations, buildCacheKey } = require('./rag/abbreviations');
 
 // Bảng ánh xạ tự động mở rộng truy vấn từ văn bản hết hiệu lực sang văn bản hiện hành (Legacy Replacement Map)
 const LEGACY_REPLACEMENT_MAP = [
@@ -33,10 +34,11 @@ function expandLegacyQuery(queryText) {
 }
 
 class PipelineResult {
-  constructor(answer, intent, retrievedDocs = []) {
+  constructor(answer, intent, retrievedDocs = [], fromCache = false) {
     this.answer = answer;
     this.intent = intent;
     this.retrievedDocs = retrievedDocs;
+    this.fromCache = fromCache;
   }
 
   toString() {
@@ -69,6 +71,7 @@ class PipelineOrchestrator {
     this.rag = rag;
     this.jev = jev;
     this.gemini = gemini;
+    this.db = db;
   }
 
   /**
@@ -79,7 +82,13 @@ class PipelineOrchestrator {
   }
 
   /**
-   * Xử lý một tin nhắn từ người dùng
+   * Xử lý một tin nhắn từ người dùng theo kiến trúc tối ưu 5 bước:
+   * Bước 0 (0ms): Kiểm tra lệnh / và chuỗi rác/chuỗi rỗng
+   * Bước 1 (0ms): Bung từ viết tắt nội bộ bằng expandAbbreviations
+   * Bước 2 (0ms): Phán đoán intent với Jev (chào hỏi / ngoài phạm vi trả về ngay)
+   * Bước 3 (0-5ms): Tra cứu Response Cache (hit trả về ngay < 10ms, tốn 0 token)
+   * Bước 4: Truy xuất RAG Lượt 1 + Lazy Rewriting nếu hụt tài liệu
+   * Bước 5: Lọc Jev + Sinh câu trả lời Gemini + Guardrail + Lưu Response Cache
    * @param {object} param0
    * @returns {Promise<PipelineResult>} Kết quả câu trả lời kèm metadata
    */
@@ -89,13 +98,13 @@ class PipelineOrchestrator {
       return new PipelineResult('Vui lòng nhập câu hỏi hoặc nội dung quy định cần tra cứu.', 'empty', []);
     }
 
-    // Xử lý các lệnh nhanh
+    // Bước 0. Xử lý các lệnh nhanh
     if (rawQuery.startsWith('/')) {
       const cmdAnswer = await this._handleCommand(rawQuery);
       return new PipelineResult(cmdAnswer, 'command', []);
     }
 
-    // 0. CHỐT CHẶN CHUỖI RÁC / KÝ TỰ ĐẶC BIỆT (Early return: 0ms, 0đ token)
+    // Bước 0. CHỐT CHẶN CHUỖI RÁC / KÝ TỰ ĐẶC BIỆT (Early return: 0ms, 0đ token)
     if (rawQuery.length < 3 || /^[\d\s\W_]+$/i.test(rawQuery)) {
       const invalidText = (
         `Chào ${senderName},\n\n` +
@@ -105,8 +114,11 @@ class PipelineOrchestrator {
       return new PipelineResult(invalidText, 'invalid_or_empty', []);
     }
 
-    // 1. TẦNG JEV: Phân loại ý định & Chặn sớm chào hỏi / ngoài phạm vi (0ms, 0đ token)
-    const route = await this.jev.routeIntent(rawQuery);
+    // Bước 1. BUNG TỪ VIẾT TẮT NỘI BỘ (0ms, 0đ token)
+    const expandedQuery = expandAbbreviations(rawQuery);
+
+    // Bước 2. TẦNG JEV: Phân loại ý định & Chặn sớm chào hỏi / ngoài phạm vi (0ms, 0đ token)
+    const route = await this.jev.routeIntent(expandedQuery);
     console.log(`[Pipeline] Ý định nhận diện: ${route.intent} (độ tin cậy: ${Math.round(route.confidence * 100)}%)`);
 
     if (route.intent === 'invalid_or_empty') {
@@ -134,16 +146,30 @@ class PipelineOrchestrator {
       return new PipelineResult(outText, route.intent, []);
     }
 
-    // 2. TẦNG RAG LƯỢT 1 (Lazy Rewriting): Mở rộng từ viết tắt nội bộ và văn bản cũ trực tiếp trong RAM (0ms, 0 token)
-    const expandedLocal = expandAbbreviations(rawQuery);
-    const searchQuery = expandLegacyQuery(expandedLocal);
+    // Bước 3. TRA CỨU RESPONSE CACHE (0 - 5ms, 0đ token)
+    const cacheKey = buildCacheKey(expandedQuery);
+    const cached = await this.db.getCachedResponse(cacheKey);
+    if (cached && cached.response_text) {
+      console.log(`[Pipeline] Cache hit cho key "${cacheKey}" (lượt truy cập thứ: ${cached.hit_count})`);
+      return new PipelineResult(cached.response_text, cached.intent || route.intent, cached.retrieved_doc_codes || [], true);
+    }
+
+    // Bước 4. TẦNG RAG LƯỢT 1 & LAZY REWRITING (Fallback-on-Miss)
+    const searchQuery = expandLegacyQuery(expandedQuery);
     console.log(`[Pipeline] Đang truy xuất tài liệu từ RAG lượt 1: "${searchQuery}"`);
     let candidatePassages = await this.rag.search(searchQuery, { topK: config.rag.topK });
-    let effectiveQuery = expandedLocal;
+    let effectiveQuery = expandedQuery;
 
-    // 3. NẾU RAG LƯỢT 1 HỤT TÀI LIỆU: Mới kích hoạt Smart Query Rewriter gọi Gemini viết lại (Chỉ 5% trường hợp)
-    if (!candidatePassages || candidatePassages.length === 0) {
-      console.log(`[Pipeline] RAG lượt 1 không tìm thấy tài liệu, đang kích hoạt Smart Query Rewriter...`);
+    // Điều kiện Lazy Rewriting:
+    // 1. Câu hỏi tiếng Việt không dấu VÀ kết quả RAG lượt 1 có điểm khớp thấp, HOẶC
+    // 2. Kết quả RAG lượt 1 trả về rỗng (candidatePassages.length === 0) do người dùng gõ sai chính tả nặng
+    const hasVietnameseAccent = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(rawQuery);
+    const firstScore = Number(candidatePassages?.[0]?.rank ?? candidatePassages?.[0]?.score ?? 0);
+    const isLowScoreMatch = !candidatePassages || candidatePassages.length === 0 || firstScore < 5.0;
+    const isMiss = !candidatePassages || candidatePassages.length === 0;
+
+    if ((!hasVietnameseAccent && isLowScoreMatch) || isMiss) {
+      console.log(`[Pipeline] Kích hoạt Lazy Query Rewriting (tiếng Việt không dấu hoặc hụt tài liệu)...`);
       const rewritten = await this.gemini.rewriteQuery(rawQuery);
       if (rewritten && rewritten !== rawQuery) {
         effectiveQuery = rewritten;
@@ -165,7 +191,7 @@ class PipelineOrchestrator {
       return new PipelineResult(notFoundText, route.intent, []);
     }
 
-    // 4. TẦNG JEV: Lọc và Rerank các đoạn trích (System One Relevance Filter)
+    // Bước 5. TẦNG JEV: Lọc và Rerank các đoạn trích (System One Relevance Filter)
     console.log(`[Pipeline] Jev đang lọc ${candidatePassages.length} đoạn trích liên quan...`);
     const filteredPassages = await this.jev.filterRelevantPassages(effectiveQuery, candidatePassages);
     const finalPassages = filteredPassages.length > 0 ? filteredPassages : candidatePassages.slice(0, 2);
@@ -175,21 +201,42 @@ class PipelineOrchestrator {
     console.log(`[Pipeline] Giữ lại ${finalPassages.length} đoạn trích đạt chuẩn.`);
     const context = this.rag.formatContext(finalPassages);
 
-    // 5. TẦNG GEMINI: Tổng hợp câu trả lời chuẩn hành chính Đảng (Chỉ tốn đúng 1 request Gemini)
+    // Bước 5. TẦNG GEMINI: Tổng hợp câu trả lời chuẩn hành chính Đảng
     console.log(`[Pipeline] Đang gửi context tới Gemini để sinh câu trả lời...`);
     let answer = await this.gemini.generateAnswer(effectiveQuery, context);
 
-    // 6. TẦNG JEV GUARDRAIL: Kiểm tra tính trung thực (Faithfulness Check)
+    // Bước 5. TẦNG JEV GUARDRAIL: Kiểm tra tính trung thực (Faithfulness Check)
+    let isFaithful = true;
     if (config.jev.enableGuardrails) {
       console.log(`[Pipeline] Jev đang kiểm tra tính xác thực (Guardrail)...`);
       const check = await this.jev.checkFaithfulness(context, answer);
+      isFaithful = check.isFaithful;
       if (!check.isFaithful) {
         console.warn(`[Pipeline] Cảnh báo: Câu trả lời có nguy cơ không khớp tài liệu trích dẫn!`);
         answer += `\n\nLưu ý: Nội dung trên được tổng hợp tự động; đồng chí vui lòng đối chiếu lại văn bản gốc trước khi áp dụng chính thức.`;
       }
     }
 
-    return new PipelineResult(answer, route.intent, docCodes);
+    // Bước 5. LƯU RESPONSE CACHE (TTL 48 giờ) nếu câu trả lời hợp lệ
+    const isNetworkOrFallback = (
+      answer.includes('Lưu ý: Hệ thống đang hoạt động ở chế độ dự phòng') ||
+      answer.includes('Hiện tại các API Key cấu hình cho Gemini đều tạm thời bị giới hạn') ||
+      answer.includes('Lỗi hệ thống khi tạo câu trả lời')
+    );
+
+    if (isFaithful && !isNetworkOrFallback) {
+      await this.db.setCachedResponse({
+        cacheKey,
+        originalQuery: rawQuery,
+        intent: route.intent,
+        retrievedDocs: docCodes,
+        responseText: answer,
+        ttlHours: 48,
+      });
+      console.log(`[Pipeline] Đã lưu câu trả lời vào Response Cache với key: "${cacheKey}"`);
+    }
+
+    return new PipelineResult(answer, route.intent, docCodes, false);
   }
 
   async _handleCommand(command) {

@@ -48,7 +48,7 @@ class DocumentLoader {
             articleNumber: art.articleNumber,
             title: art.title || '',
             content: art.content,
-            fullText: `${doc.documentCode || ''} ${doc.documentName || ''} - Điều ${art.articleNumber}: ${art.title || ''}. ${art.content}`,
+            fullText: `${doc.documentCode || ''} ${doc.documentName || ''}${doc.description ? ` ${doc.description}` : ''} - Điều ${art.articleNumber}: ${art.title || ''}. ${art.content}`,
           });
         }
       } catch (err) {
