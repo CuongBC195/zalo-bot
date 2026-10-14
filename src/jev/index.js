@@ -187,7 +187,13 @@ class JevService {
       // Văn thư & Lưu trữ Đảng và Nhà nước (HD 05, HD 06, TT 02/2019/TT-BNV)
       'văn thư', 'lưu trữ', 'nộp lưu', 'hồ sơ', 'danh mục hồ sơ', 'tiêu hủy', 'hủy tài liệu',
       'thời hạn bảo quản', '05-hd', '06-hd', 'tt-bnv', 'bộ nội vụ', '02/2019', 'lưu trữ điện tử',
-      'pdf/a', 'siêu dữ liệu', 'metadata', 'bảo quản tài liệu'
+      'pdf/a', 'siêu dữ liệu', 'metadata', 'bảo quản tài liệu',
+      // Nghiệp vụ Đảng ủy cơ sở cấp xã (299-QĐ, 342-QĐ, 12-HD, 124-QĐ)
+      'đảng ủy xã', 'đảng bộ xã', 'văn phòng đảng ủy', 'chuyên viên', 'thường trực đảng ủy',
+      'đảng phí', 'thu đảng phí', 'đóng đảng phí', 'mức đóng đảng phí', 'trích giữ', '342-qđ', '03-hd',
+      'sinh hoạt chi bộ', '12-hd', 'btctw', 'tiêu chí sinh hoạt', 'sinh hoạt chuyên đề',
+      'đánh giá xếp loại', 'kiểm điểm cuối năm', '124-qđ', 'xếp loại chất lượng', 'hoàn thành xuất sắc',
+      '299-qđ', 'tham mưu cấp ủy', 'lịch công tác', 'tiếp công dân'
     ];
 
     const hasPartyKw = partyKeywords.some(kw => text.includes(kw));
