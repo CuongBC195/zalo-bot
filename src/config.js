@@ -16,7 +16,7 @@ const config = {
   // Gemini (System Two - Generation)
   gemini: {
     apiKey: process.env.GEMINI_API_KEY || '',
-    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    model: process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite',
     baseUrl: process.env.GEMINI_API_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta',
     maxOutputTokens: 2048,
     temperature: 0.2, // Nhiệt độ thấp để đảm bảo câu trả lời chuẩn xác, không suy diễn
