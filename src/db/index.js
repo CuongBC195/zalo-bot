@@ -41,14 +41,21 @@ class DatabaseService {
 
   initPool() {
     const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/zalo_dang_bot';
+    const isRemote = !connectionString.includes('localhost') && !connectionString.includes('127.0.0.1');
     
     try {
-      this.pool = new Pool({
+      const poolConfig = {
         connectionString,
-        connectionTimeoutMillis: 3000,
+        connectionTimeoutMillis: 5000,
         idleTimeoutMillis: 10000,
         max: 10,
-      });
+      };
+
+      if (isRemote || connectionString.includes('sslmode=require') || connectionString.includes('supabase')) {
+        poolConfig.ssl = { rejectUnauthorized: false };
+      }
+
+      this.pool = new Pool(poolConfig);
 
       this.pool.on('error', (err) => {
         console.warn('[Postgres] Cảnh báo kết nối pool:', err.message);
