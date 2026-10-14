@@ -1,47 +1,57 @@
 {
-  "documentId": "05-HD/VPTW-2012",
-  "documentCode": "05-HD/VPTW (2012)",
-  "documentName": "Hướng dẫn về công tác văn thư trong các cơ quan, tổ chức Đảng",
-  "issuer": "Văn phòng Trung ương Đảng",
-  "category": "van_thu_luu_tru",
-  "issueDate": "2012-11-23",
-  "status": "Còn hiệu lực",
-  "description": "Hướng dẫn của Văn phòng Trung ương Đảng về nghiệp vụ công tác văn thư, quản lý văn bản đi, văn bản đến, quản lý con dấu và lập hồ sơ hiện hành trong cơ quan Đảng.",
+  "documentId": "05-HD/VPTW-2026",
+  "documentCode": "05-HD/VPTW",
+  "documentName": "Hướng dẫn về thể thức và kỹ thuật trình bày văn bản của Đảng",
+  "issuer": "Văn phòng Ban Chấp hành Trung ương",
+  "category": "the_thuc",
+  "issueDate": "2026-05-27",
+  "status": "Còn hiệu lực (Hiện hành)",
+  "description": "Hướng dẫn số 05-HD/VPTW ngày 27/05/2026 của Văn phòng Ban Chấp hành Trung ương Đảng thực hiện Quy định số 399-QĐ/TW ngày 09/01/2026 của Ban Bí thư về thể loại, thẩm quyền ban hành và thể thức văn bản của Đảng; chính thức có hiệu lực từ ngày ký và thay thế Hướng dẫn số 36-HD/VPTW năm 2018.",
   "articles": [
     {
       "articleNumber": "1",
-      "title": "Phạm vi điều chỉnh và nguyên tắc công tác văn thư trong cơ quan Đảng",
-      "content": "1. Hướng dẫn này quy định về các khâu nghiệp vụ công tác văn thư trong các cơ quan, tổ chức đảng, bao gồm: Quản lý văn bản đến, quản lý văn bản đi, quản lý và sử dụng con dấu, thiết bị lưu khóa bí mật, chữ ký số và lập hồ sơ hiện hành.\n2. Công tác văn thư của cơ quan đảng phải bảo đảm các nguyên tắc: Kịp thời, chính xác, bảo mật, an toàn tuyệt đối và đúng quy trình, quy định của Đảng và Nhà nước."
+      "title": "Phạm vi điều chỉnh và đối tượng áp dụng",
+      "content": "1. Phạm vi điều chỉnh:\n- Thể thức và kỹ thuật trình bày văn bản giấy và văn bản điện tử của Đảng.\n- Văn bản chứa bí mật nhà nước thực hiện theo Hướng dẫn này và các quy định của pháp luật về bảo vệ bí mật nhà nước.\n- Văn bản chuyên ngành, văn bản khi in thành sách và các ấn phẩm khác không thuộc phạm vi điều chỉnh của Hướng dẫn này.\n2. Đối tượng áp dụng:\n- Các cấp uỷ, tổ chức, cơ quan đảng từ Trung ương đến chi bộ.\n- Các tổ chức, cơ quan hoạt động theo Luật Doanh nghiệp không thuộc đối tượng áp dụng Hướng dẫn này."
     },
     {
       "articleNumber": "2",
-      "title": "Quản lý văn bản đến trong cơ quan Đảng",
-      "content": "1. Tiếp nhận và đăng ký văn bản đến: Tất cả văn bản, tài liệu, đơn thư gửi đến cơ quan đảng (trừ thư riêng) đều phải tập trung qua bộ phận văn thư để tiếp nhận, kiểm tra bì, đóng dấu 'ĐẾN', ghi số đến và ngày đến vào sổ đăng ký văn bản đến hoặc phần mềm quản lý văn bản.\n2. Trình và chuyển giao văn bản đến: Văn thư có trách nhiệm trình người có thẩm quyền (Thường trực cấp ủy hoặc Chánh Văn phòng) phân phối văn bản ngay trong ngày làm việc; đối với văn bản 'HỎA TỐC', 'THƯỢNG KHẨN' phải chuyển giao ngay lập tức.\n3. Giải quyết và theo dõi: Đơn vị hoặc cá nhân được giao thụ lý văn bản có trách nhiệm giải quyết đúng thời hạn, không được để tồn đọng, thất lạc."
+      "title": "Yêu cầu chung và nguyên tắc thực hiện",
+      "content": "Văn bản chính thức của cấp uỷ, tổ chức, cơ quan đảng phải thống nhất về thể thức và kỹ thuật trình bày theo quy định tại Hướng dẫn này để bảo đảm tính pháp lý, tính trang trọng và tính đồng bộ trong toàn hệ thống tổ chức của Đảng."
     },
     {
       "articleNumber": "3",
-      "title": "Quản lý văn bản đi trong cơ quan Đảng",
-      "content": "1. Kiểm tra thể thức trước khi ban hành: Văn thư cơ quan phải kiểm tra kỹ thể thức, kỹ thuật trình bày, chữ ký của người có thẩm quyền trước khi lấy số và đóng dấu phát hành.\n2. Cấp số và nhân bản: Văn bản đi phải được cấp số liên tục theo từng loại văn bản trong một năm (bắt đầu từ số 01 vào ngày 01/01 và kết thúc vào ngày 31/12). Nhân bản đúng số lượng bản theo nơi nhận.\n3. Đóng dấu và phát hành: Đóng dấu rõ ràng, đúng vị trí quy định; gửi văn bản đi đúng địa chỉ nơi nhận qua đường bưu chính bảo mật, giao liên hoặc phát hành qua mạng mạng thông tin diện rộng của Đảng (Lotus Notes / Trục liên thông văn bản quốc gia).\n4. Lưu văn bản đi: Mỗi văn bản đi phải lưu ít nhất 02 bản chính (01 bản lưu tại bộ phận văn thư cơ quan, 01 bản lưu trong hồ sơ công việc của người soạn thảo)."
+      "title": "Trách nhiệm của cá nhân trong công tác thể thức văn bản",
+      "content": "1. Người ký văn bản chịu trách nhiệm về thể thức và kỹ thuật trình bày văn bản.\n2. Chánh văn phòng hoặc người được giao phụ trách công tác văn phòng chịu trách nhiệm thẩm định thể thức và kỹ thuật trình bày văn bản.\n3. Người soạn thảo văn bản chịu trách nhiệm thực hiện đúng hướng dẫn về thể thức và kỹ thuật trình bày văn bản.\n4. Người được giao nhiệm vụ văn thư cơ quan chịu trách nhiệm kiểm tra thể thức và kỹ thuật trình bày văn bản trước khi trình ký, phát hành."
     },
     {
       "articleNumber": "4",
-      "title": "Quản lý và sử dụng con dấu, thiết bị lưu khóa bí mật",
-      "content": "1. Con dấu của cơ quan, tổ chức đảng phải được bảo quản an toàn tuyệt đối tại phòng văn thư trong két sắt có khóa chắc chắn. Cán bộ văn thư được giao giữ con dấu chịu trách nhiệm trước người đứng đầu cơ quan về việc quản lý con dấu.\n2. Sử dụng con dấu: Chỉ cán bộ văn thư mới được trực tiếp đóng dấu vào văn bản sau khi đã có chữ ký chính thức của người có thẩm quyền. Tuyệt đối không giao con dấu cho người khác hoặc mang con dấu ra khỏi cơ quan khi chưa được lãnh đạo cho phép bằng văn bản.\n3. Thiết bị lưu khóa bí mật và chữ ký số: Quản lý như tài liệu mật, chỉ người được phân công mới được nắm giữ mật khẩu và thực hiện ký số văn bản."
+      "title": "Chín thành phần thể thức bắt buộc của văn bản Đảng",
+      "content": "Văn bản của Đảng bắt buộc phải có đủ 09 thành phần thể thức chính thức sau:\n1. Tiêu đề: ĐẢNG CỘNG SẢN VIỆT NAM (trình bày ở trang đầu, góc phải, dòng đầu, phía dưới có đường kẻ ngang nét liền dài bằng độ dài tiêu đề).\n2. Tên cơ quan ban hành văn bản (xác định tác giả văn bản, ghi đúng theo quy định của Điều lệ Đảng).\n3. Số và ký hiệu văn bản (số thứ tự, tên loại viết tắt và cơ quan ban hành, ví dụ: 05-HD/VPTW, 399-QĐ/TW, 45-CT/TW).\n4. Địa danh và ngày, tháng, năm ban hành văn bản.\n5. Tên loại văn bản và trích yếu nội dung văn bản (đối với công văn không ghi tên loại văn bản).\n6. Nội dung văn bản.\n7. Quyền hạn, chức vụ, chữ ký và họ tên của người có thẩm quyền ký văn bản.\n8. Con dấu của cơ quan ban hành (đối với văn bản giấy) hoặc chữ ký số của cơ quan, tổ chức (đối với văn bản điện tử).\n9. Nơi nhận văn bản."
     },
     {
       "articleNumber": "5",
-      "title": "Ứng dụng công nghệ thông tin và quản lý văn bản điện tử",
-      "content": "1. Các cơ quan đảng đẩy mạnh xử lý văn bản trên môi trường mạng thông tin diện rộng của Đảng; từng bước thay thế văn bản giấy bằng văn bản điện tử đối với các văn bản không chứa bí mật nhà nước.\n2. Văn bản điện tử phát hành qua mạng phải có chữ ký số hợp lệ của người có thẩm quyền và chữ ký số của cơ quan, tổ chức ban hành; có giá trị pháp lý tương đương văn bản giấy."
+      "title": "Các thành phần thể thức bổ sung của văn bản",
+      "content": "Tùy theo tính chất văn bản, người ký có thể quyết định bổ sung các thành phần thể thức sau:\n1. Phụ lục văn bản kèm theo.\n2. Dấu chỉ mức độ mật (TUYỆT MẬT, TỐI MẬT, MẬT) và các chỉ dẫn theo quy định bảo vệ bí mật nhà nước.\n3. Dấu chỉ mức độ khẩn (HOẢ TỐC, THƯỢNG KHẨN, KHẨN).\n4. Các chỉ dẫn về phạm vi lưu hành: LƯU HÀNH NỘI BỘ, THU HỒI, KHÔNG PHỔ BIẾN...\n5. Ký hiệu người soạn thảo và số lượng bản phát hành.\n6. Địa chỉ cơ quan ban hành, số điện thoại, số fax, trang thông tin điện tử."
     },
     {
       "articleNumber": "6",
-      "title": "Lập hồ sơ công việc hiện hành của cán bộ, công chức",
-      "content": "1. Trách nhiệm lập hồ sơ: Cán bộ, công chức được giao chủ trì giải quyết công việc có trách nhiệm lập hồ sơ về công việc đó từ khi bắt đầu tiếp nhận tài liệu cho đến khi công việc hoàn thành.\n2. Yêu cầu lập hồ sơ:\n- Thu thập đầy đủ các văn bản, giấy tờ phát sinh liên quan đến sự việc.\n- Sắp xếp tài liệu trong hồ sơ theo trình tự thời gian hoặc diễn biến giải quyết công việc.\n- Đặt tiêu đề hồ sơ ngắn gọn, rõ ràng, phản ánh chính xác nội dung sự việc.\n3. Kết thúc hồ sơ: Khi công việc kết thúc, người lập hồ sơ kiểm tra lại thành phần tài liệu, loại bỏ bản trùng thừa, bản nháp không cần thiết, đánh số tờ và quản lý tại đơn vị cho đến khi nộp lưu vào Lưu trữ cơ quan."
+      "title": "Thẩm quyền và cách thức ghi quyền hạn ký văn bản Đảng (T/M, K/T, T/L, T/U)",
+      "content": "1. Ký thay mặt (T/M):\n- Tổng Bí thư ký T/M Ban Chấp hành Trung ương Đảng đối với các nghị quyết, quyết định, quy định của Ban Chấp hành Trung ương.\n- Thường trực Ban Bí thư ký T/M Ban Bí thư.\n- Bí thư cấp ủy ký T/M ban chấp hành, ban thường vụ cấp ủy các cấp.\n- Phó Bí thư ký T/M cấp ủy khi được Bí thư phân công hoặc thay mặt giải quyết công việc chung của cấp ủy.\n2. Ký thay (K/T):\n- Phó Bí thư ký thay (K/T) Bí thư khi ký văn bản thuộc lĩnh vực phụ trách hoặc được Bí thư giao giải quyết.\n- Phó Trưởng ban ký K/T Trưởng ban; Phó Chánh Văn phòng ký K/T Chánh Văn phòng các cơ quan tham mưu, giúp việc cấp ủy.\n3. Ký thừa lệnh (T/L):\n- Chánh Văn phòng cấp ủy ký T/L ban thường vụ cấp ủy các văn bản hướng dẫn nghiệp vụ công tác đảng, thông báo kết luận cuộc họp, truyền đạt ý kiến chỉ đạo theo thẩm quyền.\n- Cấp phó của người đứng đầu cơ quan ký T/L theo phân công bằng văn bản của người đứng đầu.\n4. Ký thừa ủy quyền (T/U):\n- Chỉ áp dụng khi người đứng đầu cơ quan ủy quyền bằng văn bản cho cấp phó hoặc người đứng đầu cơ quan cấp dưới ký một số văn bản cụ thể trong phạm vi được giao."
     },
     {
       "articleNumber": "7",
-      "title": "Trách nhiệm của lãnh đạo cơ quan, Chánh văn phòng và cán bộ văn thư",
-      "content": "1. Người đứng đầu cơ quan đảng chịu trách nhiệm toàn diện về công tác văn thư, bảo mật tài liệu và an toàn con dấu của cơ quan.\n2. Chánh Văn phòng cấp ủy có trách nhiệm trực tiếp chỉ đạo, kiểm tra, hướng dẫn việc thực hiện công tác văn thư tại cơ quan và các tổ chức đảng trực thuộc.\n3. Cán bộ văn thư phải có phẩm chất chính trị tốt, trung thực, cẩn trọng, có chứng chỉ hoặc bằng cấp chuyên môn về văn thư - lưu trữ và thực hiện nghiêm các quy định về bảo vệ bí mật của Đảng và Nhà nước."
+      "title": "Quy chuẩn kỹ thuật chữ ký số trên văn bản điện tử của Đảng",
+      "content": "1. Định dạng văn bản điện tử: Văn bản điện tử của Đảng phải có định dạng .pdf (khuyến nghị chuẩn PDF/A), bảo đảm tính toàn vẹn thông tin lâu dài.\n2. Chữ ký số của cá nhân người có thẩm quyền: Hình ảnh chữ ký tay màu xanh, tệp định dạng .png nền trong suốt, đặt canh giữa chức vụ và họ tên người ký.\n3. Chữ ký số của cơ quan, tổ chức: Hình ảnh con dấu cơ quan màu đỏ, đúng kích thước thực tế, tệp .png nền trong suốt, trùm lên khoảng 1/3 chữ ký số cá nhân về phía bên trái.\n4. Văn bản số hóa (Scan): Độ phân giải tối thiểu 200 dpi, tỷ lệ 100%, ảnh màu và được gắn chứng thư số của cơ quan thực hiện số hóa."
+    },
+    {
+      "articleNumber": "8",
+      "title": "Quy chuẩn quản lý và đóng dấu cơ quan Đảng trên văn bản giấy",
+      "content": "1. Dấu đóng trên văn bản phải rõ ràng, ngay ngắn, đúng chiều, dùng mực dấu màu đỏ tươi theo quy định.\n2. Vị trí đóng dấu: Dấu trùm lên khoảng 1/3 chữ ký của người ký về phía bên trái.\n3. Đóng dấu giáp lai: Áp dụng với văn bản hoặc phụ lục có từ 02 trang trở lên (in 1 mặt) hoặc từ 03 trang trở lên (in 2 mặt), đóng vào mép phải trùm lên các tờ giấy (tối đa không quá 05 tờ/dấu).\n4. Đóng dấu treo: Đóng ở góc trên bên trái, trùm lên dòng tên cơ quan ban hành văn bản hoặc tên phụ lục.\n5. Nghiêm cấm: Đóng dấu khống chỉ (đóng dấu vào giấy trắng chưa có nội dung hoặc chữ ký); đóng dấu trước khi người có thẩm quyền ký."
+    },
+    {
+      "articleNumber": "9",
+      "title": "Hiệu lực thi hành và thay thế văn bản",
+      "content": "1. Hướng dẫn này có hiệu lực từ ngày ký (27/05/2026), thay thế Hướng dẫn số 36-HD/VPTW ngày 03/04/2018 của Văn phòng Ban Chấp hành Trung ương Đảng.\n2. Trường hợp các quy định, hướng dẫn được dẫn chiếu tại Hướng dẫn này có sửa đổi, bổ sung hoặc thay thế thì áp dụng theo các quy định, hướng dẫn mới.\n3. Các cấp ủy, tổ chức, cơ quan đảng có trách nhiệm tổ chức quán triệt và thực hiện nghiêm túc Hướng dẫn này."
     }
   ]
 }
