@@ -1,52 +1,37 @@
 {
-  "documentId": "06-HD/VPTW",
+  "documentId": "06-HD/VPTW-2026",
   "documentCode": "06-HD/VPTW",
-  "documentName": "Hướng dẫn về công tác lưu trữ, lập danh mục hồ sơ và nộp lưu, tiêu hủy tài liệu của cơ quan Đảng",
+  "documentName": "Hướng dẫn về việc lập hồ sơ và nộp hồ sơ, tài liệu vào lưu trữ hiện hành",
   "issuer": "Văn phòng Trung ương Đảng",
   "category": "van_thu_luu_tru",
-  "issueDate": "2012-11-23",
-  "status": "Còn hiệu lực",
-  "description": "Hướng dẫn của Văn phòng Trung ương Đảng quy định về xây dựng danh mục hồ sơ, nộp lưu hồ sơ vào lưu trữ cơ quan, xác định thời hạn bảo quản và quy trình tiêu hủy tài liệu hết giá trị.",
+  "issueDate": "2026-05-29",
+  "status": "Còn hiệu lực (Hiện hành)",
+  "description": "Hướng dẫn số 06-HD/VPTW ngày 29/05/2026 của Văn phòng Trung ương Đảng (do Phó Chánh Văn phòng Lê Khánh Toàn ký) căn cứ Luật Lưu trữ số 33/2024/QH15 và Quy định số 383-QĐ/TW ngày 19/11/2025 của Ban Bí thư; hướng dẫn chi tiết nghiệp vụ lập danh mục hồ sơ, lập hồ sơ công việc và nộp hồ sơ, tài liệu giấy và điện tử vào lưu trữ hiện hành.",
   "articles": [
     {
       "articleNumber": "1",
-      "title": "Phạm vi điều chỉnh và đối tượng áp dụng trong công tác lưu trữ Đảng",
-      "content": "1. Hướng dẫn này quy định về xây dựng danh mục hồ sơ; nộp lưu hồ sơ, tài liệu vào Lưu trữ cơ quan; xác định giá trị và thời hạn bảo quản tài liệu; tiêu huỷ tài liệu hết giá trị; quản lý, bảo vệ và khai thác sử dụng tài liệu lưu trữ trong các cơ quan, tổ chức đảng.\n2. Áp dụng đối với các cấp ủy đảng, cơ quan chuyên trách tham mưu, giúp việc của Đảng từ cấp huyện và tương đương trở lên."
+      "title": "Phạm vi điều chỉnh và đối tượng áp dụng",
+      "content": "1. Hướng dẫn này áp dụng đối với việc lập và nộp hồ sơ, tài liệu có giá trị (bao gồm cả tài liệu điện tử, tài liệu giấy và các vật mang tin khác) hình thành trong quá trình hoạt động của các cơ quan, tổ chức đảng, Mặt trận Tổ quốc Việt Nam, các tổ chức chính trị - xã hội và các hội quần chúng được Đảng, Nhà nước giao nhiệm vụ từ Trung ương đến cơ sở.\n2. Căn cứ pháp lý cốt lõi: Luật Lưu trữ số 33/2024/QH15 của Quốc hội và Quy định số 383-QĐ/TW ngày 19/11/2025 của Ban Bí thư về Phông Lưu trữ Đảng Cộng sản Việt Nam."
     },
     {
       "articleNumber": "2",
-      "title": "Xây dựng và ban hành Danh mục hồ sơ cơ quan",
-      "content": "1. Danh mục hồ sơ cơ quan là bảng kê hệ thống tên các hồ sơ dự kiến sẽ được lập trong năm công tác của cơ quan, tổ chức đảng.\n2. Trách nhiệm và thời điểm ban hành: Vào quý IV hàng năm, bộ phận lưu trữ chủ trì, phối hợp với các ban, phòng chuyên môn xây dựng 'Danh mục hồ sơ cơ quan' cho năm sau, trình Chánh Văn phòng cấp ủy xem xét, ký ban hành vào đầu tháng 01 hàng năm để áp dụng thống nhất trong toàn cơ quan.\n3. Cấu trúc Danh mục hồ sơ: Phải xác định rõ mã số hồ sơ, tên/tiêu đề hồ sơ, đơn vị hoặc người chủ trì lập hồ sơ và thời hạn bảo quản dự kiến (Vĩnh viễn hoặc Có thời hạn bao nhiêu năm)."
+      "title": "Xây dựng và ban hành Danh mục hồ sơ cơ quan hằng năm",
+      "content": "1. Danh mục hồ sơ là bảng kê hệ thống tên các hồ sơ dự kiến sẽ lập trong năm công tác của cơ quan, tổ chức đảng.\n2. Trách nhiệm xây dựng: Quý IV hằng năm, bộ phận văn thư - lưu trữ chủ trì, phối hợp với các ban, bộ phận chuyên môn xây dựng Danh mục hồ sơ cho năm sau, trình Chánh văn phòng (hoặc người phụ trách công tác văn phòng) ký ban hành vào đầu tháng 01 hằng năm.\n3. Tiêu chí: Xác định rõ mã số hồ sơ, tiêu đề hồ sơ, đơn vị/cá nhân chủ trì lập hồ sơ và thời hạn bảo quản dự kiến (Vĩnh viễn hoặc Có thời hạn theo Bảng thời hạn bảo quản)."
     },
     {
       "articleNumber": "3",
-      "title": "Tiêu chuẩn và thành phần hồ sơ nộp lưu vào Lưu trữ cơ quan",
-      "content": "Hồ sơ, tài liệu nộp lưu vào Lưu trữ cơ quan phải đạt các tiêu chuẩn sau:\n1. Hồ sơ phải được phân loại, chỉnh lý sơ bộ và sắp xếp văn bản theo đúng diễn biến thời gian hoặc theo trình tự giải quyết công việc.\n2. Phải loại bỏ hoàn toàn các bản nháp, bản sao thừa, bản photocopy không có giá trị, các văn bản của cơ quan khác gửi đến để biết mà không liên quan đến việc xử lý.\n3. Văn bản trong hồ sơ phải được đánh số tờ bằng bút chì vào góc trên bên phải; lập tờ mục lục văn bản ở đầu hồ sơ và tờ kết thúc hồ sơ có ghi rõ tổng số tờ và người lập.\n4. Hồ sơ nộp lưu phải kèm theo 'Mục lục hồ sơ, tài liệu nộp lưu' (lập thành 02 bản) và 'Biên bản giao nhận hồ sơ, tài liệu' (lập thành 02 bản, mỗi bên giữ 01 bản)."
+      "title": "Nghiệp vụ lập hồ sơ công việc hiện hành (hồ sơ giấy và hồ sơ điện tử)",
+      "content": "1. Đối với hồ sơ giấy: Thu thập đầy đủ văn bản theo diễn biến công việc; loại bỏ bản trùng thừa, bản nháp; đánh số tờ bằng bút chì vào góc phải; lập mục lục văn bản và tờ kết thúc hồ sơ.\n2. Đối với hồ sơ điện tử: Tạo lập trên Hệ thống quản lý tài liệu điện tử cơ quan Đảng; gắn đầy đủ siêu dữ liệu (Metadata) đầu vào theo chuẩn quy định; bảo đảm tính toàn vẹn, tính xác thực và chữ ký số của người tạo lập và cơ quan phát hành."
     },
     {
       "articleNumber": "4",
-      "title": "Thời hạn nộp lưu hồ sơ, tài liệu vào Lưu trữ cơ quan Đảng",
-      "content": "1. Các hồ sơ, tài liệu có giá trị bảo quản từ 05 năm trở lên đều phải nộp lưu vào Lưu trữ cơ quan.\n2. Thời hạn nộp lưu được quy định như sau:\n- Sau 01 năm kể từ năm công việc kết thúc đối với các hồ sơ, tài liệu hành chính thông thường.\n- Sau 03 tháng kể từ ngày quyết toán ngân sách nhà nước được cơ quan có thẩm quyền phê duyệt đối với hồ sơ, chứng từ, sổ sách kế toán, tài chính.\n- Sau 01 năm kể từ ngày đề tài, đề án nghiên cứu khoa học được nghiệm thu chính thức.\n3. Trường hợp đơn vị, cá nhân có nhu cầu giữ lại hồ sơ đã đến hạn nộp lưu để phục vụ công tác thì phải được sự đồng ý bằng văn bản của lãnh đạo cơ quan nhưng không được giữ quá 02 năm."
+      "title": "Thời hạn và thủ tục giao nộp hồ sơ vào Lưu trữ hiện hành",
+      "content": "1. Thời hạn giao nộp:\n- Sau 01 năm kể từ năm công việc kết thúc đối với hồ sơ, tài liệu hành chính thông thường.\n- Sau 03 tháng kể từ ngày quyết toán ngân sách nhà nước được phê duyệt đối với hồ sơ tài chính, kế toán.\n- Sau 01 năm kể từ ngày đề án, đề tài nghiên cứu được nghiệm thu chính thức.\n2. Thủ tục giao nộp: Lập 02 bản 'Mục lục hồ sơ, tài liệu nộp lưu' và 02 bản 'Biên bản giao nhận hồ sơ, tài liệu' có đầy đủ chữ ký của người giao và người nhận lưu trữ."
     },
     {
       "articleNumber": "5",
-      "title": "Thời hạn nộp lưu hồ sơ từ Lưu trữ cơ quan vào Lưu trữ lịch sử của Đảng",
-      "content": "1. Trong thời hạn 10 năm kể từ năm tài liệu được nộp lưu vào Lưu trữ cơ quan, các cơ quan, tổ chức đảng thuộc nguồn nộp lưu có trách nhiệm chỉnh lý hoàn chỉnh và nộp lưu tài liệu có giá trị bảo quản vĩnh viễn vào Lưu trữ lịch sử của Đảng (Kho Lưu trữ Trung ương Đảng hoặc Kho Lưu trữ Tỉnh ủy, Thành ủy).\n2. Không nộp vào Lưu trữ lịch sử các tài liệu thuộc diện bảo quản có thời hạn (dưới 70 năm) hoặc tài liệu trùng lặp."
-    },
-    {
-      "articleNumber": "6",
-      "title": "Xác định thời hạn bảo quản tài liệu lưu trữ của Đảng",
-      "content": "Thời hạn bảo quản tài liệu lưu trữ của cơ quan Đảng được chia thành 02 mức cơ bản:\n1. Bảo quản Vĩnh viễn: Áp dụng đối với các tài liệu có ý nghĩa lịch sử, chính trị, lý luận sâu sắc phản ánh chức năng lãnh đạo toàn diện của cấp ủy; văn kiện đại hội đảng các cấp; các nghị quyết, quyết định, quy định, chỉ thị, kết luận của cấp ủy; hồ sơ nhân sự chủ chốt; hồ sơ vụ án kỷ luật nghiêm trọng; biên bản các hội nghị ban chấp hành, ban thường vụ cấp ủy.\n2. Bảo quản Có thời hạn: Được quy định cụ thể theo các mức: 70 năm, 50 năm, 20 năm, 10 năm, 5 năm... dựa trên Bảng thời hạn bảo quản tài liệu của cơ quan Đảng ban hành."
-    },
-    {
-      "articleNumber": "7",
-      "title": "Trình tự, thủ tục tiêu huỷ tài liệu hết giá trị tại cơ quan Đảng",
-      "content": "Việc tiêu huỷ tài liệu hết giá trị phải tuân thủ nghiêm ngặt theo các bước sau, nghiêm cấm tự ý tiêu hủy tài liệu:\n1. Bước 1: Bộ phận lưu trữ cơ quan tiến hành rà soát hồ sơ đã hết thời hạn bảo quản, lập 'Danh mục tài liệu hết giá trị đề nghị huỷ' kèm bản thuyết minh cụ thể.\n2. Bước 2: Thành lập Hội đồng xác định giá trị tài liệu của cơ quan (gồm lãnh đạo cơ quan, đại diện bộ phận lưu trữ và lãnh đạo các đơn vị có tài liệu) để thẩm tra, xem xét và lập biên bản kết luận.\n3. Bước 3: Gửi hồ sơ đề nghị thẩm định lên cơ quan Lưu trữ lịch sử của Đảng cấp trên có thẩm quyền (Cục Lưu trữ VPTW Đảng đối với cơ quan Trung ương; Phòng Lưu trữ Văn phòng Tỉnh ủy đối với cấp huyện, sở, ban ngành).\n4. Bước 4: Sau khi có văn bản thẩm định/thỏa thuận của cơ quan lưu trữ cấp trên, người đứng đầu cơ quan mới được ban hành Quyết định tiêu hủy tài liệu.\n5. Bước 5: Tổ chức tiêu hủy tài liệu (bằng phương pháp cắt vụn cơ học hoặc nấu thành bột giấy tại cơ sở tái chế bảo đảm bí mật); lập 'Biên bản tiêu hủy tài liệu' có đầy đủ chữ ký của các thành viên giám sát."
-    },
-    {
-      "articleNumber": "8",
-      "title": "Khai thác, sử dụng và bảo mật tài liệu lưu trữ của Đảng",
-      "content": "1. Cán bộ, đảng viên, tổ chức có nhu cầu nghiên cứu, khai thác tài liệu lưu trữ của Đảng phải có giấy giới thiệu của cơ quan và được người có thẩm quyền phê duyệt.\n2. Thẩm quyền cho phép khai thác:\n- Chánh Văn phòng cấp ủy duyệt cho phép khai thác tài liệu thông thường.\n- Thường trực cấp ủy duyệt cho phép khai thác tài liệu Mật, Tối mật hoặc tài liệu về nhân sự cán bộ thuộc diện cấp ủy quản lý.\n3. Nghiêm cấm: Tự ý sao chụp, chụp ảnh, mang tài liệu lưu trữ ra khỏi phòng đọc; làm rách, viết bẩn hoặc làm lộ lọt nội dung bí mật của tài liệu."
+      "title": "Thời hạn nộp lưu tài liệu từ Lưu trữ hiện hành vào Lưu trữ lịch sử của Đảng",
+      "content": "1. Trong thời hạn 10 năm đối với tài liệu giấy và trong thời hạn 05 năm đối với tài liệu điện tử kể từ năm nộp lưu vào Lưu trữ hiện hành, cơ quan, tổ chức đảng có trách nhiệm chỉnh lý hoàn chỉnh và nộp lưu các hồ sơ có giá trị bảo quản vĩnh viễn vào Lưu trữ lịch sử của Đảng (Kho Lưu trữ Trung ương Đảng hoặc Kho Lưu trữ Tỉnh ủy, Thành ủy).\n2. Tài liệu thuộc Phông lưu trữ Đảng Cộng sản Việt Nam phải được quản lý chặt chẽ theo Quy định số 383-QĐ/TW ngày 19/11/2025 của Ban Bí thư."
     }
   ]
 }

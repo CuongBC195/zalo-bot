@@ -213,17 +213,18 @@ class PipelineOrchestrator {
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
       `Chào ${senderName},\n\n` +
       `Tôi là trợ lý AI chuyên giải đáp các thắc mắc về Cương lĩnh, Điều lệ, Quy định, Thông tư và Hướng dẫn của Đảng Cộng sản Việt Nam.\n\n` +
-      `CÁC CHUYÊN MỤC HỖ TRỢ CHÍNH (CẬP NHẬT 2026):\n` +
+      `CÁC CHUYÊN MỤC HỖ TRỢ CHÍNH (CẬP NHẬT MỚI NHẤT ĐẾN THÁNG 10/2026):\n` +
       `• Thể thức và kỹ thuật trình bày văn bản Đảng (Hướng dẫn số 05-HD/VPTW ngày 27/05/2026 và Quy định số 399-QĐ/TW ngày 09/01/2026: thẩm quyền ký T/M, K/T, con dấu, chữ ký số, 25 thể loại văn bản...).\n` +
-      `• Công tác văn thư và lưu trữ cơ quan Đảng (Hướng dẫn 05, Hướng dẫn 06, Thông tư 02 BNV: nộp lưu hồ sơ, lưu trữ điện tử...).\n` +
-      `• Quy định và thi hành Điều lệ Đảng (Quy định 24, Quy định 37 về 19 điều cấm, Hướng dẫn 01, Quy định 22 về kiểm tra kỷ luật...).\n\n` +
+      `• Công tác văn thư và lưu trữ cơ quan Đảng (Hướng dẫn số 06-HD/VPTW ngày 29/05/2026, Quy định số 383-QĐ/TW ngày 19/11/2025 về Phông lưu trữ Đảng, Luật Lưu trữ số 33/2024/QH15 hiệu lực từ 01/07/2025).\n` +
+      `• Điều lệ, kỷ cương và đạo đức đảng viên (Quy định số 232-QĐ/TW năm 2025 thi hành Điều lệ Đảng; Quy định số 207-QĐ/TW năm 2026 về 19 điều đảng viên không được làm; Quy định số 01-QĐ/TW năm 2026 về chế độ đảng phí; Quy định 144-QĐ/TW về 5 chuẩn mực đạo đức cách mạng; Chỉ thị 45-CT/TW về Đại hội XIV).\n\n` +
       `MỘT SỐ CÂU HỎI MẪU:\n` +
       `• "Thẩm quyền ký thay mặt T/M và ký thay K/T theo Hướng dẫn 05/2026 quy định thế nào?"\n` +
       `• "Hệ thống 25 thể loại văn bản của Đảng theo Quy định 399-QĐ/TW gồm những gì?"\n` +
       `• "Quy chuẩn kỹ thuật chữ ký số trên văn bản điện tử của Đảng theo Hướng dẫn 05/2026?"\n` +
-      `• "Thời hạn nộp lưu hồ sơ vào Lưu trữ cơ quan Đảng là bao lâu?"\n` +
-      `• "Những điều đảng viên không được làm theo Quy định 37?"\n\n` +
-      `Gõ /docs để tra cứu toàn bộ danh mục văn bản hiện có trong cơ sở dữ liệu.`
+      `• "Mức đóng đảng phí theo Quy định số 01-QĐ/TW năm 2026 được tính như thế nào?"\n` +
+      `• "Những điều đảng viên không được làm theo Quy định mới 207-QĐ/TW năm 2026?"\n` +
+      `• "Quy định về thời hạn nộp lưu hồ sơ vào Lưu trữ hiện hành theo Hướng dẫn 06/2026?"\n\n` +
+      `Gõ /docs để tra cứu toàn bộ danh mục 22 văn bản hiện có trong cơ sở dữ liệu.`
     );
   }
 }
