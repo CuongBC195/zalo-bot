@@ -60,7 +60,7 @@ async function testPipelineEndToEnd() {
   });
   const reply1 = typeof res1 === 'string' ? res1 : res1.answer;
   assert(typeof reply1 === 'string' && reply1.length > 20, 'Phải sinh câu trả lời hợp lệ');
-  assert(reply1.includes('17-HD/VPTW') || reply1.includes('T/M'), 'Phải dẫn nguồn Hướng dẫn 17');
+  assert(reply1.includes('05-HD/VPTW') || reply1.includes('399-QĐ/TW') || reply1.includes('17-HD/VPTW') || reply1.includes('T/M'), 'Phải dẫn nguồn văn bản thể thức');
   if (res1.intent) {
     assert.strictEqual(res1.intent, 'party_regulation', 'Intent phải là party_regulation');
   }

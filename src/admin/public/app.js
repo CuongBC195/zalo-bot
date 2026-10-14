@@ -493,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function getCategoryBadge(cat) {
     switch (cat) {
       case 'the_thuc':
-        return '<span class="badge badge-gold">Thể thức (HD 17)</span>';
+        return '<span class="badge badge-gold">Thể thức (HD 05 &amp; QĐ 399)</span>';
       case 'van_thu_luu_tru':
         return '<span class="badge badge-blue">Văn thư & Lưu trữ</span>';
       case 'quy_dinh_dang':

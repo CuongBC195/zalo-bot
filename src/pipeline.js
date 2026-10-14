@@ -97,7 +97,7 @@ class PipelineOrchestrator {
         `Chào ${senderName},\n\n` +
         `Tôi là Trợ lý AI chuyên trách hỗ trợ tra cứu về Cương lĩnh, Điều lệ, Quy định của Đảng, Thể thức văn bản và Công tác văn thư lưu trữ.\n\n` +
         `Nội dung câu hỏi của đồng chí nằm ngoài phạm vi nghiệp vụ được phân công. Đồng chí vui lòng đặt các câu hỏi thuộc các lĩnh vực sau:\n` +
-        `• Thể thức và kỹ thuật trình bày văn bản Đảng (HD 17-HD/VPTW, thẩm quyền ký T/M, K/T, con dấu...)\n` +
+        `• Thể thức và kỹ thuật trình bày văn bản Đảng (HD 05-HD/VPTW ngày 27/05/2026, QĐ 399-QĐ/TW, thẩm quyền ký T/M, K/T, con dấu, chữ ký số...)\n` +
         `• Công tác văn thư và lưu trữ cơ quan Đảng (HD 05, HD 06, Thông tư 02 BNV, nộp lưu hồ sơ...)\n` +
         `• Quy định, điều lệ và thi hành Điều lệ Đảng (Quy định 24, Quy định 37, Hướng dẫn 01, Quy định 22...)`
       );
@@ -178,19 +178,20 @@ class PipelineOrchestrator {
 
         if (!listText) {
           listText = (
-            `1. 17-HD/VPTW (05/10/2015): Thể thức và kỹ thuật trình bày văn bản Đảng\n` +
-            `2. 05-HD/VPTW (26/12/2014): Hướng dẫn công tác văn thư trong cơ quan Đảng\n` +
-            `3. 06-HD/VPTW (26/12/2014): Lập hồ sơ và nộp lưu hồ sơ vào Lưu trữ cơ quan Đảng\n` +
-            `4. 02/2019/TT-BNV (24/01/2019): Tiêu chuẩn dữ liệu thông tin và lưu trữ điện tử\n` +
-            `5. 24-QĐ/TW (30/07/2021): Thi hành Điều lệ Đảng\n` +
-            `6. 37-QĐ/TW (25/10/2021): Quy định về những điều đảng viên không được làm\n` +
-            `7. 01-HD/TW (28/09/2021): Một số vấn đề cụ thể thi hành Điều lệ Đảng\n` +
-            `8. 22-QĐ/TW (28/07/2021): Công tác kiểm tra, giám sát và kỷ luật của Đảng\n`
+            `1. 05-HD/VPTW (27/05/2026): Thể thức và kỹ thuật trình bày văn bản Đảng (văn bản điện tử, chữ ký số)\n` +
+            `2. 399-QĐ/TW (09/01/2026): Thể loại, thẩm quyền ban hành và thể thức văn bản của Đảng (25 thể loại)\n` +
+            `3. 05-HD/VPTW-VT (26/12/2014): Hướng dẫn công tác văn thư trong cơ quan Đảng\n` +
+            `4. 06-HD/VPTW (26/12/2014): Lập hồ sơ và nộp lưu hồ sơ vào Lưu trữ cơ quan Đảng\n` +
+            `5. 02/2019/TT-BNV (24/01/2019): Tiêu chuẩn dữ liệu thông tin và lưu trữ điện tử\n` +
+            `6. 24-QĐ/TW (30/07/2021): Thi hành Điều lệ Đảng\n` +
+            `7. 37-QĐ/TW (25/10/2021): Quy định về những điều đảng viên không được làm\n` +
+            `8. 01-HD/TW (28/09/2021): Một số vấn đề cụ thể thi hành Điều lệ Đảng\n` +
+            `9. 22-QĐ/TW (28/07/2021): Công tác kiểm tra, giám sát và kỷ luật của Đảng\n`
           );
         }
 
         return (
-          `DANH MỤC VĂN BẢN ĐẢNG TRONG KHO DỮ LIỆU (${docMap.size || 8} VĂN BẢN):\n` +
+          `DANH MỤC VĂN BẢN ĐẢNG TRONG KHO DỮ LIỆU (${docMap.size || 9} VĂN BẢN):\n` +
           `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           listText +
           `\nLưu ý: Đồng chí có thể nạp thêm văn bản mới qua Web Admin Dashboard hoặc thư mục /data/regulations/`
@@ -211,13 +212,14 @@ class PipelineOrchestrator {
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
       `Chào ${senderName},\n\n` +
       `Tôi là trợ lý AI chuyên giải đáp các thắc mắc về Cương lĩnh, Điều lệ, Quy định, Thông tư và Hướng dẫn của Đảng Cộng sản Việt Nam.\n\n` +
-      `CÁC CHUYÊN MỤC HỖ TRỢ CHÍNH:\n` +
-      `• Thể thức và kỹ thuật trình bày văn bản Đảng (Hướng dẫn 17-HD/VPTW: thẩm quyền ký T/M, K/T, đóng dấu, định lề...).\n` +
+      `CÁC CHUYÊN MỤC HỖ TRỢ CHÍNH (CẬP NHẬT 2026):\n` +
+      `• Thể thức và kỹ thuật trình bày văn bản Đảng (Hướng dẫn số 05-HD/VPTW ngày 27/05/2026 và Quy định số 399-QĐ/TW ngày 09/01/2026: thẩm quyền ký T/M, K/T, con dấu, chữ ký số, 25 thể loại văn bản...).\n` +
       `• Công tác văn thư và lưu trữ cơ quan Đảng (Hướng dẫn 05, Hướng dẫn 06, Thông tư 02 BNV: nộp lưu hồ sơ, lưu trữ điện tử...).\n` +
       `• Quy định và thi hành Điều lệ Đảng (Quy định 24, Quy định 37 về 19 điều cấm, Hướng dẫn 01, Quy định 22 về kiểm tra kỷ luật...).\n\n` +
       `MỘT SỐ CÂU HỎI MẪU:\n` +
-      `• "Thẩm quyền ký thay mặt T/M và ký thay K/T trong văn bản Đảng quy định thế nào?"\n` +
-      `• "Quy định đóng dấu trên chữ ký và dấu giáp lai văn bản Đảng ra sao?"\n` +
+      `• "Thẩm quyền ký thay mặt T/M và ký thay K/T theo Hướng dẫn 05/2026 quy định thế nào?"\n` +
+      `• "Hệ thống 25 thể loại văn bản của Đảng theo Quy định 399-QĐ/TW gồm những gì?"\n` +
+      `• "Quy chuẩn kỹ thuật chữ ký số trên văn bản điện tử của Đảng theo Hướng dẫn 05/2026?"\n` +
       `• "Thời hạn nộp lưu hồ sơ vào Lưu trữ cơ quan Đảng là bao lâu?"\n` +
       `• "Những điều đảng viên không được làm theo Quy định 37?"\n\n` +
       `Gõ /docs để tra cứu toàn bộ danh mục văn bản hiện có trong cơ sở dữ liệu.`

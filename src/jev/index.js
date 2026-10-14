@@ -46,8 +46,9 @@ const PARTY_AND_REGULATION_KEYWORDS = [
   'đảng phí', 'thu đảng phí', 'đóng đảng phí', 'mức đóng đảng phí', 'trích giữ', '342-qđ', '03-hd',
   'đánh giá xếp loại', 'kiểm điểm cuối năm', '124-qđ', 'xếp loại chất lượng', 'hoàn thành xuất sắc',
   'tiêu chuẩn đảng viên', 'người vào đảng', 'lý lịch người vào đảng', 'thẩm tra lý lịch',
-  // 2. Thể thức & Kỹ thuật trình bày văn bản Đảng (HD 17-HD/VPTW, NĐ 30/2020)
-  'thể thức', 'văn bản', 'vptw', 'văn phòng trung ương', '17-hd', 'trình bày văn bản',
+  // 2. Thể thức & Kỹ thuật trình bày văn bản Đảng (HD 05-HD/VPTW ngày 27/05/2026, QĐ 399-QĐ/TW, NĐ 30/2020)
+  'thể thức', 'văn bản', 'vptw', 'văn phòng trung ương', '05-hd/vptw', '399-qđ/tw', '399-qđ', '05-hd', '17-hd', '36-hd', 'trình bày văn bản',
+  '25 thể loại văn bản', 'thể loại văn bản', 'chữ ký số', 'văn bản điện tử',
   'thẩm quyền ký', 'ký thay', 'ký thay mặt', 'thừa lệnh', 'thừa uỷ quyền', 'thừa ủy quyền',
   't/m', 'k/t', 't/l', 't/u', 'con dấu', 'đóng dấu', 'dấu giáp lai', 'dấu treo', 'đóng dấu treo',
   'phông chữ', 'cỡ chữ', 'kiểu chữ', 'định lề', 'lề trái', 'lề phải', 'lề trên', 'lề dưới',
