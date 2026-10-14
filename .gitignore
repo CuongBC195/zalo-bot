@@ -1,0 +1,10 @@
+.env
+node_modules/
+*.log
+logs/
+.bot.pid
+.DS_Store
+data/state.json
+data/*.json
+data/knowledge_index.json
+!data/regulations/
