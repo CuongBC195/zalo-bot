@@ -8,10 +8,12 @@ const rag = require('./rag');
 const gemini = require('./gemini');
 const config = require('./config');
 
+const { expandAbbreviations } = require('./rag/abbreviations');
+
 // Bảng ánh xạ tự động mở rộng truy vấn từ văn bản hết hiệu lực sang văn bản hiện hành (Legacy Replacement Map)
 const LEGACY_REPLACEMENT_MAP = [
   { pattern: /(24-q[đd]|232-q[đd]|294-q[đd]|quy\s*[đd][iị]nh\s*24\b|quy\s*[đd][iị]nh\s*232\b)/i, expansion: ' 208-QĐ/TW ' },
-  { pattern: /(37-q[đd]|quy\s*[đd][iị]nh\s*37\b)/i, expansion: ' 207-QĐ/TW ' },
+  { pattern: /(37-q[đd]|quy\s*[đd][iị]nh\s*37\b|kh[oô]ng\s*[đd][uư][oợ]c\s*l[aà]m|19\s*[đd]i[eề]u|[đd][aá]nh\s*b[aạ]c)/i, expansion: ' 207-QĐ/TW ' },
   { pattern: /(22-q[đd]|296-q[đd]|quy\s*[đd][iị]nh\s*22\b)/i, expansion: ' 21-QĐ/TW ' },
   { pattern: /(342-q[đd]|quy[eế]t\s*[đd][iị]nh\s*342\b)/i, expansion: ' 01-QĐ/TW ' },
   { pattern: /(17-h[dđ]|36-h[dđ]|66-q[đd]|h[uư][oơ]ng\s*d[aẫ]n\s*17\b)/i, expansion: ' 05-HD/VPTW 399-QĐ/TW ' },
@@ -93,20 +95,20 @@ class PipelineOrchestrator {
       return new PipelineResult(cmdAnswer, 'command', []);
     }
 
-    // 0. TẦNG SMART QUERY REWRITER: Chuẩn hóa câu hỏi nếu là tiếng Việt không dấu
-    let query = rawQuery;
-    const hasVietnameseAccent = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(rawQuery);
-    if (!hasVietnameseAccent) {
-      console.log(`[Pipeline] Phát hiện câu hỏi không dấu, đang kích hoạt Smart Query Rewriter...`);
-      query = await this.gemini.rewriteQuery(rawQuery);
+    // 0. CHỐT CHẶN CHUỖI RÁC / KÝ TỰ ĐẶC BIỆT (Early return: 0ms, 0đ token)
+    if (rawQuery.length < 3 || /^[\d\s\W_]+$/i.test(rawQuery)) {
+      const invalidText = (
+        `Chào ${senderName},\n\n` +
+        `Nội dung tra cứu chưa rõ ràng. Đồng chí vui lòng nhập câu hỏi hoặc số hiệu văn bản cụ thể cần tìm hiểu ` +
+        `(ví dụ: "Thẩm quyền ký T/M", "Quy định 37 về 19 điều cấm", "Thời hạn nộp lưu hồ sơ").`
+      );
+      return new PipelineResult(invalidText, 'invalid_or_empty', []);
     }
 
-    // 1. TẦNG JEV: Phân loại ý định & Ràng buộc đầu vào (Strict Scope Gatekeeper)
-    console.log(`[Pipeline] Đang phân loại ý định cho câu hỏi: "${query}" (Gốc: "${rawQuery}")`);
-    const route = await this.jev.routeIntent(query);
+    // 1. TẦNG JEV: Phân loại ý định & Chặn sớm chào hỏi / ngoài phạm vi (0ms, 0đ token)
+    const route = await this.jev.routeIntent(rawQuery);
     console.log(`[Pipeline] Ý định nhận diện: ${route.intent} (độ tin cậy: ${Math.round(route.confidence * 100)}%)`);
 
-    // Nhánh chuỗi rác / quá ngắn / ký tự vô nghĩa (Early return: 0 token, 0 DB query)
     if (route.intent === 'invalid_or_empty') {
       const invalidText = (
         `Chào ${senderName},\n\n` +
@@ -116,12 +118,10 @@ class PipelineOrchestrator {
       return new PipelineResult(invalidText, route.intent, []);
     }
 
-    // Nhánh chào hỏi / hỏi cách sử dụng (Early return: 0 token Gemini, 0 DB query)
     if (route.intent === 'greeting_or_help') {
       return new PipelineResult(this._buildGreeting(senderName), route.intent, []);
     }
 
-    // Nhánh ngoài phạm vi (Early return: Chặn đứng mọi câu hỏi không liên quan, bảo toàn 100% token Gemini và hạ tầng DB)
     if (route.intent === 'out_of_scope') {
       const outText = (
         `Chào ${senderName},\n\n` +
@@ -134,16 +134,30 @@ class PipelineOrchestrator {
       return new PipelineResult(outText, route.intent, []);
     }
 
-    // 2. TẦNG RAG: Truy xuất các điều khoản liên quan (kèm mở rộng truy vấn văn bản hết hiệu lực)
-    const searchQuery = expandLegacyQuery(query);
-    console.log(`[Pipeline] Đang truy xuất tài liệu từ RAG với truy vấn: "${searchQuery}"`);
-    const candidatePassages = await this.rag.search(searchQuery, { topK: config.rag.topK });
+    // 2. TẦNG RAG LƯỢT 1 (Lazy Rewriting): Mở rộng từ viết tắt nội bộ và văn bản cũ trực tiếp trong RAM (0ms, 0 token)
+    const expandedLocal = expandAbbreviations(rawQuery);
+    const searchQuery = expandLegacyQuery(expandedLocal);
+    console.log(`[Pipeline] Đang truy xuất tài liệu từ RAG lượt 1: "${searchQuery}"`);
+    let candidatePassages = await this.rag.search(searchQuery, { topK: config.rag.topK });
+    let effectiveQuery = expandedLocal;
 
-    if (!candidatePassages.length) {
+    // 3. NẾU RAG LƯỢT 1 HỤT TÀI LIỆU: Mới kích hoạt Smart Query Rewriter gọi Gemini viết lại (Chỉ 5% trường hợp)
+    if (!candidatePassages || candidatePassages.length === 0) {
+      console.log(`[Pipeline] RAG lượt 1 không tìm thấy tài liệu, đang kích hoạt Smart Query Rewriter...`);
+      const rewritten = await this.gemini.rewriteQuery(rawQuery);
+      if (rewritten && rewritten !== rawQuery) {
+        effectiveQuery = rewritten;
+        const retrySearchQuery = expandLegacyQuery(expandAbbreviations(rewritten));
+        console.log(`[Pipeline] Đang truy xuất tài liệu từ RAG lượt 2 với truy vấn chuẩn hóa: "${retrySearchQuery}"`);
+        candidatePassages = await this.rag.search(retrySearchQuery, { topK: config.rag.topK });
+      }
+    }
+
+    if (!candidatePassages || !candidatePassages.length) {
       const notFoundText = (
         `Chào ${senderName},\n\n` +
         `Hiện tại trong kho dữ liệu văn bản Đảng của hệ thống chưa tìm thấy quy định nào điều chỉnh trực tiếp nội dung:\n` +
-        `"${query}"\n\n` +
+        `"${rawQuery}"\n\n` +
         `Gợi ý:\n` +
         `• Đồng chí có thể thử tìm bằng từ khóa cụ thể hơn (ví dụ: "tuổi kết nạp", "quy định 37", "thời hạn dự bị").\n` +
         `• Gõ /docs để xem danh mục các văn bản Đảng hiện có trong kho dữ liệu.`
@@ -151,9 +165,9 @@ class PipelineOrchestrator {
       return new PipelineResult(notFoundText, route.intent, []);
     }
 
-    // 3. TẦNG JEV: Lọc và Rerank các đoạn trích (System One Relevance Filter)
+    // 4. TẦNG JEV: Lọc và Rerank các đoạn trích (System One Relevance Filter)
     console.log(`[Pipeline] Jev đang lọc ${candidatePassages.length} đoạn trích liên quan...`);
-    const filteredPassages = await this.jev.filterRelevantPassages(query, candidatePassages);
+    const filteredPassages = await this.jev.filterRelevantPassages(effectiveQuery, candidatePassages);
     const finalPassages = filteredPassages.length > 0 ? filteredPassages : candidatePassages.slice(0, 2);
 
     const docCodes = [...new Set(finalPassages.map(p => p.documentCode || p.documentId).filter(Boolean))];
@@ -161,11 +175,11 @@ class PipelineOrchestrator {
     console.log(`[Pipeline] Giữ lại ${finalPassages.length} đoạn trích đạt chuẩn.`);
     const context = this.rag.formatContext(finalPassages);
 
-    // 4. TẦNG GEMINI: Tổng hợp câu trả lời chuẩn hành chính Đảng (System Two)
+    // 5. TẦNG GEMINI: Tổng hợp câu trả lời chuẩn hành chính Đảng (Chỉ tốn đúng 1 request Gemini)
     console.log(`[Pipeline] Đang gửi context tới Gemini để sinh câu trả lời...`);
-    let answer = await this.gemini.generateAnswer(query, context);
+    let answer = await this.gemini.generateAnswer(effectiveQuery, context);
 
-    // 5. TẦNG JEV GUARDRAIL: Kiểm tra tính trung thực (Faithfulness Check)
+    // 6. TẦNG JEV GUARDRAIL: Kiểm tra tính trung thực (Faithfulness Check)
     if (config.jev.enableGuardrails) {
       console.log(`[Pipeline] Jev đang kiểm tra tính xác thực (Guardrail)...`);
       const check = await this.jev.checkFaithfulness(context, answer);

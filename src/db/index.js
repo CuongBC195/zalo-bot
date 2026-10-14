@@ -569,9 +569,18 @@ class DatabaseService {
       if (!cleanWords.length) return [];
       const tsQueryStr = cleanWords.join(' | ');
 
-      // Tìm số hiệu văn bản trong câu hỏi (loại bỏ ngày tháng dạng DD/MM/YYYY để tránh nhầm ngày 01 thành 01-HD/TW)
+      // Tìm số hiệu văn bản trong câu hỏi (chỉ lấy số sau loại văn bản hoặc có gạch nối ký hiệu)
       const queryWithoutDates = queryStr.replace(/\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b/g, ' ');
-      const docNumbers = queryWithoutDates.match(/\b\d{1,4}\b/g) || [];
+      const docNumRegex = /(?:quy\s*[đd][iị]nh|quy[eế]t\s*[đd][iị]nh|h[uư][oơ]ng\s*d[aẫ]n|ch[iỉ]\s*th[iị]|th[oô]ng\s*t[uư]|k[eế]t\s*lu[aậ]n|ngh[iị]\s*quy[eế]t|lu[aậ]t|q[đd]|h[dđ]|ct|tt|kl|nq)\s*(?:s[oố]\s*)?(\d{1,4})\b|\b(\d{1,4})(?=[-\/](?:q[đd]|h[dđ]|ct|tt|kl|nq|tw|vptw|btctw|bnv|qh))/gi;
+      const docNumbers = [];
+      let m;
+      while ((m = docNumRegex.exec(queryWithoutDates)) !== null) {
+        const num = m[1] || m[2];
+        if (num && !docNumbers.includes(num)) {
+          const nInt = parseInt(num, 10);
+          if (!(nInt > 1900 && nInt < 2100)) docNumbers.push(num);
+        }
+      }
 
       let numberClause = '0.0';
       const params = [tsQueryStr, `%${queryStr.trim()}%`];
@@ -579,8 +588,6 @@ class DatabaseService {
       if (docNumbers.length > 0) {
         const conds = [];
         for (const num of docNumbers) {
-          // Bỏ qua các số năm đơn lẻ 19xx, 20xx khi xét boost số hiệu chính
-          if (parseInt(num, 10) > 1900 && parseInt(num, 10) < 2100) continue;
           params.push(num);
           conds.push(`d.document_code ~ ('(^|[^0-9])0*' || $${params.length} || '([^0-9]|$)')`);
         }

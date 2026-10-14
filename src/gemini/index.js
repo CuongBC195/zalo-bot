@@ -12,11 +12,17 @@ try {
 const config = require('../config');
 const { SYSTEM_INSTRUCTION, buildPrompt } = require('./prompts');
 
+const keyManager = require('./key-manager');
+
 class GeminiService {
   constructor() {
-    this.apiKey = config.gemini.apiKey;
+    this.keyManager = keyManager;
     this.primaryModel = config.gemini.model || 'gemini-3.1-flash-lite';
     this.baseUrl = config.gemini.baseUrl;
+  }
+
+  get apiKey() {
+    return this.keyManager.getKey() || config.gemini.apiKey;
   }
 
   /**
@@ -38,18 +44,20 @@ class GeminiService {
       return text;
     }
 
-    if (!this.apiKey) return text;
+    const currentKey = this.apiKey;
+    if (!currentKey) return text;
 
     const rewriteCandidates = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest'];
     for (const model of rewriteCandidates) {
+      const activeKey = this.keyManager.getKey() || currentKey;
       try {
         const prompt = `Hãy viết lại câu hỏi sau thành câu tiếng Việt có dấu đầy đủ, chuẩn thuật ngữ hành chính Đảng Cộng sản Việt Nam, giữ nguyên các con số/ký hiệu văn bản, chỉ trả về đúng 1 câu hỏi đã chuẩn hóa, không giải thích gì thêm: "${text}"`;
-        const endpoint = `${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`;
+        const endpoint = `${this.baseUrl}/models/${model}:generateContent?key=${activeKey}`;
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-goog-api-key': this.apiKey,
+            'x-goog-api-key': activeKey,
           },
           body: JSON.stringify({
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -60,6 +68,11 @@ class GeminiService {
           }),
           signal: AbortSignal.timeout(4000),
         });
+
+        if (response.status === 429) {
+          this.keyManager.markRateLimited(activeKey);
+          continue;
+        }
 
         if (response.ok) {
           const data = await response.json();
@@ -84,7 +97,8 @@ class GeminiService {
    * @returns {Promise<string>}
    */
   async generateAnswer(query, context) {
-    if (!this.apiKey) {
+    const initialKey = this.apiKey;
+    if (!initialKey) {
       return this._fallbackFormat(query, context);
     }
 
@@ -100,13 +114,14 @@ class GeminiService {
     const userPrompt = buildPrompt(query, context);
 
     for (const model of modelCandidates) {
+      const activeKey = this.keyManager.getKey() || initialKey;
       try {
-        const endpoint = `${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`;
+        const endpoint = `${this.baseUrl}/models/${model}:generateContent?key=${activeKey}`;
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-goog-api-key': this.apiKey,
+            'x-goog-api-key': activeKey,
           },
           body: JSON.stringify({
             system_instruction: {
@@ -126,6 +141,11 @@ class GeminiService {
           signal: AbortSignal.timeout(8000),
         });
 
+        if (response.status === 429) {
+          this.keyManager.markRateLimited(activeKey);
+          continue;
+        }
+
         if (response.ok) {
           const data = await response.json();
           const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -134,7 +154,6 @@ class GeminiService {
             return cleanAnswer;
           }
         } else {
-          const errorText = await response.text();
           console.warn(`[Gemini API] Model ${model} trả về mã ${response.status}, thử model tiếp theo...`);
         }
       } catch (err) {

@@ -131,7 +131,16 @@ class RagEngine {
     const normalizedQuery = this._normalize(query);
     const queryTokens = this._tokenize(normalizedQuery);
     const queryWithoutDates = query.replace(/\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b/g, ' ');
-    const docNumbers = queryWithoutDates.match(/\b\d{1,3}\b/g) || [];
+    const docNumRegex = /(?:quy\s*[đd][iị]nh|quy[eế]t\s*[đd][iị]nh|h[uư][oơ]ng\s*d[aẫ]n|ch[iỉ]\s*th[iị]|th[oô]ng\s*t[uư]|k[eế]t\s*lu[aậ]n|ngh[iị]\s*quy[eế]t|lu[aậ]t|q[đd]|h[dđ]|ct|tt|kl|nq)\s*(?:s[oố]\s*)?(\d{1,4})\b|\b(\d{1,4})(?=[-\/](?:q[đd]|h[dđ]|ct|tt|kl|nq|tw|vptw|btctw|bnv|qh))/gi;
+    const docNumbers = [];
+    let m;
+    while ((m = docNumRegex.exec(queryWithoutDates)) !== null) {
+      const num = m[1] || m[2];
+      if (num && !docNumbers.includes(num)) {
+        const nInt = parseInt(num, 10);
+        if (!(nInt > 1900 && nInt < 2100)) docNumbers.push(num);
+      }
+    }
 
     const scored = this.chunks.map(chunk => {
       const normChunk = this._normalize(chunk.fullText);
@@ -139,7 +148,6 @@ class RagEngine {
 
       // 1. Khớp số hiệu văn bản bằng regex ranh giới số độc lập
       for (const num of docNumbers) {
-        if (parseInt(num, 10) > 1900 && parseInt(num, 10) < 2100) continue;
         const numRegex = new RegExp('(^|[^0-9])0*' + num + '([^0-9]|$)');
         if (chunk.documentCode && numRegex.test(chunk.documentCode)) {
           score += 15.0;
