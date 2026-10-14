@@ -33,6 +33,9 @@ class RagEngine {
         if (existingDocs && existingDocs.length === 0) {
           console.log('🌱 [Postgres] Đang tự động nạp dữ liệu mẫu vào PostgreSQL...');
           await db.seedFromFiles(this.chunks);
+        } else {
+          // Nếu DB đã có dữ liệu từ trước, đồng bộ các văn bản mới do Admin thêm vào this.chunks
+          await this._syncFromDb();
         }
       } else {
         console.log('📦 [RAG Engine] Chế độ lưu trữ: Local In-Memory / File JSON.');
@@ -47,8 +50,15 @@ class RagEngine {
 
   async reload() {
     this.chunks = this.loader.loadAll();
+    await this._syncFromDb();
+    console.log(`[RAG Engine] Đã làm mới chỉ mục (${this.chunks.length} điều khoản).`);
+    return this.chunks.length;
+  }
 
-    // Đồng bộ thêm các tài liệu từ PostgreSQL (nếu có thêm từ Web Admin)
+  /**
+   * Đồng bộ thêm các tài liệu từ PostgreSQL (nếu có thêm từ Web Admin)
+   */
+  async _syncFromDb() {
     try {
       if (db.isConnected) {
         const docs = await db.getDocuments();
@@ -80,9 +90,6 @@ class RagEngine {
     } catch (err) {
       console.warn('[RAG Engine] Cảnh báo đồng bộ chunks từ DB:', err.message);
     }
-
-    console.log(`[RAG Engine] Đã làm mới chỉ mục (${this.chunks.length} điều khoản).`);
-    return this.chunks.length;
   }
 
   /**
