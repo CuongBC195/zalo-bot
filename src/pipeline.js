@@ -71,22 +71,35 @@ class PipelineOrchestrator {
       return new PipelineResult(cmdAnswer, 'command', []);
     }
 
-    // 1. TẦNG JEV: Phân loại ý định (System One Intent Routing)
+    // 1. TẦNG JEV: Phân loại ý định & Ràng buộc đầu vào (Strict Scope Gatekeeper)
     console.log(`[Pipeline] Đang phân loại ý định cho câu hỏi: "${query}"`);
     const route = await this.jev.routeIntent(query);
     console.log(`[Pipeline] Ý định nhận diện: ${route.intent} (độ tin cậy: ${Math.round(route.confidence * 100)}%)`);
 
-    // Nhánh chào hỏi / hỏi cách sử dụng
+    // Nhánh chuỗi rác / quá ngắn / ký tự vô nghĩa (Early return: 0 token, 0 DB query)
+    if (route.intent === 'invalid_or_empty') {
+      const invalidText = (
+        `Chào ${senderName},\n\n` +
+        `Nội dung tra cứu chưa rõ ràng. Đồng chí vui lòng nhập câu hỏi hoặc số hiệu văn bản cụ thể cần tìm hiểu ` +
+        `(ví dụ: "Thẩm quyền ký T/M", "Quy định 37 về 19 điều cấm", "Thời hạn nộp lưu hồ sơ").`
+      );
+      return new PipelineResult(invalidText, route.intent, []);
+    }
+
+    // Nhánh chào hỏi / hỏi cách sử dụng (Early return: 0 token Gemini, 0 DB query)
     if (route.intent === 'greeting_or_help') {
       return new PipelineResult(this._buildGreeting(senderName), route.intent, []);
     }
 
-    // Nhánh ngoài phạm vi
+    // Nhánh ngoài phạm vi (Early return: Chặn đứng mọi câu hỏi không liên quan, bảo toàn 100% token Gemini và hạ tầng DB)
     if (route.intent === 'out_of_scope') {
       const outText = (
         `Chào ${senderName},\n\n` +
-        `Tôi là Trợ lý AI chuyên trách giải đáp về Cương lĩnh, Điều lệ, Quy định, Thông tư và Hướng dẫn của Đảng.\n\n` +
-        `Nội dung câu hỏi của đồng chí nằm ngoài phạm vi hỗ trợ của tôi. Đồng chí vui lòng đặt các câu hỏi liên quan đến công tác Đảng (ví dụ: kết nạp đảng, những điều đảng viên không được làm, sinh hoạt chi bộ, kỷ luật đảng viên...).`
+        `Tôi là Trợ lý AI chuyên trách hỗ trợ tra cứu về Cương lĩnh, Điều lệ, Quy định của Đảng, Thể thức văn bản và Công tác văn thư lưu trữ.\n\n` +
+        `Nội dung câu hỏi của đồng chí nằm ngoài phạm vi nghiệp vụ được phân công. Đồng chí vui lòng đặt các câu hỏi thuộc các lĩnh vực sau:\n` +
+        `• Thể thức và kỹ thuật trình bày văn bản Đảng (HD 17-HD/VPTW, thẩm quyền ký T/M, K/T, con dấu...)\n` +
+        `• Công tác văn thư và lưu trữ cơ quan Đảng (HD 05, HD 06, Thông tư 02 BNV, nộp lưu hồ sơ...)\n` +
+        `• Quy định, điều lệ và thi hành Điều lệ Đảng (Quy định 24, Quy định 37, Hướng dẫn 01, Quy định 22...)`
       );
       return new PipelineResult(outText, route.intent, []);
     }
