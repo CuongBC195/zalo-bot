@@ -3,23 +3,60 @@
   "documentCode": "01-HD/TW",
   "documentName": "Hướng dẫn một số vấn đề cụ thể thi hành Điều lệ Đảng",
   "issuer": "Ban Bí thư",
+  "category": "quy_dinh_dang",
   "issueDate": "2021-09-28",
   "status": "Còn hiệu lực",
+  "description": "Hướng dẫn số 01-HD/TW ngày 28/9/2021 của Ban Bí thư Trung ương Đảng khoá XIII hướng dẫn một số vấn đề cụ thể thi hành Điều lệ Đảng.",
   "articles": [
+    {
+      "articleNumber": "1",
+      "title": "Tiêu chuẩn và điều kiện của người vào Đảng",
+      "content": "1. Là công dân Việt Nam từ đủ 18 tuổi trở lên; thừa nhận và tự nguyện thực hiện Cương lĩnh chính trị, Điều lệ Đảng, tiêu chuẩn và nhiệm vụ đảng viên, hoạt động trong một tổ chức cơ sở đảng.\n2. Qua thực tiễn chứng tỏ là người ưu tú, có phẩm chất chính trị, đạo đức, lối sống trong sạch; gắn bó mật thiết với nhân dân; hoàn thành tốt nhiệm vụ được giao.\n3. Được nhân dân và quần chúng nơi công tác, nơi cư trú tín nhiệm."
+    },
+    {
+      "articleNumber": "2",
+      "title": "Bồi dưỡng nhận thức về Đảng và phân công đảng viên giúp đỡ",
+      "content": "1. Người vào Đảng phải học lớp bồi dưỡng nhận thức về Đảng do trung tâm chính trị cấp huyện hoặc cấp ủy có thẩm quyền tổ chức và được cấp giấy chứng nhận.\n2. Chi bộ phân công một đảng viên chính thức (hoặc hai đảng viên nếu là quần chúng không sinh hoạt đoàn thể) cùng công tác, lao động, học tập theo dõi, giáo dục, giúp đỡ người vào Đảng trong thời gian ít nhất 12 tháng liên tục."
+    },
     {
       "articleNumber": "3",
       "title": "Hồ sơ của người vào Đảng",
-      "content": "Hồ sơ xét kết nạp người vào Đảng gồm có:\n1. Đơn xin vào Đảng (người vào Đảng tự viết tay).\n2. Lý lịch của người vào Đảng (tự khai trung thực, được cấp ủy cơ sở thẩm tra và kết luận theo quy định).\n3. Giấy giới thiệu của người giới thiệu vào Đảng (gồm 2 đảng viên chính thức; nếu là đoàn viên Đoàn TNCS Hồ Chí Minh hoặc công đoàn viên thì 1 đảng viên chính thức và ban chấp hành đoàn thể giới thiệu).\n4. Nghị quyết giới thiệu đoàn viên ưu tú vào Đảng của ban chấp hành Đoàn cơ sở hoặc ban chấp hành công đoàn cơ sở.\n5. Ý kiến nhận xét của tổ chức chính trị - xã hội nơi người vào Đảng sinh hoạt và chi ủy nơi cư trú.\n6. Nghị quyết đề nghị kết nạp đảng viên của chi bộ.\n7. Báo cáo thẩm tra lý lịch của người vào Đảng.\n8. Quyết định kết nạp đảng viên của cấp ủy có thẩm quyền."
+      "content": "Hồ sơ xét kết nạp người vào Đảng gồm có các văn bản bắt buộc sau:\n1. Đơn xin vào Đảng (người vào Đảng tự viết tay, nêu rõ nhận thức về Đảng, động cơ vào Đảng và lời hứa khi được đứng trong hàng ngũ của Đảng).\n2. Lý lịch của người vào Đảng (người vào Đảng tự khai trung thực, đầy đủ theo mẫu 2-KNĐ, được cấp ủy cơ sở thẩm tra và kết luận theo quy định).\n3. Giấy giới thiệu người vào Đảng (gồm 02 giấy giới thiệu của 02 đảng viên chính thức được phân công; trường hợp là đoàn viên Đoàn TNCS Hồ Chí Minh hoặc đoàn viên công đoàn thì 01 đảng viên chính thức và ban chấp hành đoàn thể tương ứng giới thiệu).\n4. Nghị quyết giới thiệu đoàn viên ưu tú vào Đảng của ban chấp hành Đoàn cơ sở hoặc ban chấp hành công đoàn cơ sở.\n5. Ý kiến nhận xét của tổ chức chính trị - xã hội nơi làm việc và ý kiến nhận xét của chi ủy nơi cư trú (theo mẫu quy định).\n6. Nghị quyết đề nghị kết nạp đảng viên của chi bộ (theo mẫu 6-KNĐ).\n7. Báo cáo thẩm tra lý lịch của người vào Đảng.\n8. Quyết định kết nạp đảng viên của cấp ủy có thẩm quyền kết nạp."
     },
     {
       "articleNumber": "4",
       "title": "Thẩm tra lý lịch của người vào Đảng",
-      "content": "1. Những người cần thẩm tra về lý lịch:\n- Cha, mẹ đẻ, cha, mẹ vợ (hoặc cha, mẹ chồng).\n- Người trực tiếp nuôi dưỡng bản thân; vợ hoặc chồng của người vào Đảng.\n2. Nội dung thẩm tra:\n- Lịch sử chính trị và chính trị hiện nay; việc chấp hành đường lối, chủ trương của Đảng, chính sách, pháp luật của Nhà nước.\n3. Thời hạn sử dụng lý lịch: Trong thời hạn 12 tháng kể từ ngày cấp ủy cơ sở xác nhận vào lý lịch đến ngày chi bộ họp xét kết nạp, nếu không phát sinh vấn đề mới thì không phải thẩm tra lại."
+      "content": "1. Những người cần thẩm tra về lý lịch:\n- Bản thân người vào Đảng.\n- Người thân của người vào Đảng (có năng lực hành vi dân sự đầy đủ) gồm: Cha, mẹ đẻ, cha, mẹ vợ (hoặc chồng) hoặc người trực tiếp nuôi dưỡng bản thân; vợ hoặc chồng; người trực tiếp nuôi dưỡng vợ (hoặc chồng); con đẻ của người vào Đảng.\n2. Nội dung thẩm tra:\n- Đối với người vào Đảng: Làm rõ lịch sử chính trị và chính trị hiện nay; việc chấp hành đường lối, chủ trương, chính sách của Đảng, pháp luật của Nhà nước; phẩm chất đạo đức, lối sống.\n- Đối với người thân: Làm rõ lịch sử chính trị và chính trị hiện nay; việc chấp hành đường lối, chủ trương của Đảng, chính sách, pháp luật của Nhà nước.\n3. Phương pháp thẩm tra và các trường hợp không phải thẩm tra:\n- Nếu cha, mẹ đẻ, vợ (chồng) hoặc con đẻ đang là đảng viên, đã khai lý lịch rõ ràng và có xác nhận của cấp ủy quản lý hồ sơ đảng viên thì không phải thẩm tra lại.\n- Thời hạn sử dụng lý lịch: Trong thời hạn 12 tháng kể từ ngày cấp ủy cơ sở xác nhận vào lý lịch đến ngày chi bộ họp xét kết nạp, nếu không phát sinh vấn đề mới thì không phải thẩm tra lại."
     },
     {
       "articleNumber": "5",
-      "title": "Thủ tục công nhận đảng viên chính thức",
-      "content": "1. Bản tự kiểm điểm của đảng viên dự bị.\n2. Bản nhận xét đảng viên dự bị của đảng viên chính thức được phân công giúp đỡ.\n3. Ý kiến nhận xét của tổ chức chính trị - xã hội nơi làm việc và chi ủy nơi cư trú.\n4. Nghị quyết của chi bộ đề nghị công nhận đảng viên chính thức.\n5. Quyết định công nhận đảng viên chính thức của cấp ủy có thẩm quyền."
+      "title": "Tổ chức lễ kết nạp đảng viên và thời hạn dự bị",
+      "content": "1. Trong thời hạn 30 ngày làm việc kể từ ngày nhận được quyết định kết nạp đảng viên của cấp ủy có thẩm quyền, chi bộ phải tổ chức lễ kết nạp. Lễ kết nạp phải được tổ chức trang nghiêm tại trụ sở làm việc hoặc nơi sinh hoạt của chi bộ, có cờ Đảng, cờ Tổ quốc, ảnh Bác Hồ.\n2. Thời hạn dự bị của đảng viên là 12 tháng tính từ ngày chi bộ tổ chức lễ kết nạp.\n3. Trong thời gian dự bị, chi bộ phân công đảng viên chính thức tiếp tục theo dõi, giáo dục, bồi dưỡng đảng viên dự bị và phân công đảng viên dự bị tham gia lớp bồi dưỡng lý luận chính trị dành cho đảng viên mới."
+    },
+    {
+      "articleNumber": "6",
+      "title": "Thủ tục xét công nhận đảng viên chính thức",
+      "content": "Hồ sơ xét công nhận đảng viên chính thức gồm có:\n1. Bản tự kiểm điểm của đảng viên dự bị (tự đánh giá ưu khuyết điểm sau 12 tháng thử thách).\n2. Bản nhận xét đảng viên dự bị của đảng viên chính thức được phân công giúp đỡ.\n3. Ý kiến nhận xét của tổ chức chính trị - xã hội nơi làm việc và ý kiến nhận xét của chi ủy nơi cư trú đối với đảng viên dự bị.\n4. Nghị quyết của chi bộ đề nghị công nhận đảng viên chính thức.\n5. Quyết định công nhận đảng viên chính thức của cấp ủy có thẩm quyền (ban thường vụ huyện ủy hoặc tương đương)."
+    },
+    {
+      "articleNumber": "7",
+      "title": "Kết nạp lại vào Đảng và kết nạp người có vi phạm",
+      "content": "1. Người được xét kết nạp lại phải có đủ tiêu chuẩn, điều kiện như người vào Đảng lần đầu và phải cách thời điểm ra khỏi Đảng ít nhất 36 tháng. Phải được ban thường vụ tỉnh ủy, thành ủy (hoặc tương đương) đồng ý bằng văn bản trước khi cấp ủy có thẩm quyền ra quyết định.\n2. Kết nạp người vi phạm chính sách dân số và kế hoạch hóa gia đình: Thực hiện theo Quy định riêng của Ban Bí thư Trung ương Đảng (phải có thời gian phấn đấu ít nhất 24 hoặc 36 tháng kể từ ngày vi phạm, chấp hành tốt chính sách và được tập thể tín nhiệm cao)."
+    },
+    {
+      "articleNumber": "8",
+      "title": "Tính tuổi Đảng của đảng viên",
+      "content": "1. Tuổi đảng của đảng viên được tính từ ngày cấp ủy có thẩm quyền ký quyết định kết nạp đảng viên (sau khi đã trừ thời gian bị xóa tên, bị khai trừ khỏi Đảng nếu có).\n2. Trường hợp đảng viên được kết nạp lại thì tuổi đảng tính từ ngày cấp ủy có thẩm quyền ký quyết định kết nạp lại, trừ trường hợp được ban thường vụ tỉnh ủy hoặc tương đương xem xét, công nhận lại tuổi đảng liên tục theo quy định."
+    },
+    {
+      "articleNumber": "9",
+      "title": "Thủ tục chuyển sinh hoạt đảng và quản lý hồ sơ đảng viên",
+      "content": "1. Khi đảng viên được điều động, thuyên chuyển công tác, thay đổi nơi cư trú từ 3 tháng trở lên thì chi bộ làm thủ tục giới thiệu chuyển sinh hoạt đảng chính thức hoặc tạm thời.\n2. Hồ sơ đảng viên chuyển đi phải được niêm phong, gửi qua đường công văn giao thông bảo mật của Đảng hoặc cán bộ chuyên trách chuyển giao trực tiếp, tuyệt đối không giao hồ sơ mật cho cá nhân đảng viên tự cầm."
+    },
+    {
+      "articleNumber": "10",
+      "title": "Xóa tên đảng viên và giải quyết khiếu nại về xóa tên",
+      "content": "1. Chi bộ họp xét, ra nghị quyết đề nghị xóa tên đảng viên và báo cáo cấp ủy có thẩm quyền quyết định.\n2. Quyết định xóa tên đảng viên của cấp ủy có thẩm quyền phải nêu rõ lý do và gửi cho đảng viên bị xóa tên cùng chi bộ nơi đảng viên sinh hoạt.\n3. Đảng viên bị xóa tên có quyền khiếu nại lên cấp ủy cấp trên trong thời hạn 30 ngày làm việc kể từ ngày nhận quyết định xóa tên."
     }
   ]
 }

@@ -1,26 +1,47 @@
 {
   "documentId": "05-HD/VPTW",
   "documentCode": "05-HD/VPTW",
-  "documentName": "Hướng dẫn về công tác văn thư, lập hồ sơ và nộp lưu hồ sơ vào Lưu trữ cơ quan của các cơ quan, tổ chức Đảng",
+  "documentName": "Hướng dẫn về công tác văn thư trong các cơ quan, tổ chức Đảng",
   "issuer": "Văn phòng Trung ương Đảng",
   "category": "van_thu_luu_tru",
   "issueDate": "2012-11-23",
   "status": "Còn hiệu lực",
+  "description": "Hướng dẫn của Văn phòng Trung ương Đảng về nghiệp vụ công tác văn thư, quản lý văn bản đi, văn bản đến, quản lý con dấu và lập hồ sơ hiện hành trong cơ quan Đảng.",
   "articles": [
     {
       "articleNumber": "1",
-      "title": "Nguyên tắc và trách nhiệm lập hồ sơ công việc",
-      "content": "1. Mọi công việc của cơ quan, tổ chức đảng đều phải được phản ánh bằng văn bản và phải được lập thành hồ sơ theo dõi.\n2. Cán bộ, công chức, viên chức được giao giải quyết công việc có trách nhiệm lập hồ sơ về công việc đó ngay từ khi tiếp nhận văn bản đầu tiên cho đến khi kết thúc.\n3. Hồ sơ phải phản ánh đúng chức năng, nhiệm vụ của cơ quan; đúng diễn biến của sự việc và có giá trị pháp lý, giá trị sử dụng lâu dài."
+      "title": "Phạm vi điều chỉnh và nguyên tắc công tác văn thư trong cơ quan Đảng",
+      "content": "1. Hướng dẫn này quy định về các khâu nghiệp vụ công tác văn thư trong các cơ quan, tổ chức đảng, bao gồm: Quản lý văn bản đến, quản lý văn bản đi, quản lý và sử dụng con dấu, thiết bị lưu khóa bí mật, chữ ký số và lập hồ sơ hiện hành.\n2. Công tác văn thư của cơ quan đảng phải bảo đảm các nguyên tắc: Kịp thời, chính xác, bảo mật, an toàn tuyệt đối và đúng quy trình, quy định của Đảng và Nhà nước."
     },
     {
       "articleNumber": "2",
-      "title": "Thời hạn nộp lưu hồ sơ, tài liệu vào Lưu trữ cơ quan",
-      "content": "1. Hồ sơ, tài liệu có giá trị bảo quản từ 05 năm trở lên phải nộp lưu vào Lưu trữ cơ quan.\n2. Thời hạn nộp lưu hồ sơ:\n- Sau 01 năm kể từ năm công việc kết thúc đối với hồ sơ, tài liệu hành chính thông thường.\n- Sau 03 tháng kể từ ngày quyết toán ngân sách nhà nước được phê duyệt đối với hồ sơ, tài liệu tài chính, kế toán.\n- Hồ sơ nghiên cứu khoa học nộp lưu sau 01 năm kể từ ngày đề tài được nghiệm thu chính thức."
+      "title": "Quản lý văn bản đến trong cơ quan Đảng",
+      "content": "1. Tiếp nhận và đăng ký văn bản đến: Tất cả văn bản, tài liệu, đơn thư gửi đến cơ quan đảng (trừ thư riêng) đều phải tập trung qua bộ phận văn thư để tiếp nhận, kiểm tra bì, đóng dấu 'ĐẾN', ghi số đến và ngày đến vào sổ đăng ký văn bản đến hoặc phần mềm quản lý văn bản.\n2. Trình và chuyển giao văn bản đến: Văn thư có trách nhiệm trình người có thẩm quyền (Thường trực cấp ủy hoặc Chánh Văn phòng) phân phối văn bản ngay trong ngày làm việc; đối với văn bản 'HỎA TỐC', 'THƯỢNG KHẨN' phải chuyển giao ngay lập tức.\n3. Giải quyết và theo dõi: Đơn vị hoặc cá nhân được giao thụ lý văn bản có trách nhiệm giải quyết đúng thời hạn, không được để tồn đọng, thất lạc."
     },
     {
       "articleNumber": "3",
-      "title": "Thủ tục và thành phần hồ sơ nộp lưu",
-      "content": "Khi nộp lưu hồ sơ, tài liệu vào Lưu trữ cơ quan, đơn vị/cán bộ phải hoàn thành các thủ tục sau:\n1. Kiểm tra, sắp xếp văn bản trong hồ sơ theo trình tự giải quyết hoặc thời gian.\n2. Loại bỏ bản nháp, bản trùng thừa, bản photocopy không cần thiết.\n3. Đánh số tờ (đánh bút chì góc trên bên phải) và viết mục lục văn bản trong hồ sơ.\n4. Lập 'Mục lục hồ sơ, tài liệu nộp lưu' (02 bản) và 'Biên bản giao nhận hồ sơ, tài liệu' (02 bản)."
+      "title": "Quản lý văn bản đi trong cơ quan Đảng",
+      "content": "1. Kiểm tra thể thức trước khi ban hành: Văn thư cơ quan phải kiểm tra kỹ thể thức, kỹ thuật trình bày, chữ ký của người có thẩm quyền trước khi lấy số và đóng dấu phát hành.\n2. Cấp số và nhân bản: Văn bản đi phải được cấp số liên tục theo từng loại văn bản trong một năm (bắt đầu từ số 01 vào ngày 01/01 và kết thúc vào ngày 31/12). Nhân bản đúng số lượng bản theo nơi nhận.\n3. Đóng dấu và phát hành: Đóng dấu rõ ràng, đúng vị trí quy định; gửi văn bản đi đúng địa chỉ nơi nhận qua đường bưu chính bảo mật, giao liên hoặc phát hành qua mạng mạng thông tin diện rộng của Đảng (Lotus Notes / Trục liên thông văn bản quốc gia).\n4. Lưu văn bản đi: Mỗi văn bản đi phải lưu ít nhất 02 bản chính (01 bản lưu tại bộ phận văn thư cơ quan, 01 bản lưu trong hồ sơ công việc của người soạn thảo)."
+    },
+    {
+      "articleNumber": "4",
+      "title": "Quản lý và sử dụng con dấu, thiết bị lưu khóa bí mật",
+      "content": "1. Con dấu của cơ quan, tổ chức đảng phải được bảo quản an toàn tuyệt đối tại phòng văn thư trong két sắt có khóa chắc chắn. Cán bộ văn thư được giao giữ con dấu chịu trách nhiệm trước người đứng đầu cơ quan về việc quản lý con dấu.\n2. Sử dụng con dấu: Chỉ cán bộ văn thư mới được trực tiếp đóng dấu vào văn bản sau khi đã có chữ ký chính thức của người có thẩm quyền. Tuyệt đối không giao con dấu cho người khác hoặc mang con dấu ra khỏi cơ quan khi chưa được lãnh đạo cho phép bằng văn bản.\n3. Thiết bị lưu khóa bí mật và chữ ký số: Quản lý như tài liệu mật, chỉ người được phân công mới được nắm giữ mật khẩu và thực hiện ký số văn bản."
+    },
+    {
+      "articleNumber": "5",
+      "title": "Ứng dụng công nghệ thông tin và quản lý văn bản điện tử",
+      "content": "1. Các cơ quan đảng đẩy mạnh xử lý văn bản trên môi trường mạng thông tin diện rộng của Đảng; từng bước thay thế văn bản giấy bằng văn bản điện tử đối với các văn bản không chứa bí mật nhà nước.\n2. Văn bản điện tử phát hành qua mạng phải có chữ ký số hợp lệ của người có thẩm quyền và chữ ký số của cơ quan, tổ chức ban hành; có giá trị pháp lý tương đương văn bản giấy."
+    },
+    {
+      "articleNumber": "6",
+      "title": "Lập hồ sơ công việc hiện hành của cán bộ, công chức",
+      "content": "1. Trách nhiệm lập hồ sơ: Cán bộ, công chức được giao chủ trì giải quyết công việc có trách nhiệm lập hồ sơ về công việc đó từ khi bắt đầu tiếp nhận tài liệu cho đến khi công việc hoàn thành.\n2. Yêu cầu lập hồ sơ:\n- Thu thập đầy đủ các văn bản, giấy tờ phát sinh liên quan đến sự việc.\n- Sắp xếp tài liệu trong hồ sơ theo trình tự thời gian hoặc diễn biến giải quyết công việc.\n- Đặt tiêu đề hồ sơ ngắn gọn, rõ ràng, phản ánh chính xác nội dung sự việc.\n3. Kết thúc hồ sơ: Khi công việc kết thúc, người lập hồ sơ kiểm tra lại thành phần tài liệu, loại bỏ bản trùng thừa, bản nháp không cần thiết, đánh số tờ và quản lý tại đơn vị cho đến khi nộp lưu vào Lưu trữ cơ quan."
+    },
+    {
+      "articleNumber": "7",
+      "title": "Trách nhiệm của lãnh đạo cơ quan, Chánh văn phòng và cán bộ văn thư",
+      "content": "1. Người đứng đầu cơ quan đảng chịu trách nhiệm toàn diện về công tác văn thư, bảo mật tài liệu và an toàn con dấu của cơ quan.\n2. Chánh Văn phòng cấp ủy có trách nhiệm trực tiếp chỉ đạo, kiểm tra, hướng dẫn việc thực hiện công tác văn thư tại cơ quan và các tổ chức đảng trực thuộc.\n3. Cán bộ văn thư phải có phẩm chất chính trị tốt, trung thực, cẩn trọng, có chứng chỉ hoặc bằng cấp chuyên môn về văn thư - lưu trữ và thực hiện nghiêm các quy định về bảo vệ bí mật của Đảng và Nhà nước."
     }
   ]
 }

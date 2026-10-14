@@ -3,73 +3,105 @@
   "documentCode": "37-QĐ/TW",
   "documentName": "Quy định về những điều đảng viên không được làm",
   "issuer": "Ban Chấp hành Trung ương",
+  "category": "quy_dinh_dang",
   "issueDate": "2021-10-25",
   "status": "Còn hiệu lực",
+  "description": "Quy định số 37-QĐ/TW ngày 25/10/2021 của Ban Chấp hành Trung ương khoá XIII về 19 điều đảng viên không được làm, thay thế Quy định số 47-QĐ/TW.",
   "articles": [
     {
       "articleNumber": "1",
-      "title": "Chống lại Cương lĩnh chính trị, Điều lệ Đảng",
-      "content": "Không được nói, viết, làm trái hoặc không thực hiện Cương lĩnh chính trị, Điều lệ Đảng, nghị quyết, chỉ thị, kết luận, quy định, quy chế, quyết định của Đảng; làm những việc mà pháp luật không cho phép."
+      "title": "Nói, viết, làm trái hoặc không thực hiện Cương lĩnh chính trị, Điều lệ Đảng",
+      "content": "Nói, viết, làm trái hoặc không thực hiện Cương lĩnh chính trị, Điều lệ Đảng, nghị quyết, chỉ thị, kết luận, quy định, quy chế, quyết định của Đảng; làm những việc mà pháp luật không cho phép."
     },
     {
       "articleNumber": "2",
-      "title": "Không chấp hành các nguyên tắc tổ chức và sinh hoạt đảng",
-      "content": "Không chấp hành các nguyên tắc tổ chức và sinh hoạt đảng; độc đoán, chuyên quyền, quan liêu, xa rời quần chúng; không thực hiện trách nhiệm nêu gương; không thực hiện quy định của Đảng và pháp luật về kiểm soát quyền lực, phòng, chống tham nhũng, tiêu cực."
+      "title": "Không chấp hành các nguyên tắc tổ chức và hoạt động của Đảng; vi phạm quy định về ứng cử, đề cử",
+      "content": "Không chấp hành các nguyên tắc tổ chức và hoạt động của Đảng; tự ứng cử, nhận đề cử và đề cử các chức danh của tổ chức nhà nước, Mặt trận Tổ quốc, các tổ chức chính trị - xã hội, các tổ chức quần chúng được Đảng, Nhà nước giao nhiệm vụ khi chưa được tổ chức đảng có thẩm quyền cho phép."
     },
     {
       "articleNumber": "3",
-      "title": "Vi phạm về phát ngôn và bảo mật thông tin",
-      "content": "Phản bác, phủ nhận, xuyên tạc chủ nghĩa Mác - Lênin, tư tưởng Hồ Chí Minh; không thực hiện trách nhiệm bảo vệ nền tảng tư tưởng của Đảng. Cung cấp, để lộ, làm mất hoặc viết bài, đăng những thông tin, tài liệu bí mật của Đảng và Nhà nước hoặc những việc chưa được phép công bố; tàng trữ, phát tán hoặc xúi giục người khác tuyên truyền, phát tán thông tin, tài liệu dưới mọi hình thức để lan truyền những thông tin sai lệch, không khách quan."
+      "title": "Phản bác, phủ nhận, xuyên tạc chủ nghĩa Mác - Lênin, tư tưởng Hồ Chí Minh; độc đoán, xa rời quần chúng",
+      "content": "Phản bác, phủ nhận, xuyên tạc chủ nghĩa Mác - Lênin, tư tưởng Hồ Chí Minh; không thực hiện trách nhiệm nêu gương; chủ nghĩa cá nhân, cơ hội, vụ lợi; 'tư duy nhiệm kỳ', đoàn kết xuôi chiều, dân chủ hình thức, thấy đúng không bảo vệ, thấy sai không đấu tranh; độc đoán, chuyên quyền, quan liêu, xa rời quần chúng."
     },
     {
       "articleNumber": "4",
-      "title": "Đe dọa, trù dập người khiếu nại, tố cáo",
-      "content": "Cung cấp thông tin, tài liệu, phát tán nội dung khiếu nại, tố cáo không đúng sự thật; đe dọa, trù dập, trả thù người khiếu nại, tố cáo; kích động, xúi giục, lôi kéo, mua chuộc người khác khiếu nại, tố cáo; vu khống, bôi nhọ cá nhân, tổ chức."
+      "title": "Làm lộ, làm mất bí mật của Đảng, Nhà nước; truyền bá quan điểm sai trái",
+      "content": "Cung cấp, để lộ, làm mất hoặc viết bài, đăng những thông tin, tài liệu bí mật của Đảng và Nhà nước hoặc những việc chưa được phép công bố; tàng trữ, tuyên truyền, tán phát hoặc xúi giục người khác tuyên truyền, tán phát thông tin, tài liệu dưới mọi hình thức để truyền bá những thông tin, quan điểm trái với chủ trương, đường lối của Đảng, chính sách, pháp luật của Nhà nước."
     },
     {
       "articleNumber": "5",
-      "title": "Tố cáo giấu tên, mạo tên",
-      "content": "Tố cáo mang tính chất bịa đặt; cùng người khác viết, ký tên trong đơn tố cáo; viết đơn tố cáo giấu tên, mạo tên. Gửi đơn thư tố cáo đến những nơi không có thẩm quyền giải quyết."
+      "title": "Đăng tải tin, bài sai sự thật; sáng tác, tán phát tác phẩm không lành mạnh",
+      "content": "Viết bài hoặc cung cấp tài liệu cho người khác viết, nói, cho đăng tải tin, bài sai sự thật, không đăng tải ý kiến phản hồi, cải chính theo quy định. Sáng tác, sản xuất, tàng trữ, tán phát các tác phẩm, công trình văn học, nghệ thuật không lành mạnh, trái thuần phong mỹ tục Việt Nam, mang tính kích động gây ảnh hưởng xấu trong xã hội; tán phát bài viết, bài nói, phỏng vấn, hồi ký, phim, ảnh không đúng quy định."
     },
     {
       "articleNumber": "6",
-      "title": "Tổ chức phe nhóm, cục bộ, bè phái",
-      "content": "Tổ chức, tham gia các tổ chức, hội, nhóm hoạt động trái quy định của Đảng, pháp luật của Nhà nước; biểu tình, tụ tập đông người gây mất trật tự, an ninh; đe dọa, ức hiếp người khác."
+      "title": "Tố cáo bịa đặt, giấu tên, mạo tên; đe dọa, trù dập người khiếu nại, tố cáo",
+      "content": "Tố cáo có nội dung mang tính bịa đặt; cùng người khác viết, ký tên trong đơn tố cáo; viết đơn tố cáo giấu tên, mạo tên. Gửi hoặc tán phát đơn khiếu nại, tố cáo dưới mọi hình thức đến nơi không có thẩm quyền giải quyết. Đe doạ, trù dập, trả thù người khiếu nại, tố cáo; không thực hiện các quy định của Đảng và pháp luật về bảo vệ người tố cáo, phê bình, góp ý; kích động, xúi giục, mua chuộc, cưỡng ép người khác khiếu nại, tố cáo."
     },
     {
       "articleNumber": "7",
-      "title": "Vi phạm quy định bầu cử",
-      "content": "Chủ trì, tham gia hoặc vận động người khác bầu cử mang tính chất phe nhóm, dòng họ, địa phương; vận động bầu cử, ứng cử trái quy định; tác động, lôi kéo người khác bỏ phiếu hoặc không bỏ phiếu cho nhân sự được giới thiệu."
+      "title": "Tổ chức, tham gia các tổ chức trái quy định; biểu tình gây mất trật tự",
+      "content": "Tổ chức, tham gia các tổ chức, hội trái quy định của Đảng, pháp luật của Nhà nước; biểu tình, tụ tập đông người gây mất trật tự, an ninh."
     },
     {
       "articleNumber": "8",
-      "title": "Chạy chức, chạy quyền, bao che sai phạm",
-      "content": "Quan liêu, thiếu trách nhiệm, bao che, dung túng cho cấp dưới làm sai; chạy chức, chạy quyền, chạy chỗ, chạy tội, chạy khen thưởng, chạy bằng cấp, chạy luân chuyển... để mưu lợi cho bản thân hoặc người khác."
+      "title": "Tổ chức phe nhóm, cục bộ bè phái; đả kích, xúc phạm tổ chức, cá nhân",
+      "content": "Tổ chức, xúi giục, tham gia các hoạt động bè phái, cục bộ gây mất đoàn kết nội bộ. Lợi dụng việc phản ánh, góp ý kiến đối với Đảng, Nhà nước để đả kích, vu cáo, xúc phạm, nhận xét, đánh giá tuỳ tiện đối với tổ chức, cá nhân."
     },
     {
       "articleNumber": "9",
-      "title": "Tham nhũng, nhận hối lộ, lãng phí",
-      "content": "Sử dụng tài sản của Nhà nước, tập thể trái quy định; can thiệp, tác động vào hoạt động kiểm tra, thanh tra, kiểm toán, điều tra, truy tố, xét xử; nhận hối lộ, đưa hối lộ, môi giới hối lộ, lợi dụng chức vụ, quyền hạn để vụ lợi."
+      "title": "Không trung thực trong báo cáo, kê khai lý lịch, tài sản; mở tài khoản nước ngoài trái phép",
+      "content": "Báo cáo, lập hồ sơ, kê khai lý lịch, kê khai tài sản, thu nhập không trung thực. Sử dụng văn bằng, chứng chỉ, chứng nhận giả, không hợp pháp; nhập quốc tịch, chuyển tiền, tài sản ra nước ngoài, mở tài khoản và mua bán tài sản ở nước ngoài trái quy định."
+    },
+    {
+      "articleNumber": "10",
+      "title": "Ban hành văn bản trái quy định; sai phạm trong quản lý đất đai, tài chính, tài sản",
+      "content": "Chủ trì, tham mưu ban hành văn bản có nội dung trái quy định của Đảng, pháp luật của Nhà nước. Thực hiện không đúng quy định trong quản lý đầu tư, xây dựng, sử dụng nhà, đất, tài nguyên, tài chính, tài sản của Đảng, Nhà nước."
     },
     {
       "articleNumber": "11",
-      "title": "Vi phạm quy định về kê khai tài sản, thu nhập",
-      "content": "Kê khai tài sản, thu nhập không trung thực; giải trình nguồn gốc tài sản, thu nhập tăng thêm không trung thực; mở tài khoản, mua bán tài sản ở nước ngoài trái quy định."
+      "title": "Nhũng nhiễu, cửa quyền; bao che, tiếp tay cho tham nhũng, tiêu cực",
+      "content": "Nhũng nhiễu, quan liêu, cửa quyền, gây phiền hà cho tổ chức, cá nhân khi giải quyết công việc. Tiếp tay, bao che cho các hành vi tham nhũng, tiêu cực."
+    },
+    {
+      "articleNumber": "12",
+      "title": "Can thiệp, tác động trái quy định vào hoạt động thanh tra, kiểm toán, điều tra, xét xử",
+      "content": "Can thiệp, tác động vào hoạt động kiểm tra, giám sát, thanh tra, kiểm toán, điều tra, truy tố, xét xử, thi hành án, xét đặc xá, giải quyết khiếu nại, tố cáo để bao che, tiếp tay cho các hành vi vi phạm quy định của Đảng, pháp luật của Nhà nước. Tác động, ép buộc, mua chuộc tổ chức, cá nhân để giảm trách nhiệm, hình phạt cho người khác."
     },
     {
       "articleNumber": "13",
-      "title": "Can thiệp trái quy định vào đất đai, đầu tư, đấu thầu",
-      "content": "Can thiệp, tác động vào hoạt động quy hoạch, quản lý và sử dụng đất đai, nhà ở, tài nguyên, khoáng sản, đầu tư, đấu thầu, tài chính, ngân sách nhà nước để vụ lợi."
+      "title": "Lạm dụng chức vụ, quyền hạn để chiếm đoạt tài sản; vay mượn trái quy định",
+      "content": "Lợi dụng, lạm dụng chức vụ, quyền hạn, vị trí công tác để sử dụng tài sản của Đảng, của Nhà nước trái quy định; vay, mượn, chiếm đoạt tiền, tài sản của tổ chức, cá nhân trái quy định."
+    },
+    {
+      "articleNumber": "14",
+      "title": "Tham ô, hối lộ; rửa tiền; cho vay trái quy định",
+      "content": "Tham ô, đưa, nhận, môi giới hối lộ hoặc lợi dụng vị trí công tác để môi giới, hối lộ dưới mọi hình thức; tổ chức, tham gia hoặc tạo điều kiện thực hiện hoạt động rửa tiền, đi vay, cho vay trái quy định của pháp luật."
+    },
+    {
+      "articleNumber": "15",
+      "title": "Tặng, nhận quà để vụ lợi hoặc tác động dẫn đến quyết định sai trái",
+      "content": "Tặng, nhận quà dưới mọi hình thức để tác động đến tổ chức, người có trách nhiệm dẫn đến việc quyết định sai, có lợi riêng cho bản thân hoặc cá nhân, tổ chức, cơ quan, doanh nghiệp."
+    },
+    {
+      "articleNumber": "16",
+      "title": "Lãng phí, thất thoát tài chính, tài sản công",
+      "content": "Không thực hành tiết kiệm, để xảy ra thất thoát, lãng phí trong việc quản lý, sử dụng tài chính, tài sản công; mua sắm, quản lý, sử dụng tài sản công trái quy định."
+    },
+    {
+      "articleNumber": "17",
+      "title": "Can thiệp để bản thân và người thân đi du lịch, học tập bằng nguồn tài trợ trái quy định",
+      "content": "Can thiệp, tác động để vợ (chồng), con, bố, mẹ, anh, chị, em ruột mình, bên vợ (chồng), bản thân và người khác đi du lịch, học tập, chữa bệnh bằng nguồn tài trợ của các tổ chức, cá nhân có liên quan đến ngành, lĩnh vực theo dõi, quản lý."
     },
     {
       "articleNumber": "18",
-      "title": "Mê tín dị đoan, tệ nạn xã hội",
-      "content": "Tổ chức, tham gia đánh bạc dưới mọi hình thức; sử dụng các chất ma túy; sử dụng rượu bia đến mức bê tha; mê tín, dị đoan; ủng hộ hoặc tham gia các tôn giáo bất hợp pháp."
+      "title": "Đánh bạc, sử dụng ma túy, rượu bia bê tha; cưới tang xa hoa, bạo lực gia đình",
+      "content": "Tổ chức, tham gia đánh bạc dưới mọi hình thức; sử dụng các chất ma tuý; sử dụng rượu, bia không đúng quy định hoặc đến mức bê tha và các tệ nạn xã hội khác. Tổ chức việc cưới, việc tang và các sự kiện khác của cá nhân, gia đình xa hoa, lãng phí hoặc nhằm mục đích vụ lợi. Thờ ơ, vô cảm với các hành vi sai trái trong xã hội; có hành vi bạo lực trong gia đình; vi phạm chính sách dân số; sống chung với người khác như vợ chồng; vi phạm quy định về kết hôn với người nước ngoài."
     },
     {
       "articleNumber": "19",
-      "title": "Xuất cảnh, nhập cảnh, mang quốc tịch nước ngoài trái quy định",
-      "content": "Xuất cảnh, nhập cảnh, cư trú, đi nước ngoài trái quy định; mang quốc tịch nước ngoài, chuyển tiền, tài sản ra nước ngoài, mở tài khoản và mua bán tài sản ở nước ngoài trái quy định."
+      "title": "Mê tín dị đoan; tham gia tôn giáo bất hợp pháp hoặc trục lợi từ tín ngưỡng",
+      "content": "Mê tín, hoạt động mê tín; ủng hộ hoặc tham gia các tôn giáo bất hợp pháp hoặc lợi dụng các hoạt động tôn giáo, tín ngưỡng để trục lợi."
     }
   ]
 }

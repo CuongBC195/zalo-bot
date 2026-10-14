@@ -3,43 +3,70 @@
   "documentCode": "24-QĐ/TW",
   "documentName": "Quy định thi hành Điều lệ Đảng",
   "issuer": "Ban Chấp hành Trung ương",
+  "category": "quy_dinh_dang",
   "issueDate": "2021-07-30",
   "status": "Còn hiệu lực",
+  "description": "Quy định số 24-QĐ/TW ngày 30/7/2021 của Ban Chấp hành Trung ương khoá XIII về thi hành Điều lệ Đảng, thay thế Quy định số 29-QĐ/TW.",
   "articles": [
     {
       "articleNumber": "1",
       "title": "Tuổi đời và trình độ học vấn của người vào Đảng",
-      "content": "1. Về tuổi đời: Tại thời điểm chi bộ xét kết nạp, người vào Đảng phải đủ 18 tuổi đến đủ 60 tuổi (tính theo tháng). Việc kết nạp người trên 60 tuổi vào Đảng do cấp uỷ trực thuộc Trung ương xem xét, quyết định.\n2. Về trình độ học vấn: Người vào Đảng phải có bằng tốt nghiệp trung học cơ sở trở lên. Đối với người vào Đảng đang sinh sống ở vùng đồng bào dân tộc thiểu số, vùng cao, vùng sâu, vùng xa, biên giới, hải đảo, vùng có điều kiện kinh tế - xã hội đặc biệt khó khăn và những trường hợp cụ thể khác do yêu cầu phát triển đảng mà không bảo đảm được quy định chung thì thực hiện theo Hướng dẫn của Ban Bí thư (tối thiểu phải biết đọc, biết viết chữ quốc ngữ hoặc tốt nghiệp tiểu học)."
+      "content": "1. Về tuổi đời:\n- Tại thời điểm chi bộ xét kết nạp, người vào Đảng phải đủ 18 tuổi đến đủ 60 tuổi (tính theo tháng).\n- Việc kết nạp người trên 60 tuổi vào Đảng chỉ thực hiện khi có đủ các điều kiện: Có sức khoẻ và uy tín; đang công tác, cư trú tại cơ sở chưa có tổ chức đảng, chưa có đảng viên hoặc do yêu cầu đặc biệt; được ban thường vụ cấp uỷ trực thuộc Trung ương đồng ý bằng văn bản trước khi cấp uỷ có thẩm quyền ra quyết định kết nạp.\n2. Về trình độ học vấn:\n- Người vào Đảng phải có bằng tốt nghiệp trung học cơ sở trở lên.\n- Học vấn đối với người vào Đảng đang sinh sống ở vùng đồng bào dân tộc thiểu số, vùng cao, vùng sâu, vùng xa, biên giới, hải đảo, vùng có điều kiện kinh tế - xã hội đặc biệt khó khăn và những trường hợp cụ thể khác do yêu cầu phát triển đảng mà không bảo đảm được quy định chung thì thực hiện theo Hướng dẫn của Ban Bí thư (tối thiểu phải biết đọc, biết viết chữ quốc ngữ hoặc tốt nghiệp tiểu học)."
     },
     {
       "articleNumber": "2",
       "title": "Quyền của đảng viên",
-      "content": "1. Đảng viên có quyền được thông báo và thảo luận các vấn đề về Cương lĩnh chính trị, Điều lệ Đảng, đường lối, chủ trương, chính sách của Đảng; biểu quyết công việc của Đảng.\n2. Đảng viên có quyền ứng cử, đề cử và bầu cử cơ quan lãnh đạo các cấp của Đảng theo quy định của Ban Chấp hành Trung ương.\n3. Đảng viên dự bị có các quyền như đảng viên chính thức, trừ quyền biểu quyết, ứng cử và bầu cử cơ quan lãnh đạo của Đảng.\n4. Đảng viên có quyền phê bình, chất vấn về hoạt động của tổ chức đảng và đảng viên ở mọi cấp trong phạm vi tổ chức; báo cáo, kiến nghị với các cơ quan có trách nhiệm và yêu cầu được trả lời."
+      "content": "1. Quyền được thông tin: Đảng viên được thông báo định kỳ hàng tháng hoặc đột xuất về tình hình thời sự, chủ trương, chính sách của Đảng, pháp luật của Nhà nước; các nghị quyết, quyết định của cấp ủy các cấp.\n2. Quyền ứng cử, đề cử và bầu cử: Đảng viên chính thức có quyền ứng cử, đề cử và bầu cử cơ quan lãnh đạo các cấp của Đảng theo quy định của Ban Chấp hành Trung ương. Đảng viên dự bị có các quyền như đảng viên chính thức, trừ quyền biểu quyết, ứng cử và bầu cử cơ quan lãnh đạo của Đảng.\n3. Quyền phê bình, chất vấn: Đảng viên có quyền phê bình, chất vấn về hoạt động của tổ chức đảng và đảng viên ở mọi cấp trong phạm vi tổ chức; báo cáo, kiến nghị với các cơ quan có trách nhiệm và yêu cầu được trả lời.\n4. Quyền được bảo vệ: Khi tổ chức đảng xem xét, quyết định kỷ luật hoặc giải quyết khiếu nại, tố cáo đối với đảng viên thì đảng viên đó có quyền được trình bày ý kiến, giải trình trực tiếp trước tổ chức đảng."
+    },
+    {
+      "articleNumber": "3",
+      "title": "Trách nhiệm của đảng viên giới thiệu người vào Đảng",
+      "content": "1. Là đảng viên chính thức, cùng công tác, lao động, học tập hoặc cùng sinh hoạt nơi cư trú ít nhất 12 tháng với người được giới thiệu vào Đảng trong cùng một đơn vị thuộc phạm vi lãnh đạo của chi bộ.\n2. Nếu đảng viên giới thiệu chuyển đến cơ quan, đơn vị khác hoặc nghỉ hưu, chuyển sinh hoạt đảng thì chi bộ phân công đảng viên chính thức khác theo dõi, giúp đỡ người vào Đảng (không nhất thiết phải đủ 12 tháng).\n3. Báo cáo trung thực với chi bộ về phẩm chất chính trị, đạo đức, lối sống, năng lực công tác và quan hệ xã hội của người vào Đảng và chịu trách nhiệm về sự giới thiệu của mình."
     },
     {
       "articleNumber": "4",
-      "title": "Thời hạn kết nạp đảng viên và công nhận đảng viên chính thức",
-      "content": "1. Trong thời hạn 30 ngày làm việc kể từ ngày có quyết định kết nạp của cấp uỷ có thẩm quyền, chi bộ phải tổ chức lễ kết nạp đảng viên. Nếu để quá thời hạn phải báo cáo cấp uỷ có thẩm quyền xem xét, quyết định.\n2. Trong thời hạn 30 ngày làm việc kể từ ngày đảng viên hết 12 tháng dự bị, chi bộ phải xét và đề nghị cấp uỷ có thẩm quyền quyết định công nhận đảng viên chính thức; nếu không đủ điều kiện thì đề nghị xoá tên.\n3. Thời hạn dự bị của đảng viên là 12 tháng tính từ ngày chi bộ tổ chức lễ kết nạp."
+      "title": "Thủ tục kết nạp đảng viên và kết nạp lại vào Đảng",
+      "content": "1. Điều kiện kết nạp lại: Người đã được đưa ra khỏi Đảng phải trải qua ít nhất 36 tháng kể từ ngày ra khỏi Đảng mới được xem xét kết nạp lại (trừ trường hợp bị kết án vì tội ít nghiêm trọng hoặc tội nghiêm trọng do vô ý đã được xóa án tích thì thời hạn là 60 tháng). Phải có đơn xin kết nạp lại, được ban thường vụ tỉnh ủy, thành ủy (hoặc tương đương) đồng ý bằng văn bản trước khi cấp ủy có thẩm quyền ra quyết định.\n2. Các trường hợp không xem xét kết nạp lại: Tự bỏ sinh hoạt đảng; làm đơn xin ra Đảng (trừ trường hợp vì lý do hoàn cảnh gia đình đặc biệt khó khăn); gây mất đoàn kết nội bộ nghiêm trọng; bị kết án vì tội tham nhũng; bị kết án về tội nghiêm trọng trở lên do cố ý."
     },
     {
       "articleNumber": "5",
-      "title": "Tính tuổi đảng của đảng viên",
-      "content": "1. Tuổi đảng của đảng viên được tính từ ngày cấp có thẩm quyền ký quyết định kết nạp đảng viên (sau khi đã trừ thời gian không sinh hoạt đảng hoặc bị khai trừ nếu có).\n2. Trường hợp đảng viên được kết nạp lại thì tuổi đảng tính từ ngày quyết định kết nạp lại có hiệu lực, trừ trường hợp được công nhận lại tuổi đảng theo quy định."
+      "title": "Thời hạn tổ chức lễ kết nạp và công nhận đảng viên chính thức",
+      "content": "1. Trong thời hạn 30 ngày làm việc kể từ ngày có quyết định kết nạp của cấp ủy có thẩm quyền, chi bộ phải tổ chức lễ kết nạp đảng viên. Nếu để quá thời hạn phải báo cáo cấp ủy có thẩm quyền xem xét, quyết định.\n2. Thời hạn dự bị của đảng viên là 12 tháng tính từ ngày chi bộ tổ chức lễ kết nạp.\n3. Trong thời hạn 30 ngày làm việc kể từ ngày đảng viên hết 12 tháng dự bị, chi bộ phải xét và đề nghị cấp ủy có thẩm quyền quyết định công nhận đảng viên chính thức; nếu không đủ điều kiện thì đề nghị xóa tên."
     },
     {
       "articleNumber": "6",
-      "title": "Chuyển sinh hoạt đảng",
-      "content": "1. Chuyển sinh hoạt đảng chính thức: Khi đảng viên chuyển nơi cư trú, nơi làm việc từ đơn vị này sang đơn vị khác ngoài phạm vi quản lý của đảng bộ cơ sở thì phải làm thủ tục chuyển sinh hoạt đảng chính thức.\n2. Chuyển sinh hoạt đảng tạm thời: Đảng viên đi làm việc, học tập, công tác tạm thời ở trong nước hoặc nước ngoài từ 3 tháng đến dưới 12 tháng thì chuyển sinh hoạt đảng tạm thời đến chi bộ nơi đến. Đảng viên sinh hoạt tạm thời có quyền phát biểu thảo luận nhưng không có quyền biểu quyết, ứng cử và bầu cử tại chi bộ sinh hoạt tạm thời."
+      "title": "Phát thẻ đảng viên và quản lý hồ sơ đảng viên",
+      "content": "1. Đảng viên chính thức được cấp thẻ đảng viên. Lễ phát thẻ đảng viên do chi bộ tổ chức trang trọng.\n2. Đảng viên có trách nhiệm giữ gìn, bảo quản thẻ đảng viên cẩn thận; không được cho người khác mượn hoặc sử dụng thẻ đảng viên vào mục đích trái quy định. Khi làm mất thẻ phải báo cáo ngay với chi bộ để đề nghị cấp lại.\n3. Hồ sơ đảng viên do cấp ủy cơ sở hoặc ban tổ chức cấp ủy cấp trên trực tiếp cơ sở quản lý chặt chẽ theo chế độ mật của Đảng."
     },
     {
       "articleNumber": "7",
-      "title": "Miễn công tác và sinh hoạt đảng",
-      "content": "1. Đảng viên tuổi cao, sức yếu không thể tham gia sinh hoạt đảng được thì làm đơn tự nguyện xin miễn công tác và sinh hoạt đảng, báo cáo chi bộ. Chi bộ họp xét, ra nghị quyết đề nghị đảng uỷ cơ sở (hoặc cấp uỷ có thẩm quyền) xem xét, quyết định.\n2. Đảng viên được miễn công tác và sinh hoạt đảng vẫn có quyền dự đại hội đảng bộ, chi bộ; được cung cấp thông tin, học tập nghị quyết nếu có điều kiện; được xét tặng Huy hiệu Đảng khi đủ tiêu chuẩn."
+      "title": "Chuyển sinh hoạt đảng chính thức và tạm thời",
+      "content": "1. Chuyển sinh hoạt đảng chính thức: Khi đảng viên chuyển nơi cư trú, nơi làm việc từ đơn vị này sang đơn vị khác ngoài phạm vi quản lý của đảng bộ cơ sở thì phải làm thủ tục chuyển sinh hoạt đảng chính thức trong thời hạn 30 ngày làm việc.\n2. Chuyển sinh hoạt đảng tạm thời: Đảng viên đi làm việc, học tập, công tác tạm thời ở trong nước hoặc nước ngoài từ 3 tháng đến dưới 12 tháng thì chuyển sinh hoạt đảng tạm thời đến chi bộ nơi đến. Đảng viên sinh hoạt tạm thời có quyền phát biểu thảo luận nhưng không có quyền biểu quyết, ứng cử và bầu cử tại chi bộ nơi sinh hoạt tạm thời."
     },
     {
       "articleNumber": "8",
-      "title": "Chế độ sinh hoạt chi bộ",
-      "content": "1. Chi bộ họp thường lệ mỗi tháng một lần vào ngày định kỳ do chi bộ quy định; họp bất thường khi cần.\n2. Chi bộ tổ chức sinh hoạt chuyên đề ít nhất mỗi quý một lần theo hướng dẫn của cấp ủy cấp trên."
+      "title": "Giảm, miễn công tác và sinh hoạt đảng",
+      "content": "1. Đảng viên tuổi cao, sức yếu không thể tham gia sinh hoạt đảng được thì làm đơn tự nguyện xin giảm, miễn công tác và sinh hoạt đảng, báo cáo chi bộ. Chi bộ họp xét, ra nghị quyết đề nghị đảng ủy cơ sở (hoặc cấp ủy có thẩm quyền) xem xét, quyết định.\n2. Đảng viên được miễn công tác và sinh hoạt đảng vẫn có quyền dự đại hội đảng bộ, chi bộ; được cung cấp thông tin, học tập nghị quyết nếu có điều kiện; được xét tặng Huy hiệu Đảng khi đủ tiêu chuẩn."
+    },
+    {
+      "articleNumber": "9",
+      "title": "Xóa tên đảng viên trong danh sách đảng viên",
+      "content": "1. Chi bộ xem xét, đề nghị cấp ủy có thẩm quyền quyết định xóa tên trong danh sách đảng viên đối với các trường hợp:\n- Đảng viên bỏ sinh hoạt đảng hoặc không đóng đảng phí ba tháng trong năm mà không có lý do chính đáng.\n- Đảng viên tự ý trả thẻ đảng viên hoặc tự huỷ hoại thẻ đảng viên.\n- Đảng viên giảm sút ý chí phấn đấu, không làm nhiệm vụ đảng viên, đã được chi bộ giáo dục nhưng sau thời gian 12 tháng phấn đấu không tiến bộ.\n- Đảng viên hai năm liền không hoàn thành nhiệm vụ và chi bộ đã giáo dục nhưng không sửa chữa.\n2. Quyết định xóa tên đảng viên phải được công bố trước chi bộ."
+    },
+    {
+      "articleNumber": "10",
+      "title": "Tổ chức cơ sở đảng và các loại hình chi bộ",
+      "content": "1. Tổ chức cơ sở đảng (đảng bộ cơ sở, chi bộ cơ sở) là nền tảng của Đảng, là hạt nhân chính trị ở cơ sở, lãnh đạo cán bộ, đảng viên và nhân dân chấp hành đường lối, chủ trương của Đảng, chính sách, pháp luật của Nhà nước.\n2. Chi bộ trực thuộc đảng ủy cơ sở được tổ chức theo nơi làm việc, học tập hoặc nơi cư trú; có từ 3 đảng viên chính thức trở lên được thành lập chi bộ. Chi bộ lãnh đạo toàn diện việc thực hiện nhiệm vụ chính trị, quốc phòng, an ninh và xây dựng tổ chức đảng trong sạch, vững mạnh."
+    },
+    {
+      "articleNumber": "11",
+      "title": "Chế độ sinh hoạt chi bộ và cấp ủy",
+      "content": "1. Chi bộ, đảng ủy bộ phận, ban thường vụ đảng ủy cơ sở, đảng ủy cơ sở họp thường lệ mỗi tháng một lần vào ngày định kỳ do cấp ủy quy định; họp bất thường khi cần.\n2. Chi bộ tổ chức sinh hoạt chuyên đề ít nhất mỗi quý một lần theo hướng dẫn của cấp ủy cấp trên.\n3. Đảng viên vắng mặt trong buổi sinh hoạt phải có lý do chính đáng và được bí thư hoặc phó bí thư chi bộ đồng ý."
+    },
+    {
+      "articleNumber": "12",
+      "title": "Nguyên tắc tập trung dân chủ trong tổ chức và hoạt động của Đảng",
+      "content": "1. Cơ quan lãnh đạo các cấp của Đảng do bầu cử lập ra, thực hiện tập thể lãnh đạo, cá nhân phụ trách.\n2. Cơ quan lãnh đạo cao nhất của Đảng là Đại hội đại biểu toàn quốc. Cơ quan lãnh đạo ở mỗi cấp là đại hội đại biểu hoặc đại hội đảng viên. Giữa hai kỳ đại hội, cơ quan lãnh đạo của Đảng là Ban Chấp hành Trung ương, ở mỗi cấp là ban chấp hành đảng bộ, chi bộ (gọi tắt là cấp ủy).\n3. Cấp ủy các cấp báo cáo và chịu trách nhiệm về hoạt động của mình trước đại hội cùng cấp, trước cấp ủy cấp trên và cấp dưới; định kỳ thông báo tình hình hoạt động cho các tổ chức đảng trực thuộc, thực hiện tự phê bình và phê bình.\n4. Tổ chức đảng và đảng viên phải chấp hành nghị quyết của Đảng. Thiểu số phục tùng đa số, cấp dưới phục tùng cấp trên, cá nhân phục tùng tổ chức, các tổ chức trong toàn Đảng phục tùng Đại hội đại biểu toàn quốc và Ban Chấp hành Trung ương."
     }
   ]
 }
