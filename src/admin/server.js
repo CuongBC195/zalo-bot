@@ -516,7 +516,11 @@ if (require.main === module) {
   rag.init().then(() => {
     app.listen(PORT, () => {
       console.log(`\n🌐 [Web Admin] Giao diện quản trị đang chạy tại: http://localhost:${PORT}`);
-      console.log(`🔑 Tài khoản mặc định: admin / ${process.env.ADMIN_PASSWORD || 'Admin@123456'}`);
+      if (!process.env.ADMIN_PASSWORD) {
+        console.warn('⚠️  [Bảo mật] Chưa cấu hình ADMIN_PASSWORD trong .env! Vui lòng đặt mật khẩu bảo vệ tài khoản admin.');
+      } else {
+        console.log(`👤 Tài khoản admin: ${process.env.ADMIN_USERNAME || 'admin'} (mật khẩu đã được mã hóa bcrypt)`);
+      }
     });
   });
 }
