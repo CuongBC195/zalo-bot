@@ -72,7 +72,8 @@ class GeminiService {
           const data = await response.json();
           const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text;
           if (answer && answer.trim()) {
-            return answer.trim();
+            const cleanAnswer = answer.replace(/[\p{Extended_Pictographic}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
+            return cleanAnswer;
           }
         } else {
           const errorText = await response.text();

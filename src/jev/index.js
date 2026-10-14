@@ -67,6 +67,18 @@ const PARTY_AND_REGULATION_KEYWORDS = [
   'ủy ban nhân dân', 'hội đồng nhân dân'
 ];
 
+function stripAccents(str) {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .replace(/đ/g, 'd')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+const NORM_PARTY_KEYWORDS = PARTY_AND_REGULATION_KEYWORDS.map(kw => stripAccents(kw));
+const NORM_OUT_OF_SCOPE_KEYWORDS = OUT_OF_SCOPE_KEYWORDS.map(kw => stripAccents(kw));
+
 class JevService {
   constructor() {
     this.apiKey = config.jev.apiKey;
@@ -237,11 +249,13 @@ class JevService {
 
   _evalIntent(query = '') {
     const text = query.toLowerCase().trim();
+    const normText = stripAccents(text);
 
     // 1. Nhận diện chào hỏi / xin hướng dẫn (/help, /start)
     if (
       /^(chào|alo|hello|hi|bạn là ai|bot là gì|\/start|\/help|hướng dẫn|chào bạn|chào ad|xin chào)$/i.test(text) ||
-      (/^(chào|alo|hello|hi|bạn là ai|bot là gì)/i.test(text) && text.length < 40)
+      /^(chao|alo|hello|hi|ban la ai|bot la gi|\/start|\/help|huong dan|chao ban|chao ad|xin chao)$/i.test(normText) ||
+      ((/^(chào|alo|hello|hi|bạn là ai|bot là gì)/i.test(text) || /^(chao|alo|hello|hi|ban la ai|bot la gi)/i.test(normText)) && text.length < 40)
     ) {
       return {
         choice: 'greeting_or_help',
@@ -251,10 +265,15 @@ class JevService {
     }
 
     // 2. Kiểm tra Whitelist TRƯỚC: Nếu câu hỏi chứa từ khóa nghiệp vụ Đảng, thể thức hoặc văn thư lưu trữ
-    const hasValidScopeKeyword = PARTY_AND_REGULATION_KEYWORDS.some(kw => text.includes(kw));
+    const hasValidScopeKeyword = PARTY_AND_REGULATION_KEYWORDS.some((kw, i) =>
+      text.includes(kw) || normText.includes(NORM_PARTY_KEYWORDS[i])
+    );
 
     if (hasValidScopeKeyword) {
-      if (/(hồ sơ|thủ tục|mẫu biểu|các bước|quy trình|hướng dẫn lập|hướng dẫn viết)/i.test(text)) {
+      if (
+        /(hồ sơ|thủ tục|mẫu biểu|các bước|quy trình|hướng dẫn lập|hướng dẫn viết)/i.test(text) ||
+        /(ho so|thu tuc|mau bieu|cac buoc|quy trinh|huong dan lap|huong dan viet)/i.test(normText)
+      ) {
         return {
           choice: 'party_procedure',
           confidence: 0.92,
@@ -269,7 +288,9 @@ class JevService {
     }
 
     // 3. Chặn Blacklist: Kiểm tra từ khóa ngoài phạm vi đời thường/giải trí
-    const isExplicitlyOutOfScope = OUT_OF_SCOPE_KEYWORDS.some(kw => text.includes(kw));
+    const isExplicitlyOutOfScope = OUT_OF_SCOPE_KEYWORDS.some((kw, i) =>
+      text.includes(kw) || normText.includes(NORM_OUT_OF_SCOPE_KEYWORDS[i])
+    );
     if (isExplicitlyOutOfScope) {
       return {
         choice: 'out_of_scope',
