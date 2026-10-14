@@ -74,6 +74,28 @@ class ZaloAPI {
     }
   }
 
+  async setWebhook(url, secretToken) {
+    try {
+      const options = {};
+      if (secretToken) options.secret_token = secretToken;
+      const result = await this.bot.setWebHook(url, options);
+      return { ok: true, result };
+    } catch (err) {
+      this._logError('setWebhook', err);
+      return { ok: false, error: err.message };
+    }
+  }
+
+  async getWebhookInfo() {
+    try {
+      const result = await this.bot.getWebHookInfo();
+      return { ok: true, result };
+    } catch (err) {
+      this._logError('getWebhookInfo', err);
+      return null;
+    }
+  }
+
   _splitText(text) {
     const value = String(text || '');
     if (value.length <= MESSAGE_CHUNK_SIZE) return [value];

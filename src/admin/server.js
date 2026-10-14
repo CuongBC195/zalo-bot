@@ -79,6 +79,56 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 // ============================================================
+// PUBLIC ZALO WEBHOOK ROUTE (Không yêu cầu xác thực JWT)
+// ============================================================
+
+const ZaloAPI = require('../zalo/api');
+const { handleZaloUpdate } = require('../zalo/handler');
+
+let zaloApiInstance = null;
+function getZaloApi() {
+  if (!zaloApiInstance) {
+    zaloApiInstance = new ZaloAPI();
+  }
+  return zaloApiInstance;
+}
+
+app.post('/api/webhook', async (req, res) => {
+  try {
+    const update = req.body;
+    if (!update || Object.keys(update).length === 0) {
+      return res.status(400).json({ ok: false, error: 'Empty update payload' });
+    }
+
+    const api = getZaloApi();
+    const result = await handleZaloUpdate(api, update);
+    res.json({ ok: true, result });
+  } catch (err) {
+    console.error('[Webhook] Lỗi xử lý update:', err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.get('/api/webhook', (req, res) => {
+  res.json({
+    ok: true,
+    service: 'Zalo Bot Webhook Endpoint',
+    status: 'active',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get('/api/webhook/status', async (req, res) => {
+  try {
+    const api = getZaloApi();
+    const info = await api.getWebhookInfo();
+    res.json({ ok: true, info });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ============================================================
 // BẢO VỆ CÁC ROUTE QUẢN TRỊ BẰNG AUTHMIDDLEWARE
 // ============================================================
 app.use('/api', authMiddleware);
@@ -457,8 +507,8 @@ app.post('/api/seed-db', async (req, res) => {
   }
 });
 
-// Single Page App fallback
-app.get('*', (req, res) => {
+// Single Page App fallback (Express 5 compatible)
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

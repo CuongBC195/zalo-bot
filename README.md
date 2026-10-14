@@ -106,9 +106,37 @@ npm run ask "Thời hạn nộp lưu hồ sơ vào lưu trữ cơ quan theo hư�
 npm run ask "Tiêu chuẩn định dạng văn bản nộp lưu theo thông tư 02 BNV?"
 npm run ask "Đảng viên dự bị có quyền biểu quyết không?"
 
-# 3. Khởi chạy Bot Zalo chính thức
+# 3. Khởi chạy Bot Zalo chính thức (Local Long Polling)
 npm start
 ```
+
+---
+
+## ☁️ Triển khai lên Vercel (Miễn phí 0đ - Chạy 24/7 Webhook & Web Admin)
+
+Hệ thống đã được đóng gói sẵn để chạy trọn vẹn cả **Zalo Bot Webhook** và **Web Admin Dashboard** trên Vercel:
+
+### 1. Đẩy dự án lên Vercel
+1. Đăng nhập [vercel.com](https://vercel.com) bằng tài khoản GitHub của bạn.
+2. Bấm **Add New** $\rightarrow$ **Project** $\rightarrow$ Chọn repo `CuongBC195/zalo-bot`.
+3. Trong phần **Environment Variables**, thêm các biến sau:
+   * `DATABASE_URL`: Chuỗi kết nối PostgreSQL từ Supabase.
+   * `ZALO_BOT_TOKEN`: Token Zalo Bot của bạn.
+   * `GEMINI_API_KEY`: API Key Gemini của bạn.
+   * `ADMIN_PASSWORD`: Mật khẩu đăng nhập Web Admin (ví dụ: `Admin@2026`).
+4. Bấm **Deploy**. Sau ~1 phút, bạn sẽ nhận được đường dẫn dạng:
+   `https://zalo-dang-bot.vercel.app`
+
+### 2. Kích hoạt Webhook với Zalo Bot
+Mở terminal trên máy và chạy lệnh sau (thay bằng URL Vercel của bạn):
+```bash
+npm run webhook:set https://zalo-dang-bot.vercel.app/api/webhook
+```
+*(Nếu muốn hủy Webhook để chuyển lại chạy máy cá nhân: `npm run webhook:delete`)*.
+
+### 3. Truy cập Web Admin Dashboard:
+Mở trình duyệt: `https://zalo-dang-bot.vercel.app` để quản lý văn bản Đảng, tài khoản và theo dõi lịch sử hỏi đáp trực tiếp trên đám mây!
+
 
 ---
 

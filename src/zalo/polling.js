@@ -6,6 +6,7 @@
 const config = require('../config');
 const pipeline = require('../pipeline');
 const db = require('../db');
+const { handleZaloUpdate } = require('./handler');
 
 class PollingEngine {
   constructor(api) {
@@ -61,63 +62,7 @@ class PollingEngine {
   }
 
   async _handleUpdate(update) {
-    const message = update.message || update.data?.message;
-    if (!message) return;
-
-    const from = message.from || message.sender || {};
-    if (from.is_bot === true || message.is_bot === true) return;
-
-    const chat = message.chat || {};
-    const chatId = chat.id || message.chat_id || from.id;
-    if (!chatId) return;
-
-    const text = (message.text || message.caption || '').trim();
-    if (!text) return;
-
-    const senderName = from.display_name || from.name || from.username || message.sender_name || 'Đồng chí';
-
-    console.log(`\n📩 [Zalo] Nhận tin nhắn từ ${senderName} (${chatId}): "${text}"`);
-
-    // Kiểm tra người dùng có bị chặn không
-    const isBlocked = await db.isZaloUserBlocked(from.id);
-    if (isBlocked) {
-      console.warn(`⛔ [Zalo] Người dùng ${senderName} (${from.id}) đang bị chặn, bỏ qua tin nhắn.`);
-      await this.api.sendMessage(chatId, 'Tài khoản của bạn hiện đang bị tạm khóa tương tác với trợ lý. Vui lòng liên hệ quản trị viên.');
-      return;
-    }
-
-    const startTime = Date.now();
-
-    const pipelineResult = await pipeline.processMessage({
-      text,
-      chatId,
-      senderId: from.id,
-      senderName,
-    });
-
-    const reply = typeof pipelineResult === 'string' ? pipelineResult : pipelineResult.answer;
-    const intent = pipelineResult.intent || 'party_qa';
-    const retrievedDocs = pipelineResult.retrievedDocs || [];
-
-    const latencyMs = Date.now() - startTime;
-
-    // Gửi phản hồi lại Zalo
-    await this.api.sendMessage(chatId, reply);
-    console.log(`📤 [Zalo] Đã phản hồi thành công cho ${senderName} (${latencyMs}ms)`);
-
-    // Ghi nhật ký tương tác và cập nhật thông tin Zalo user
-    await db.recordInteraction({
-      zaloId: from.id,
-      displayName: senderName,
-      chatId,
-      queryText: text,
-      intent,
-      retrievedDocs,
-      responseText: reply,
-      latencyMs,
-    }).catch(err => {
-      console.warn('[Polling] Lỗi ghi interaction log:', err.message);
-    });
+    return handleZaloUpdate(this.api, update);
   }
 
   _normalizeUpdates(result) {
