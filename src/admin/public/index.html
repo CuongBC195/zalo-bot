@@ -10,225 +10,362 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Top Navigation Bar -->
-  <header class="navbar">
-    <div class="nav-brand">
-      <div class="brand-badge">🇻🇳</div>
-      <div class="brand-text">
-        <h1>TRUNG TÂM TRI THỨC VĂN BẢN ĐẢNG</h1>
-        <p>Hệ thống Quản trị Dữ liệu RAG cho Zalo AI Assistant</p>
+
+  <!-- MÀN HÌNH ĐĂNG NHẬP (LOGIN OVERLAY) -->
+  <div id="loginScreen" class="login-overlay">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-badge">🇻🇳</div>
+        <h2>ĐĂNG NHẬP HỆ THỐNG</h2>
+        <p>Cổng Quản Trị Tri Thức Văn Bản Đảng & Zalo AI</p>
+      </div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginUsername">Tên đăng nhập</label>
+          <input type="text" id="loginUsername" placeholder="Ví dụ: admin" required autofocus autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Mật khẩu</label>
+          <input type="password" id="loginPassword" placeholder="Nhập mật khẩu quản trị" required autocomplete="current-password">
+        </div>
+        <div id="loginError" class="login-error hidden"></div>
+        <button type="submit" id="btnLoginSubmit" class="btn btn-primary btn-block">
+          🔐 Đăng Nhập
+        </button>
+      </form>
+      <div class="login-footer">
+        <p>Tài khoản mặc định: <code>admin</code> / <code>Admin@123456</code></p>
       </div>
     </div>
-    <div class="nav-actions">
-      <div id="dbStatusBadge" class="status-pill status-checking">
-        <span class="status-dot"></span>
-        <span id="dbStatusText">Đang kiểm tra DB...</span>
-      </div>
-      <button id="btnSeedDb" class="btn btn-outline" title="Đồng bộ toàn bộ văn bản mẫu vào PostgreSQL">
-        ⚡ Nạp Dữ Liệu Mẫu
-      </button>
-    </div>
-  </header>
+  </div>
 
-  <!-- Main Container -->
-  <main class="container">
-    <!-- Stats Cards -->
-    <section class="stats-grid">
-      <div class="stat-card card-total">
-        <div class="stat-icon">📚</div>
-        <div class="stat-content">
-          <span class="stat-label">Tổng Số Văn Bản</span>
-          <h2 id="statTotalDocs">0</h2>
-          <span class="stat-sub">Đã lập chỉ mục vào hệ thống</span>
+  <!-- GIAO DIỆN QUẢN TRỊ CHÍNH (MAIN DASHBOARD) -->
+  <div id="mainApp" class="hidden">
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="brand-badge">🇻🇳</div>
+        <div class="brand-text">
+          <h1>TRUNG TÂM TRI THỨC VĂN BẢN ĐẢNG</h1>
+          <p>Hệ thống Quản trị Dữ liệu RAG cho Zalo AI Assistant</p>
         </div>
       </div>
-      <div class="stat-card card-articles">
-        <div class="stat-icon">⚖️</div>
-        <div class="stat-content">
-          <span class="stat-label">Tổng Số Điều/Khoản</span>
-          <h2 id="statTotalArticles">0</h2>
-          <span class="stat-sub">Sẵn sàng truy xuất RAG</span>
+      <div class="nav-actions">
+        <div id="dbStatusBadge" class="status-pill status-checking">
+          <span class="status-dot"></span>
+          <span id="dbStatusText">Đang kiểm tra DB...</span>
+        </div>
+        <button id="btnSeedDb" class="btn btn-outline" title="Đồng bộ toàn bộ văn bản mẫu vào PostgreSQL">
+          ⚡ Nạp Dữ Liệu Mẫu
+        </button>
+        <div class="user-profile-menu">
+          <span class="user-avatar">👤</span>
+          <span id="currentUserName" class="user-name">Admin</span>
+          <button id="btnLogout" class="btn btn-secondary btn-sm" title="Đăng xuất">Đăng xuất</button>
         </div>
       </div>
-      <div class="stat-card card-thethuc">
-        <div class="stat-icon">✍️</div>
-        <div class="stat-content">
-          <span class="stat-label">Thể Thức Văn Bản (HD 17)</span>
-          <h2 id="statTheThuc">0</h2>
-          <span class="stat-sub">Thẩm quyền ký, con dấu, cỡ chữ</span>
-        </div>
-      </div>
-      <div class="stat-card card-vanthu">
-        <div class="stat-icon">🗄️</div>
-        <div class="stat-content">
-          <span class="stat-label">Văn Thư & Lưu Trữ</span>
-          <h2 id="statVanThu">0</h2>
-          <span class="stat-sub">HD 05, HD 06, TT 02/2019</span>
-        </div>
-      </div>
-    </section>
+    </header>
 
-    <!-- Navigation Tabs -->
-    <div class="tabs-header">
-      <button class="tab-btn active" data-tab="tab-list">
-        📋 Quản Lý Văn Bản
-      </button>
-      <button class="tab-btn" data-tab="tab-add">
-        ➕ Thêm Văn Bản & Bóc Tách Tự Động
-      </button>
-      <button class="tab-btn" data-tab="tab-playground">
-        🧪 Thử Nghiệm Truy Vấn RAG
-      </button>
-    </div>
+    <!-- Main Container -->
+    <main class="container">
+      <!-- Stats Cards -->
+      <section class="stats-grid">
+        <div class="stat-card card-total">
+          <div class="stat-icon">📚</div>
+          <div class="stat-content">
+            <span class="stat-label">Tổng Văn Bản</span>
+            <h2 id="statTotalDocs">0</h2>
+            <span class="stat-sub">Kho văn bản Đảng</span>
+          </div>
+        </div>
+        <div class="stat-card card-articles">
+          <div class="stat-icon">⚖️</div>
+          <div class="stat-content">
+            <span class="stat-label">Tổng Điều/Khoản</span>
+            <h2 id="statTotalArticles">0</h2>
+            <span class="stat-sub">Đã lập chỉ mục RAG</span>
+          </div>
+        </div>
+        <div class="stat-card card-thethuc">
+          <div class="stat-icon">✍️</div>
+          <div class="stat-content">
+            <span class="stat-label">Thể Thức (HD 17)</span>
+            <h2 id="statTheThuc">0</h2>
+            <span class="stat-sub">Ký T/M, K/T, con dấu</span>
+          </div>
+        </div>
+        <div class="stat-card card-vanthu">
+          <div class="stat-icon">🗄️</div>
+          <div class="stat-content">
+            <span class="stat-label">Văn Thư Lưu Trữ</span>
+            <h2 id="statVanThu">0</h2>
+            <span class="stat-sub">HD 05, 06, TT 02</span>
+          </div>
+        </div>
+        <div class="stat-card card-users">
+          <div class="stat-icon">👥</div>
+          <div class="stat-content">
+            <span class="stat-label">Người Dùng Zalo</span>
+            <h2 id="statZaloUsers">0</h2>
+            <span class="stat-sub">Đang tương tác với Bot</span>
+          </div>
+        </div>
+      </section>
 
-    <!-- TAB 1: DANH SÁCH VĂN BẢN -->
-    <section id="tab-list" class="tab-content active">
-      <div class="filter-bar">
-        <div class="search-box">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="searchInput" placeholder="Tìm theo số hiệu (17-HD, 37-QĐ...), tên văn bản, cơ quan...">
-        </div>
-        <div class="select-group">
-          <select id="categoryFilter">
-            <option value="">Tất cả chuyên mục</option>
-            <option value="the_thuc">Thể thức & Trình bày (HD 17)</option>
-            <option value="van_thu_luu_tru">Văn thư & Lưu trữ (HD 05, 06, TT 02)</option>
-            <option value="quy_dinh_dang">Quy định & Điều lệ Đảng</option>
-          </select>
-          <button id="btnRefresh" class="btn btn-secondary">🔄 Làm mới</button>
-        </div>
+      <!-- Navigation Tabs -->
+      <div class="tabs-header">
+        <button class="tab-btn active" data-tab="tab-list">
+          📋 Quản Lý Văn Bản
+        </button>
+        <button class="tab-btn" data-tab="tab-add">
+          ➕ Thêm Văn Bản & Bóc Tách
+        </button>
+        <button class="tab-btn" data-tab="tab-users">
+          👥 Quản Lý Người Dùng
+        </button>
+        <button class="tab-btn" data-tab="tab-logs">
+          📜 Nhật Ký Hỏi Đáp (Audit)
+        </button>
+        <button class="tab-btn" data-tab="tab-playground">
+          🧪 Thử Nghiệm RAG
+        </button>
       </div>
 
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Số / Ký hiệu</th>
-              <th>Tên Văn Bản</th>
-              <th>Cơ Quan Ban Hành</th>
-              <th>Chuyên Mục</th>
-              <th>Số Điều</th>
-              <th>Hiệu Lực</th>
-              <th>Thao Tác</th>
-            </tr>
-          </thead>
-          <tbody id="documentsTableBody">
-            <tr>
-              <td colspan="7" class="text-center py-8">Đang tải danh sách văn bản...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- TAB 2: THÊM VĂN BẢN & AUTO PARSER -->
-    <section id="tab-add" class="tab-content">
-      <div class="card add-form-card">
-        <div class="card-header">
-          <h3>Thêm Mới Văn Bản Quy Định Vào Cơ Sở Dữ Liệu</h3>
-          <p>Hỗ trợ nhập trực tiếp hoặc dán toàn văn để AI / Regex tự động bóc tách thành các Điều/Khoản.</p>
+      <!-- TAB 1: DANH SÁCH VĂN BẢN -->
+      <section id="tab-list" class="tab-content active">
+        <div class="filter-bar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Tìm theo số hiệu (17-HD, 37-QĐ...), tên văn bản, cơ quan...">
+          </div>
+          <div class="select-group">
+            <select id="categoryFilter">
+              <option value="">Tất cả chuyên mục</option>
+              <option value="the_thuc">Thể thức & Trình bày (HD 17)</option>
+              <option value="van_thu_luu_tru">Văn thư & Lưu trữ (HD 05, 06, TT 02)</option>
+              <option value="quy_dinh_dang">Quy định & Điều lệ Đảng</option>
+            </select>
+            <button id="btnRefresh" class="btn btn-secondary">🔄 Làm mới</button>
+          </div>
         </div>
 
-        <form id="addDocForm">
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="docCode">Số và Ký Hiệu Văn Bản <span class="required">*</span></label>
-              <input type="text" id="docCode" placeholder="Ví dụ: 17-HD/VPTW, 24-QĐ/TW, 02/2019/TT-BNV" required>
-            </div>
-            <div class="form-group">
-              <label for="docCategory">Chuyên Mục <span class="required">*</span></label>
-              <select id="docCategory" required>
-                <option value="the_thuc">Thể thức & Kỹ thuật trình bày văn bản (HD 17)</option>
-                <option value="van_thu_luu_tru">Công tác Văn thư & Lưu trữ (HD 05, 06, TT 02)</option>
-                <option value="quy_dinh_dang">Quy định & Thi hành Điều lệ Đảng</option>
-              </select>
-            </div>
-            <div class="form-group span-2">
-              <label for="docName">Tên Văn Bản / Trích Yếu <span class="required">*</span></label>
-              <input type="text" id="docName" placeholder="Ví dụ: Hướng dẫn về thể thức và kỹ thuật trình bày văn bản của Đảng" required>
-            </div>
-            <div class="form-group">
-              <label for="docIssuer">Cơ Quan Ban Hành <span class="required">*</span></label>
-              <input type="text" id="docIssuer" placeholder="Ví dụ: Văn phòng Trung ương Đảng, Bộ Nội vụ, BCH Trung ương" required>
-            </div>
-            <div class="form-group">
-              <label for="docDate">Ngày Ban Hành</label>
-              <input type="date" id="docDate">
-            </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Số / Ký hiệu</th>
+                <th>Tên Văn Bản</th>
+                <th>Cơ Quan Ban Hành</th>
+                <th>Chuyên Mục</th>
+                <th>Số Điều</th>
+                <th>Hiệu Lực</th>
+                <th>Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody id="documentsTableBody">
+              <tr>
+                <td colspan="7" class="text-center py-8">Đang tải danh sách văn bản...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 2: THÊM VĂN BẢN & AUTO PARSER -->
+      <section id="tab-add" class="tab-content">
+        <div class="card add-form-card">
+          <div class="card-header">
+            <h3>Thêm Mới Văn Bản Quy Định Vào Cơ Sở Dữ Liệu</h3>
+            <p>Hỗ trợ nhập trực tiếp hoặc dán toàn văn để AI / Regex tự động bóc tách thành các Điều/Khoản.</p>
           </div>
 
-          <!-- Khu vực Bóc tách tự động -->
-          <div class="parser-box">
-            <div class="parser-header">
-              <div>
-                <h4>⚡ Bóc Tách Tự Động Từ Văn Bản Toàn Văn</h4>
-                <p>Dán toàn văn văn bản có các khối "Điều 1...", "Điều 2..." vào đây, hệ thống sẽ tự động tách Điều và Tiêu đề.</p>
+          <form id="addDocForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="docCode">Số và Ký Hiệu Văn Bản <span class="required">*</span></label>
+                <input type="text" id="docCode" placeholder="Ví dụ: 17-HD/VPTW, 24-QĐ/TW, 02/2019/TT-BNV" required>
               </div>
-              <button type="button" id="btnAutoParse" class="btn btn-primary">
-                Tự Động Bóc Tách
-              </button>
+              <div class="form-group">
+                <label for="docCategory">Chuyên Mục <span class="required">*</span></label>
+                <select id="docCategory" required>
+                  <option value="the_thuc">Thể thức & Kỹ thuật trình bày văn bản (HD 17)</option>
+                  <option value="van_thu_luu_tru">Công tác Văn thư & Lưu trữ (HD 05, 06, TT 02)</option>
+                  <option value="quy_dinh_dang">Quy định & Thi hành Điều lệ Đảng</option>
+                </select>
+              </div>
+              <div class="form-group span-2">
+                <label for="docName">Tên Văn Bản / Trích Yếu <span class="required">*</span></label>
+                <input type="text" id="docName" placeholder="Ví dụ: Hướng dẫn về thể thức và kỹ thuật trình bày văn bản của Đảng" required>
+              </div>
+              <div class="form-group">
+                <label for="docIssuer">Cơ Quan Ban Hành <span class="required">*</span></label>
+                <input type="text" id="docIssuer" placeholder="Ví dụ: Văn phòng Trung ương Đảng, Bộ Nội vụ, BCH Trung ương" required>
+              </div>
+              <div class="form-group">
+                <label for="docDate">Ngày Ban Hành</label>
+                <input type="date" id="docDate">
+              </div>
             </div>
-            <textarea id="rawTextContent" rows="7" placeholder="Dán nội dung toàn văn văn bản vào đây...
+
+            <!-- Khu vực Bóc tách tự động -->
+            <div class="parser-box">
+              <div class="parser-header">
+                <div>
+                  <h4>⚡ Bóc Tách Tự Động Từ Văn Bản Toàn Văn</h4>
+                  <p>Dán toàn văn văn bản có các khối "Điều 1...", "Điều 2..." vào đây, hệ thống sẽ tự động tách Điều và Tiêu đề.</p>
+                </div>
+                <button type="button" id="btnAutoParse" class="btn btn-primary">
+                  Tự Động Bóc Tách
+                </button>
+              </div>
+              <textarea id="rawTextContent" rows="7" placeholder="Dán nội dung toàn văn văn bản vào đây...
 Ví dụ:
 Điều 1. Phạm vi điều chỉnh
 Hướng dẫn này quy định về thể thức và kỹ thuật trình bày văn bản...
 
 Điều 2. Thẩm quyền ký văn bản
 1. Ký thay mặt (T/M)..."></textarea>
+            </div>
+
+            <!-- Danh sách Điều khoản sau khi bóc tách -->
+            <div class="articles-preview-section">
+              <div class="preview-header">
+                <h4>Danh Sách Các Điều/Khoản Sẽ Nạp (<span id="parsedCount">0</span> điều)</h4>
+                <button type="button" id="btnAddSingleArticle" class="btn btn-sm btn-outline">+ Thêm Điều Thủ Công</button>
+              </div>
+              <div id="articlesListContainer" class="articles-list">
+                <p class="empty-hint">Chưa có điều khoản nào. Dán văn bản vào ô trên và bấm "Tự Động Bóc Tách" hoặc thêm thủ công.</p>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" id="btnSubmitDoc" class="btn btn-success btn-lg">
+                💾 Lưu Vào Cơ Sở Dữ Liệu
+              </button>
+              <button type="reset" class="btn btn-secondary btn-lg">Làm lại</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB 3: QUẢN LÝ NGƯỜI DÙNG (USERS & ZALO USERS) -->
+      <section id="tab-users" class="tab-content">
+        <div class="users-management-grid">
+          <!-- Bảng Admin Users -->
+          <div class="card">
+            <div class="card-header flex-between">
+              <div>
+                <h3>Quản Trị Viên Hệ Thống (Admins)</h3>
+                <p>Danh sách tài khoản có quyền truy cập trang quản trị.</p>
+              </div>
+              <button id="btnOpenAddAdminModal" class="btn btn-primary btn-sm">+ Thêm Admin</button>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Tên Đăng Nhập</th>
+                    <th>Họ Tên</th>
+                    <th>Vai Trò</th>
+                    <th>Trạng Thái</th>
+                    <th>Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody id="adminUsersTableBody">
+                  <tr><td colspan="5" class="text-center py-4">Đang tải...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <!-- Danh sách Điều khoản sau khi bóc tách -->
-          <div class="articles-preview-section">
-            <div class="preview-header">
-              <h4>Danh Sách Các Điều/Khoản Sẽ Nạp (<span id="parsedCount">0</span> điều)</h4>
-              <button type="button" id="btnAddSingleArticle" class="btn btn-sm btn-outline">+ Thêm Điều Thủ Công</button>
+          <!-- Bảng Người Dùng Zalo -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Người Dùng Zalo Tương Tác Với Bot</h3>
+              <p>Danh sách người dùng Zalo đã gửi câu hỏi cho trợ lý AI.</p>
             </div>
-            <div id="articlesListContainer" class="articles-list">
-              <p class="empty-hint">Chưa có điều khoản nào. Dán văn bản vào ô trên và bấm "Tự Động Bóc Tách" hoặc thêm thủ công.</p>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Tên / ID Zalo</th>
+                    <th>Số Câu Hỏi</th>
+                    <th>Lần Cuối Hoạt Động</th>
+                    <th>Trạng Thái</th>
+                    <th>Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody id="zaloUsersTableBody">
+                  <tr><td colspan="5" class="text-center py-4">Đang tải...</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div class="form-actions">
-            <button type="submit" id="btnSubmitDoc" class="btn btn-success btn-lg">
-              💾 Lưu Vào Cơ Sở Dữ Liệu
+      <!-- TAB 4: NHẬT KÝ HỎI ĐÁP (AUDIT LOGS) -->
+      <section id="tab-logs" class="tab-content">
+        <div class="card">
+          <div class="card-header flex-between">
+            <div>
+              <h3>Nhật Ký Hỏi Đáp Thời Gian Thực (Audit Logs)</h3>
+              <p>Xem toàn bộ câu hỏi người dùng đã gửi vào Zalo Bot và câu trả lời tương ứng.</p>
+            </div>
+            <button id="btnRefreshLogs" class="btn btn-secondary btn-sm">🔄 Tải lại</button>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Thời Gian</th>
+                  <th>Người Hỏi</th>
+                  <th>Nội Dung Câu Hỏi</th>
+                  <th>Ý Định (Jev)</th>
+                  <th>Độ Trễ</th>
+                  <th>Xem Phản Hồi</th>
+                </tr>
+              </thead>
+              <tbody id="queryLogsTableBody">
+                <tr><td colspan="6" class="text-center py-8">Đang tải nhật ký...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: THỬ NGHIỆM TRUY VẤN RAG -->
+      <section id="tab-playground" class="tab-content">
+        <div class="card playground-card">
+          <div class="card-header">
+            <h3>🧪 Thử Nghiệm Truy Vấn RAG Trực Tiếp</h3>
+            <p>Nhập câu hỏi để kiểm tra ngay những Điều/Khoản nào trong PostgreSQL/RAG được truy xuất và xếp hạng.</p>
+          </div>
+
+          <div class="playground-input-row">
+            <input type="text" id="playgroundQuery" placeholder="Ví dụ: Thẩm quyền ký thay mặt T/M và ký thay K/T quy định ra sao?">
+            <button id="btnRunQueryTest" class="btn btn-primary">
+              🚀 Kiểm Tra Truy Vấn
             </button>
-            <button type="reset" class="btn btn-secondary btn-lg">Làm lại</button>
           </div>
-        </form>
-      </div>
-    </section>
 
-    <!-- TAB 3: THỬ NGHIỆM TRUY VẤN RAG -->
-    <section id="tab-playground" class="tab-content">
-      <div class="card playground-card">
-        <div class="card-header">
-          <h3>🧪 Thử Nghiệm Truy Vấn RAG Trực Tiếp</h3>
-          <p>Nhập câu hỏi để kiểm tra ngay những Điều/Khoản nào trong PostgreSQL/RAG được truy xuất và xếp hạng.</p>
-        </div>
+          <div class="quick-sample-chips">
+            <span>Gợi ý mẫu:</span>
+            <button class="chip" data-q="Thẩm quyền ký T/M và K/T trong văn bản Đảng theo hướng dẫn 17?">Ký T/M & K/T (HD 17)</button>
+            <button class="chip" data-q="Quy định con dấu trên văn bản Đảng như thế nào?">Con dấu văn bản (HD 17)</button>
+            <button class="chip" data-q="Thời hạn nộp lưu hồ sơ vào lưu trữ cơ quan Đảng là bao lâu?">Nộp lưu hồ sơ (HD 05)</button>
+            <button class="chip" data-q="Tiêu chuẩn định dạng PDF và siêu dữ liệu theo thông tư 02 BNV?">Lưu trữ điện tử (TT 02)</button>
+            <button class="chip" data-q="Những điều đảng viên không được làm theo quy định 37?">19 điều cấm (QĐ 37)</button>
+          </div>
 
-        <div class="playground-input-row">
-          <input type="text" id="playgroundQuery" placeholder="Ví dụ: Thẩm quyền ký thay mặt T/M và ký thay K/T quy định ra sao?">
-          <button id="btnRunQueryTest" class="btn btn-primary">
-            🚀 Kiểm Tra Truy Vấn
-          </button>
+          <div id="playgroundResults" class="playground-results hidden">
+            <h4>Kết Quả Đoạn Trích Được Truy Xuất (<span id="resCount">0</span> điều khoản)</h4>
+            <div id="passagesList" class="passages-container"></div>
+          </div>
         </div>
-
-        <div class="quick-sample-chips">
-          <span>Gợi ý mẫu:</span>
-          <button class="chip" data-q="Thẩm quyền ký T/M và K/T trong văn bản Đảng theo hướng dẫn 17?">Ký T/M & K/T (HD 17)</button>
-          <button class="chip" data-q="Quy định con dấu trên văn bản Đảng như thế nào?">Con dấu văn bản (HD 17)</button>
-          <button class="chip" data-q="Thời hạn nộp lưu hồ sơ vào lưu trữ cơ quan Đảng là bao lâu?">Nộp lưu hồ sơ (HD 05)</button>
-          <button class="chip" data-q="Tiêu chuẩn định dạng PDF và siêu dữ liệu theo thông tư 02 BNV?">Lưu trữ điện tử (TT 02)</button>
-          <button class="chip" data-q="Những điều đảng viên không được làm theo quy định 37?">19 điều cấm (QĐ 37)</button>
-        </div>
-
-        <div id="playgroundResults" class="playground-results hidden">
-          <h4>Kết Quả Đoạn Trích Được Truy Xuất (<span id="resCount">0</span> điều khoản)</h4>
-          <div id="passagesList" class="passages-container"></div>
-        </div>
-      </div>
-    </section>
-  </main>
+      </section>
+    </main>
+  </div>
 
   <!-- Modal Xem Chi Tiết Điều Khoản -->
   <div id="detailModal" class="modal hidden">
@@ -250,6 +387,67 @@ Hướng dẫn này quy định về thể thức và kỹ thuật trình bày v
         <hr class="divider">
         <h4>Chi Tiết Các Điều/Khoản:</h4>
         <div id="modalArticlesList" class="modal-articles-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Thêm Admin Mới -->
+  <div id="addAdminModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>Thêm Tài Khoản Quản Trị Viên</h3>
+        <button id="btnCloseAdminModal" class="btn-close">&times;</button>
+      </div>
+      <form id="createAdminForm" class="modal-body">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label for="adminUsername">Tên đăng nhập <span class="required">*</span></label>
+          <input type="text" id="adminUsername" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label for="adminFullName">Họ và tên</label>
+          <input type="text" id="adminFullName" placeholder="Nguyễn Văn A">
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label for="adminEmail">Email</label>
+          <input type="email" id="adminEmail" placeholder="admin@party.gov.vn">
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label for="adminPassword">Mật khẩu khởi tạo <span class="required">*</span></label>
+          <input type="password" id="adminPassword" required minlength="6">
+        </div>
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label for="adminRole">Vai trò</label>
+          <select id="adminRole">
+            <option value="admin">Quản trị viên (Admin)</option>
+            <option value="superadmin">Quản trị tối cao (Superadmin)</option>
+            <option value="viewer">Người xem (Viewer)</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Tạo Tài Khoản</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Xem Chi Tiết Log Phản Hồi -->
+  <div id="logDetailModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Chi Tiết Câu Hỏi & Phản Hồi Từ Trợ Lý</h3>
+        <button id="btnCloseLogModal" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="meta-row">
+          <div><strong>Người hỏi:</strong> <span id="logUser"></span></div>
+          <div><strong>Thời gian:</strong> <span id="logTime"></span></div>
+          <div><strong>Độ trễ xử lý:</strong> <span id="logLatency"></span></div>
+        </div>
+        <hr class="divider">
+        <h4>Câu hỏi:</h4>
+        <div id="logQueryText" class="passage-card" style="margin-bottom: 1rem; border-left-color: var(--accent-blue);"></div>
+        <h4>Câu trả lời từ trợ lý:</h4>
+        <div id="logResponseText" class="passage-card" style="border-left-color: var(--accent-emerald); white-space: pre-wrap;"></div>
       </div>
     </div>
   </div>

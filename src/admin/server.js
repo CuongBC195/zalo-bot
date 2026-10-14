@@ -1,26 +1,89 @@
 /**
  * Web Admin Dashboard Server
- * Quản trị cơ sở dữ liệu văn bản Đảng, thêm/sửa/xóa và thử nghiệm RAG
+ * Quản trị cơ sở dữ liệu văn bản Đảng, Xác thực Admin, Quản lý Người dùng & Audit Logs
  */
 
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
 const db = require('../db');
 const rag = require('../rag');
-const pipeline = require('../pipeline');
+const { generateToken, authMiddleware } = require('./auth');
 
 const app = express();
 const PORT = process.env.ADMIN_PORT || 3000;
 
 app.use(express.json({ limit: '10mb' }));
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ============================================================
-// API ROUTES
+// AUTHENTICATION ROUTES (PUBLIC)
 // ============================================================
 
-// 1. Lấy trạng thái hệ thống và thống kê
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ ok: false, error: 'Vui lòng nhập tên đăng nhập và mật khẩu.' });
+  }
+
+  try {
+    const user = await db.getUserByUsername(username);
+    if (!user) {
+      return res.status(401).json({ ok: false, error: 'Tài khoản không tồn tại trên hệ thống.' });
+    }
+
+    if (!user.is_active) {
+      return res.status(403).json({ ok: false, error: 'Tài khoản này đã bị khóa. Vui lòng liên hệ quản trị viên cấp cao.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ ok: false, error: 'Mật khẩu không chính xác.' });
+    }
+
+    await db.updateUserLastLogin(user.id);
+    const token = generateToken(user);
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: 'strict',
+    });
+
+    res.json({
+      ok: true,
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        fullName: user.full_name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.get('/api/auth/me', authMiddleware, (req, res) => {
+  res.json({ ok: true, user: req.user });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.clearCookie('token');
+  res.json({ ok: true, message: 'Đã đăng xuất.' });
+});
+
+// ============================================================
+// BẢO VỆ CÁC ROUTE QUẢN TRỊ BẰNG AUTHMIDDLEWARE
+// ============================================================
+app.use('/api', authMiddleware);
+
+// 1. Thống kê tổng quan (Dashboard)
 app.get('/api/stats', async (req, res) => {
   try {
     const isDbConnected = await db.checkConnection();
@@ -29,7 +92,6 @@ app.get('/api/stats', async (req, res) => {
     if (isDbConnected) {
       docs = (await db.getDocuments()) || [];
     } else {
-      // Đọc từ loader memory
       const chunks = rag.chunks || [];
       const codeSet = new Set();
       chunks.forEach(c => codeSet.add(c.documentCode || c.documentId));
@@ -51,6 +113,10 @@ app.get('/api/stats', async (req, res) => {
     const vanThuCount = docs.filter(d => d.category === 'van_thu_luu_tru').length;
     const quyDinhCount = docs.filter(d => d.category === 'quy_dinh_dang').length;
 
+    // Lấy số lượng người dùng
+    const adminUsers = await db.getAllUsers();
+    const zaloUsers = await db.getZaloUsers();
+
     res.json({
       ok: true,
       isDbConnected,
@@ -60,6 +126,8 @@ app.get('/api/stats', async (req, res) => {
         theThucCount,
         vanThuCount,
         quyDinhCount,
+        adminCount: adminUsers.length,
+        zaloUserCount: zaloUsers.length,
       },
     });
   } catch (err) {
@@ -67,7 +135,89 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// 2. Danh sách văn bản
+// ============================================================
+// QUẢN LÝ TÀI KHOẢN ADMIN (USERS)
+// ============================================================
+app.get('/api/users', async (req, res) => {
+  const users = await db.getAllUsers();
+  res.json({ ok: true, users });
+});
+
+app.post('/api/users', async (req, res) => {
+  const { username, password, fullName, email, role } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ ok: false, error: 'Tên đăng nhập và mật khẩu là bắt buộc.' });
+  }
+
+  try {
+    const existing = await db.getUserByUsername(username);
+    if (existing) {
+      return res.status(400).json({ ok: false, error: 'Tên đăng nhập này đã được sử dụng.' });
+    }
+
+    const user = await db.createUser({ username, password, fullName, email, role });
+    res.json({ ok: true, message: 'Tạo tài khoản quản trị thành công', user });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.put('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const updated = await db.updateUser(id, req.body);
+    res.json({ ok: true, message: 'Cập nhật tài khoản thành công', user: updated });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  if (req.user.id === Number(id)) {
+    return res.status(400).json({ ok: false, error: 'Không thể tự xóa tài khoản của chính mình.' });
+  }
+
+  try {
+    await db.deleteUser(id);
+    res.json({ ok: true, message: 'Đã xóa tài khoản quản trị.' });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ============================================================
+// QUẢN LÝ NGƯỜI DÙNG ZALO (ZALO USERS)
+// ============================================================
+app.get('/api/zalo-users', async (req, res) => {
+  const { search } = req.query;
+  const users = await db.getZaloUsers({ search });
+  res.json({ ok: true, users });
+});
+
+app.post('/api/zalo-users/:zaloId/toggle-block', async (req, res) => {
+  const { zaloId } = req.params;
+  const { isBlocked } = req.body;
+  try {
+    const user = await db.toggleBlockZaloUser(zaloId, isBlocked);
+    res.json({ ok: true, message: isBlocked ? 'Đã chặn người dùng Zalo này.' : 'Đã mở khóa cho người dùng.', user });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ============================================================
+// NHẬT KÝ HỎI ĐÁP (AUDIT & QUERY LOGS)
+// ============================================================
+app.get('/api/query-logs', async (req, res) => {
+  const { search, limit } = req.query;
+  const logs = await db.getQueryLogs({ search, limit: parseInt(limit, 10) || 50 });
+  res.json({ ok: true, logs });
+});
+
+// ============================================================
+// QUẢN LÝ VĂN BẢN (DOCUMENTS & ARTICLES)
+// ============================================================
 app.get('/api/documents', async (req, res) => {
   const { category, search } = req.query;
   const isDbConnected = await db.checkConnection();
@@ -77,7 +227,6 @@ app.get('/api/documents', async (req, res) => {
     return res.json({ ok: true, source: 'postgresql', documents: docs });
   }
 
-  // Fallback từ RAG memory
   let chunks = rag.chunks || [];
   const map = {};
   for (const c of chunks) {
@@ -107,7 +256,6 @@ app.get('/api/documents', async (req, res) => {
   res.json({ ok: true, source: 'local_memory', documents: list });
 });
 
-// 3. Chi tiết một văn bản
 app.get('/api/documents/:id', async (req, res) => {
   const { id } = req.params;
   const isDbConnected = await db.checkConnection();
@@ -118,7 +266,6 @@ app.get('/api/documents/:id', async (req, res) => {
     return res.json({ ok: true, document: doc });
   }
 
-  // Tìm trong memory
   const chunks = (rag.chunks || []).filter(c => (c.documentCode || c.documentId) === id);
   if (!chunks.length) return res.status(404).json({ ok: false, error: 'Không tìm thấy văn bản' });
 
@@ -140,7 +287,6 @@ app.get('/api/documents/:id', async (req, res) => {
   res.json({ ok: true, document: doc });
 });
 
-// 4. Thêm văn bản mới
 app.post('/api/documents', async (req, res) => {
   const { documentCode, documentName, issuer, category, issueDate, status, description, articles } = req.body;
 
@@ -165,7 +311,6 @@ app.post('/api/documents', async (req, res) => {
       return res.json({ ok: true, message: 'Đã lưu văn bản vào PostgreSQL thành công', document: doc });
     }
 
-    // Nếu chưa có DB, lưu tạm thành file JSON vào data/regulations/
     const filename = `custom-${documentCode.toLowerCase().replace(/[^a-z0-9]/g, '-')}.json`;
     const filePath = path.join(__dirname, '..', '..', 'data', 'regulations', filename);
     const data = {
@@ -188,7 +333,6 @@ app.post('/api/documents', async (req, res) => {
   }
 });
 
-// 5. Cập nhật văn bản
 app.put('/api/documents/:id', async (req, res) => {
   const { id } = req.params;
   const isDbConnected = await db.checkConnection();
@@ -206,7 +350,6 @@ app.put('/api/documents/:id', async (req, res) => {
   }
 });
 
-// 6. Xóa văn bản
 app.delete('/api/documents/:id', async (req, res) => {
   const { id } = req.params;
   const isDbConnected = await db.checkConnection();
@@ -218,7 +361,6 @@ app.delete('/api/documents/:id', async (req, res) => {
       return res.json({ ok: true, message: 'Đã xóa văn bản khỏi PostgreSQL', document: deleted });
     }
 
-    // Xóa file nếu ở chế độ file
     const regDir = path.join(__dirname, '..', '..', 'data', 'regulations');
     const files = fs.readdirSync(regDir);
     let deletedFile = false;
@@ -242,7 +384,6 @@ app.delete('/api/documents/:id', async (req, res) => {
   }
 });
 
-// 7. Tự động bóc tách văn bản thô (Auto Parser)
 app.post('/api/parse-raw', (req, res) => {
   const { text } = req.body;
   if (!text || !text.trim()) {
@@ -250,7 +391,6 @@ app.post('/api/parse-raw', (req, res) => {
   }
 
   const articles = [];
-  // Regex nhận diện các khối "Điều 1.", "Điều 2:", "Điều 3 -"
   const articleRegex = /(?:^|\n)\s*(Điều\s+(\d+[a-zA-Z]?)[.:\-–—]?\s*([^\n]*))\n([\s\S]*?)(?=(?:\n\s*Điều\s+\d+[a-zA-Z]?[.:\-–—]?)|$)/gi;
 
   let match;
@@ -266,7 +406,6 @@ app.post('/api/parse-raw', (req, res) => {
     });
   }
 
-  // Nếu không khớp pattern "Điều", chia thành 1 khối duy nhất
   if (!articles.length) {
     articles.push({
       articleNumber: '1',
@@ -278,7 +417,6 @@ app.post('/api/parse-raw', (req, res) => {
   res.json({ ok: true, count: articles.length, articles });
 });
 
-// 8. Thử nghiệm truy vấn RAG trực tiếp (AI Playground)
 app.post('/api/rag-test', async (req, res) => {
   const { query } = req.body;
   if (!query || !query.trim()) {
@@ -301,7 +439,6 @@ app.post('/api/rag-test', async (req, res) => {
   }
 });
 
-// 9. Đồng bộ toàn bộ dữ liệu mẫu vào PostgreSQL
 app.post('/api/seed-db', async (req, res) => {
   try {
     const isDbConnected = await db.checkConnection();
@@ -320,16 +457,16 @@ app.post('/api/seed-db', async (req, res) => {
   }
 });
 
-// Phục vụ Single Page App
+// Single Page App fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Khởi chạy server nếu chạy trực tiếp
 if (require.main === module) {
   rag.init().then(() => {
     app.listen(PORT, () => {
       console.log(`\n🌐 [Web Admin] Giao diện quản trị đang chạy tại: http://localhost:${PORT}`);
+      console.log(`🔑 Tài khoản mặc định: admin / ${process.env.ADMIN_PASSWORD || 'Admin@123456'}`);
     });
   });
 }

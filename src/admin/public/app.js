@@ -1,18 +1,30 @@
 /**
  * Frontend Application Logic cho Web Admin Dashboard
+ * Hỗ trợ Đăng nhập JWT, Quản lý Người dùng, Quản trị Văn bản & Nhật ký Audit
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Elements
+  // Authentication Elements
+  const loginScreen = document.getElementById('loginScreen');
+  const loginForm = document.getElementById('loginForm');
+  const loginUsername = document.getElementById('loginUsername');
+  const loginPassword = document.getElementById('loginPassword');
+  const loginError = document.getElementById('loginError');
+  const mainApp = document.getElementById('mainApp');
+  const currentUserName = document.getElementById('currentUserName');
+  const btnLogout = document.getElementById('btnLogout');
+
+  // Status & Seed
   const dbStatusBadge = document.getElementById('dbStatusBadge');
   const dbStatusText = document.getElementById('dbStatusText');
   const btnSeedDb = document.getElementById('btnSeedDb');
 
-  // Stats
+  // Stats Elements
   const statTotalDocs = document.getElementById('statTotalDocs');
   const statTotalArticles = document.getElementById('statTotalArticles');
   const statTheThuc = document.getElementById('statTheThuc');
   const statVanThu = document.getElementById('statVanThu');
+  const statZaloUsers = document.getElementById('statZaloUsers');
 
   // Tabs
   const tabBtns = document.querySelectorAll('.tab-btn');
@@ -32,7 +44,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const parsedCount = document.getElementById('parsedCount');
   const btnAddSingleArticle = document.getElementById('btnAddSingleArticle');
 
-  // Tab 3: RAG Playground
+  // Tab 3: Users Management
+  const adminUsersTableBody = document.getElementById('adminUsersTableBody');
+  const zaloUsersTableBody = document.getElementById('zaloUsersTableBody');
+  const btnOpenAddAdminModal = document.getElementById('btnOpenAddAdminModal');
+  const addAdminModal = document.getElementById('addAdminModal');
+  const btnCloseAdminModal = document.getElementById('btnCloseAdminModal');
+  const createAdminForm = document.getElementById('createAdminForm');
+
+  // Tab 4: Audit Logs
+  const queryLogsTableBody = document.getElementById('queryLogsTableBody');
+  const btnRefreshLogs = document.getElementById('btnRefreshLogs');
+  const logDetailModal = document.getElementById('logDetailModal');
+  const btnCloseLogModal = document.getElementById('btnCloseLogModal');
+  const logUser = document.getElementById('logUser');
+  const logTime = document.getElementById('logTime');
+  const logLatency = document.getElementById('logLatency');
+  const logQueryText = document.getElementById('logQueryText');
+  const logResponseText = document.getElementById('logResponseText');
+
+  // Tab 5: RAG Playground
   const playgroundQuery = document.getElementById('playgroundQuery');
   const btnRunQueryTest = document.getElementById('btnRunQueryTest');
   const playgroundResults = document.getElementById('playgroundResults');
@@ -40,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resCount = document.getElementById('resCount');
   const sampleChips = document.querySelectorAll('.chip');
 
-  // Modal
+  // Modals
   const detailModal = document.getElementById('detailModal');
   const btnCloseModal = document.getElementById('btnCloseModal');
   const modalDocCode = document.getElementById('modalDocCode');
@@ -50,24 +81,113 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalDate = document.getElementById('modalDate');
   const modalArticlesList = document.getElementById('modalArticlesList');
 
-  // State
+  // Local State
   let currentArticles = [];
+  let authToken = localStorage.getItem('auth_token') || null;
 
   // ============================================================
-  // KHỞI ĐỘNG VÀ TẢI DỮ LIỆU
+  // KHỞI ĐỘNG & KIỂM TRA PHIÊN ĐĂNG NHẬP
   // ============================================================
-  init();
+  checkAuth();
 
-  async function init() {
-    setupTabSwitching();
-    setupEventListeners();
-    await loadStats();
-    await loadDocuments();
+  async function checkAuth() {
+    if (!authToken) {
+      showLogin();
+      return;
+    }
+
+    try {
+      const res = await authFetch('/api/auth/me');
+      const data = await res.json();
+
+      if (data.ok && data.user) {
+        showApp(data.user);
+        initDashboard();
+      } else {
+        showLogin();
+      }
+    } catch (err) {
+      showLogin();
+    }
+  }
+
+  function showLogin() {
+    authToken = null;
+    localStorage.removeItem('auth_token');
+    loginScreen.classList.remove('hidden');
+    mainApp.classList.add('hidden');
+  }
+
+  function showApp(user) {
+    loginScreen.classList.add('hidden');
+    mainApp.classList.remove('hidden');
+    currentUserName.textContent = user.fullName || user.username;
   }
 
   // ============================================================
-  // TABS & EVENT LISTENERS
+  // ĐĂNG NHẬP & ĐĂNG XUẤT
   // ============================================================
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    loginError.classList.add('hidden');
+
+    const username = loginUsername.value.trim();
+    const password = loginPassword.value;
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        loginError.textContent = data.error || 'Đăng nhập không thành công.';
+        loginError.classList.remove('hidden');
+        return;
+      }
+
+      authToken = data.token;
+      localStorage.setItem('auth_token', authToken);
+      showApp(data.user);
+      initDashboard();
+      showToast('Đăng nhập thành công!', 'success');
+    } catch (err) {
+      loginError.textContent = 'Lỗi kết nối máy chủ: ' + err.message;
+      loginError.classList.remove('hidden');
+    }
+  });
+
+  btnLogout.addEventListener('click', async () => {
+    try {
+      await authFetch('/api/auth/logout', { method: 'POST' });
+    } catch (err) {}
+    showToast('Đã đăng xuất.', 'success');
+    showLogin();
+  });
+
+  // Wrapper gọi API có đính kèm Bearer Token
+  function authFetch(url, options = {}) {
+    options.headers = options.headers || {};
+    if (authToken) {
+      options.headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    return fetch(url, options);
+  }
+
+  // ============================================================
+  // KHỞI TẠO DASHBOARD
+  // ============================================================
+  function initDashboard() {
+    setupTabSwitching();
+    setupEventListeners();
+    loadStats();
+    loadDocuments();
+    loadUsers();
+    loadQueryLogs();
+  }
+
   function setupTabSwitching() {
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -77,6 +197,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.classList.add('active');
         const targetId = btn.dataset.tab;
         document.getElementById(targetId)?.classList.add('active');
+
+        // Tải dữ liệu tương ứng khi bấm tab
+        if (targetId === 'tab-users') loadUsers();
+        if (targetId === 'tab-logs') loadQueryLogs();
       });
     });
   }
@@ -113,21 +237,30 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Modal close
+    // Modals
     btnCloseModal.addEventListener('click', () => detailModal.classList.add('hidden'));
     detailModal.querySelector('.modal-backdrop').addEventListener('click', () => detailModal.classList.add('hidden'));
+
+    btnOpenAddAdminModal.addEventListener('click', () => addAdminModal.classList.remove('hidden'));
+    btnCloseAdminModal.addEventListener('click', () => addAdminModal.classList.add('hidden'));
+    addAdminModal.querySelector('.modal-backdrop').addEventListener('click', () => addAdminModal.classList.add('hidden'));
+
+    createAdminForm.addEventListener('submit', handleCreateAdminSubmit);
+
+    btnRefreshLogs.addEventListener('click', loadQueryLogs);
+    btnCloseLogModal.addEventListener('click', () => logDetailModal.classList.add('hidden'));
+    logDetailModal.querySelector('.modal-backdrop').addEventListener('click', () => logDetailModal.classList.add('hidden'));
   }
 
   // ============================================================
-  // API LOADERS
+  // LOADERS
   // ============================================================
   async function loadStats() {
     try {
-      const res = await fetch('/api/stats');
+      const res = await authFetch('/api/stats');
       const data = await res.json();
       if (!data.ok) return;
 
-      // Cập nhật trạng thái DB
       if (data.isDbConnected) {
         dbStatusBadge.className = 'status-pill status-connected';
         dbStatusText.textContent = 'PostgreSQL: Đang kết nối';
@@ -136,11 +269,11 @@ document.addEventListener('DOMContentLoaded', () => {
         dbStatusText.textContent = 'Chế độ Local File / Cache';
       }
 
-      // Cập nhật các con số
       statTotalDocs.textContent = data.stats.totalDocs;
       statTotalArticles.textContent = data.stats.totalArticles;
       statTheThuc.textContent = data.stats.theThucCount;
       statVanThu.textContent = data.stats.vanThuCount;
+      statZaloUsers.textContent = data.stats.zaloUserCount || 0;
     } catch (err) {
       console.error('Lỗi tải thống kê:', err);
     }
@@ -152,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const category = categoryFilter.value;
       const url = `/api/documents?search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}`;
 
-      const res = await fetch(url);
+      const res = await authFetch(url);
       const data = await res.json();
 
       if (!data.ok || !data.documents) {
@@ -204,6 +337,177 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ============================================================
+  // QUẢN LÝ NGƯỜI DÙNG (USERS & ZALO USERS)
+  // ============================================================
+  async function loadUsers() {
+    // 1. Tải Admin Users
+    try {
+      const res = await authFetch('/api/users');
+      const data = await res.json();
+      if (data.ok && data.users) {
+        adminUsersTableBody.innerHTML = data.users.map(u => `
+          <tr>
+            <td><strong>${escapeHtml(u.username)}</strong></td>
+            <td>${escapeHtml(u.full_name || 'N/A')}</td>
+            <td><span class="badge ${u.role === 'superadmin' ? 'badge-primary' : 'badge-blue'}">${escapeHtml(u.role)}</span></td>
+            <td><span class="badge ${u.is_active ? 'badge-success' : 'badge-danger'}">${u.is_active ? 'Hoạt động' : 'Đã khóa'}</span></td>
+            <td>
+              <button class="btn-danger-sm" onclick="window.deleteAdminUser(${u.id})">Xóa</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    } catch (err) {
+      adminUsersTableBody.innerHTML = `<tr><td colspan="5">Lỗi tải danh sách admin: ${err.message}</td></tr>`;
+    }
+
+    // 2. Tải Zalo Users
+    try {
+      const res = await authFetch('/api/zalo-users');
+      const data = await res.json();
+      if (data.ok && data.users) {
+        if (!data.users.length) {
+          zaloUsersTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">Chưa có tương tác nào từ Zalo.</td></tr>`;
+          return;
+        }
+
+        zaloUsersTableBody.innerHTML = data.users.map(u => `
+          <tr>
+            <td>
+              <strong>${escapeHtml(u.display_name || 'Đồng chí')}</strong><br>
+              <small style="color: var(--text-dim);">${escapeHtml(u.zalo_id)}</small>
+            </td>
+            <td><span class="badge badge-blue">${u.query_count || 0} câu</span></td>
+            <td>${u.last_active ? new Date(u.last_active).toLocaleString('vi-VN') : 'N/A'}</td>
+            <td><span class="badge ${u.is_blocked ? 'badge-danger' : 'badge-success'}">${u.is_blocked ? 'Bị chặn' : 'Bình thường'}</span></td>
+            <td>
+              <button class="${u.is_blocked ? 'btn-info-sm' : 'btn-danger-sm'}" onclick="window.toggleBlockUser('${escapeHtml(u.zalo_id)}', ${!u.is_blocked})">
+                ${u.is_blocked ? 'Mở khóa' : 'Chặn'}
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    } catch (err) {
+      zaloUsersTableBody.innerHTML = `<tr><td colspan="5">Lỗi tải danh sách Zalo users: ${err.message}</td></tr>`;
+    }
+  }
+
+  async function handleCreateAdminSubmit(e) {
+    e.preventDefault();
+    const payload = {
+      username: document.getElementById('adminUsername').value.trim(),
+      fullName: document.getElementById('adminFullName').value.trim(),
+      email: document.getElementById('adminEmail').value.trim(),
+      password: document.getElementById('adminPassword').value,
+      role: document.getElementById('adminRole').value,
+    };
+
+    try {
+      const res = await authFetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        showToast(data.error || 'Lỗi tạo admin', 'error');
+        return;
+      }
+      showToast('Tạo tài khoản quản trị viên thành công!', 'success');
+      createAdminForm.reset();
+      addAdminModal.classList.add('hidden');
+      loadUsers();
+      loadStats();
+    } catch (err) {
+      showToast('Lỗi: ' + err.message, 'error');
+    }
+  }
+
+  window.deleteAdminUser = async (id) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa tài khoản quản trị này?')) return;
+    try {
+      const res = await authFetch(`/api/users/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!data.ok) {
+        showToast(data.error || 'Lỗi xóa admin', 'error');
+        return;
+      }
+      showToast('Đã xóa tài khoản admin.', 'success');
+      loadUsers();
+      loadStats();
+    } catch (err) {
+      showToast('Lỗi: ' + err.message, 'error');
+    }
+  };
+
+  window.toggleBlockUser = async (zaloId, isBlocked) => {
+    const actionText = isBlocked ? 'chặn' : 'mở khóa';
+    if (!confirm(`Bạn có chắc muốn ${actionText} người dùng Zalo này?`)) return;
+
+    try {
+      const res = await authFetch(`/api/zalo-users/${encodeURIComponent(zaloId)}/toggle-block`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isBlocked }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        showToast(data.error || 'Lỗi thao tác', 'error');
+        return;
+      }
+      showToast(data.message, 'success');
+      loadUsers();
+    } catch (err) {
+      showToast('Lỗi: ' + err.message, 'error');
+    }
+  };
+
+  // ============================================================
+  // NHẬT KÝ HỎI ĐÁP (AUDIT LOGS)
+  // ============================================================
+  async function loadQueryLogs() {
+    try {
+      const res = await authFetch('/api/query-logs?limit=50');
+      const data = await res.json();
+      if (!data.ok || !data.logs) {
+        queryLogsTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Chưa có nhật ký nào.</td></tr>`;
+        return;
+      }
+
+      window._currentLogs = data.logs;
+
+      queryLogsTableBody.innerHTML = data.logs.map((log, idx) => `
+        <tr>
+          <td><small>${new Date(log.created_at).toLocaleString('vi-VN')}</small></td>
+          <td><strong>${escapeHtml(log.user_name || log.zalo_user_id || 'Đồng chí')}</strong></td>
+          <td>${escapeHtml(log.query_text.length > 60 ? log.query_text.slice(0, 60) + '...' : log.query_text)}</td>
+          <td><span class="badge badge-indigo">${escapeHtml(log.intent || 'N/A')}</span></td>
+          <td><small style="color: #38bdf8;">${log.latency_ms || 0}ms</small></td>
+          <td>
+            <button class="btn-info-sm" onclick="window.viewLogDetail(${idx})">Chi tiết</button>
+          </td>
+        </tr>
+      `).join('') || `<tr><td colspan="6" class="text-center py-4">Chưa có câu hỏi nào được ghi nhận.</td></tr>`;
+    } catch (err) {
+      queryLogsTableBody.innerHTML = `<tr><td colspan="6">Lỗi tải nhật ký: ${err.message}</td></tr>`;
+    }
+  }
+
+  window.viewLogDetail = (idx) => {
+    const log = window._currentLogs?.[idx];
+    if (!log) return;
+
+    logUser.textContent = log.user_name || log.zalo_user_id;
+    logTime.textContent = new Date(log.created_at).toLocaleString('vi-VN');
+    logLatency.textContent = `${log.latency_ms || 0}ms`;
+    logQueryText.textContent = log.query_text;
+    logResponseText.textContent = log.response_text;
+
+    logDetailModal.classList.remove('hidden');
+  };
+
+  // ============================================================
   // AUTO PARSER & THÊM VĂN BẢN
   // ============================================================
   async function handleAutoParse() {
@@ -214,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const res = await fetch('/api/parse-raw', {
+      const res = await authFetch('/api/parse-raw', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
@@ -292,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     try {
-      const res = await fetch('/api/documents', {
+      const res = await authFetch('/api/documents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -310,7 +614,6 @@ document.addEventListener('DOMContentLoaded', () => {
       parsedCount.textContent = '0';
       renderArticlesList();
 
-      // Chuyển về tab danh sách
       document.querySelector('[data-tab="tab-list"]').click();
       loadStats();
       loadDocuments();
@@ -320,11 +623,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ============================================================
-  // MODAL CHI TIẾT & XÓA
+  // MODAL CHI TIẾT & XÓA VĂN BẢN
   // ============================================================
   window.viewDocDetails = async (id) => {
     try {
-      const res = await fetch(`/api/documents/${encodeURIComponent(id)}`);
+      const res = await authFetch(`/api/documents/${encodeURIComponent(id)}`);
       const data = await res.json();
       if (!data.ok || !data.document) return;
 
@@ -353,7 +656,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!confirm(`Bạn có chắc chắn muốn xóa văn bản "${id}" khỏi hệ thống?`)) return;
 
     try {
-      const res = await fetch(`/api/documents/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const res = await authFetch(`/api/documents/${encodeURIComponent(id)}`, { method: 'DELETE' });
       const data = await res.json();
       if (!data.ok) {
         showToast(data.error || 'Lỗi xóa văn bản', 'error');
@@ -381,7 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnRunQueryTest.textContent = '⏳ Đang truy vấn...';
 
     try {
-      const res = await fetch('/api/rag-test', {
+      const res = await authFetch('/api/rag-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query }),
@@ -425,7 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSeedDb.textContent = '⏳ Đang nạp...';
 
     try {
-      const res = await fetch('/api/seed-db', { method: 'POST' });
+      const res = await authFetch('/api/seed-db', { method: 'POST' });
       const data = await res.json();
       btnSeedDb.disabled = false;
       btnSeedDb.textContent = '⚡ Nạp Dữ Liệu Mẫu';

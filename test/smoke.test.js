@@ -82,6 +82,60 @@ async function testDatabaseService() {
   console.log('   ✅ Database Service sẵn sàng (hỗ trợ cả PostgreSQL và Local Memory Fallback).');
 }
 
+async function testUserManagementAndAudit() {
+  console.log('🧪 [Test 5] Kiểm tra Quản lý Người Dùng, Xác thực Admin & Audit Logs...');
+  const bcrypt = require('bcryptjs');
+
+  // 1. Kiểm tra tài khoản admin mặc định
+  const admin = await db.getUserByUsername('admin');
+  assert(admin, 'Phải tồn tại tài khoản admin mặc định');
+  assert(admin.role === 'superadmin', 'Tài khoản admin phải có quyền superadmin');
+  const isPassValid = await bcrypt.compare('Admin@123456', admin.password_hash);
+  assert(isPassValid, 'Mật khẩu admin mặc định phải là Admin@123456');
+
+  // 2. Kiểm tra tạo tài khoản admin mới
+  const testUsername = 'admin_test_' + Date.now();
+  const created = await db.createUser({
+    username: testUsername,
+    password: 'Password@999',
+    fullName: 'Cán Bộ Kiểm Thử',
+    email: 'canbo@party.gov.vn',
+    role: 'admin',
+  });
+  assert(created && created.username === testUsername, 'Tạo admin mới thành công');
+
+  // 3. Kiểm tra ghi nhận tương tác Zalo user & Audit query logs
+  const testZaloId = 'zalo_user_test_99';
+  await db.recordInteraction({
+    zaloId: testZaloId,
+    displayName: 'Đồng chí Kiểm Thử',
+    chatId: 'chat_99',
+    queryText: 'Hướng dẫn 17 quy định thể thức ra sao?',
+    intent: 'party_regulation',
+    retrievedDocs: ['17-HD/VPTW'],
+    responseText: 'Theo Hướng dẫn 17-HD/VPTW...',
+    latencyMs: 15,
+  });
+
+  const zaloUsers = await db.getZaloUsers({ search: testZaloId });
+  assert(zaloUsers.length > 0, 'Phải lưu thông tin người dùng Zalo tương tác');
+  assert(zaloUsers[0].query_count >= 1, 'Số lượt hỏi phải được đếm tăng dần');
+
+  // 4. Kiểm tra Chặn người dùng (Blacklist)
+  assert(!(await db.isZaloUserBlocked(testZaloId)), 'Mặc định người dùng chưa bị chặn');
+  await db.toggleBlockZaloUser(testZaloId, true);
+  assert(await db.isZaloUserBlocked(testZaloId), 'Người dùng phải chuyển sang trạng thái bị chặn');
+  await db.toggleBlockZaloUser(testZaloId, false);
+  assert(!(await db.isZaloUserBlocked(testZaloId)), 'Mở khóa thành công');
+
+  // 5. Kiểm tra lấy Query Logs
+  const logs = await db.getQueryLogs({ limit: 10 });
+  assert(logs.length > 0, 'Phải lưu nhật ký truy vấn audit trail');
+  assert(logs[0].query_text.includes('17'), 'Nội dung log phải khớp câu hỏi đã ghi');
+
+  console.log('   ✅ Quản lý Người Dùng, Phân Quyền Admin & Audit Logs hoạt động chính xác 100%.');
+}
+
 async function main() {
   console.log('========================================');
   console.log('🚀 BẮT ĐẦU SMOKE TEST HỆ THỐNG (v2.0)');
@@ -92,6 +146,7 @@ async function main() {
     await testRagSearch();
     await testPipelineEndToEnd();
     await testDatabaseService();
+    await testUserManagementAndAudit();
 
     console.log('\n========================================');
     console.log('🎉 TẤT CẢ SMOKE TEST ĐỀU THÀNH CÔNG (PASS)');

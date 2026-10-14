@@ -5,6 +5,7 @@
 
 const config = require('../config');
 const pipeline = require('../pipeline');
+const db = require('../db');
 
 class PollingEngine {
   constructor(api) {
@@ -77,6 +78,16 @@ class PollingEngine {
 
     console.log(`\n📩 [Zalo] Nhận tin nhắn từ ${senderName} (${chatId}): "${text}"`);
 
+    // Kiểm tra người dùng có bị chặn không
+    const isBlocked = await db.isZaloUserBlocked(from.id);
+    if (isBlocked) {
+      console.warn(`⛔ [Zalo] Người dùng ${senderName} (${from.id}) đang bị chặn, bỏ qua tin nhắn.`);
+      await this.api.sendMessage(chatId, 'Tài khoản của bạn hiện đang bị tạm khóa tương tác với trợ lý. Vui lòng liên hệ quản trị viên.');
+      return;
+    }
+
+    const startTime = Date.now();
+
     // Gửi qua Pipeline xử lý Jev + RAG + Gemini
     const reply = await pipeline.processMessage({
       text,
@@ -85,9 +96,25 @@ class PollingEngine {
       senderName,
     });
 
+    const latencyMs = Date.now() - startTime;
+
     // Gửi phản hồi lại Zalo
     await this.api.sendMessage(chatId, reply);
-    console.log(`📤 [Zalo] Đã phản hồi thành công cho ${senderName}`);
+    console.log(`📤 [Zalo] Đã phản hồi thành công cho ${senderName} (${latencyMs}ms)`);
+
+    // Ghi nhật ký tương tác và cập nhật thông tin Zalo user
+    await db.recordInteraction({
+      zaloId: from.id,
+      displayName: senderName,
+      chatId,
+      queryText: text,
+      intent: 'party_qa',
+      retrievedDocs: [],
+      responseText: reply,
+      latencyMs,
+    }).catch(err => {
+      console.warn('[Polling] Lỗi ghi interaction log:', err.message);
+    });
   }
 
   _normalizeUpdates(result) {
