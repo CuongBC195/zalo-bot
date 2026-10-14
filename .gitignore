@@ -8,3 +8,7 @@ data/state.json
 data/*.json
 data/knowledge_index.json
 !data/regulations/
+.claude/
+agent/
+data/skills/
+skills-lock.json
