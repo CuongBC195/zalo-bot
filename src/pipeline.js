@@ -166,6 +166,7 @@ class PipelineOrchestrator {
               name: c.documentName,
               issuer: c.issuer,
               issueDate: c.issueDate,
+              status: c.status || 'Còn hiệu lực',
             });
           }
         }
@@ -173,7 +174,7 @@ class PipelineOrchestrator {
         let listText = '';
         let i = 1;
         for (const doc of docMap.values()) {
-          listText += `${i++}. ${doc.code} (${doc.issueDate || 'Ban hành'}): ${doc.name} - Cơ quan: ${doc.issuer || 'N/A'}\n`;
+          listText += `${i++}. [${doc.status}] ${doc.code} (${doc.issueDate || 'Ban hành'}): ${doc.name} - Cơ quan: ${doc.issuer || 'N/A'}\n`;
         }
 
         if (!listText) {

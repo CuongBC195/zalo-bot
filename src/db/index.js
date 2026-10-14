@@ -486,10 +486,11 @@ class DatabaseService {
       await client.query('DELETE FROM articles WHERE document_id = $1', [docId]);
 
       for (const art of articles) {
+        const fullText = `${documentCode} ${documentName} - Điều ${art.articleNumber || ''}: ${art.title || ''}. ${art.content || ''}`;
         await client.query(
-          `INSERT INTO articles (document_id, article_number, title, content)
-           VALUES ($1, $2, $3, $4)`,
-          [docId, String(art.articleNumber || ''), art.title || '', art.content || '']
+          `INSERT INTO articles (document_id, article_number, title, content, full_text)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [docId, String(art.articleNumber || ''), art.title || '', art.content || '', fullText]
         );
       }
 
@@ -526,10 +527,11 @@ class DatabaseService {
       if (Array.isArray(articles)) {
         await client.query('DELETE FROM articles WHERE document_id = $1', [id]);
         for (const art of articles) {
+          const fullText = `${documentCode} ${documentName} - Điều ${art.articleNumber || ''}: ${art.title || ''}. ${art.content || ''}`;
           await client.query(
-            `INSERT INTO articles (document_id, article_number, title, content)
-             VALUES ($1, $2, $3, $4)`,
-            [id, String(art.articleNumber || ''), art.title || '', art.content || '']
+            `INSERT INTO articles (document_id, article_number, title, content, full_text)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [id, String(art.articleNumber || ''), art.title || '', art.content || '', fullText]
           );
         }
       }
@@ -567,6 +569,29 @@ class DatabaseService {
       if (!cleanWords.length) return [];
       const tsQueryStr = cleanWords.join(' | ');
 
+      // Tìm số hiệu văn bản trong câu hỏi (loại bỏ ngày tháng dạng DD/MM/YYYY để tránh nhầm ngày 01 thành 01-HD/TW)
+      const queryWithoutDates = queryStr.replace(/\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b/g, ' ');
+      const docNumbers = queryWithoutDates.match(/\b\d{1,4}\b/g) || [];
+
+      let numberClause = '0.0';
+      const params = [tsQueryStr, `%${queryStr.trim()}%`];
+
+      if (docNumbers.length > 0) {
+        const conds = [];
+        for (const num of docNumbers) {
+          // Bỏ qua các số năm đơn lẻ 19xx, 20xx khi xét boost số hiệu chính
+          if (parseInt(num, 10) > 1900 && parseInt(num, 10) < 2100) continue;
+          params.push(`%${num}%`);
+          conds.push(`d.document_code ILIKE $${params.length}`);
+        }
+        if (conds.length > 0) {
+          numberClause = `CASE WHEN (${conds.join(' OR ')}) THEN 30.0 ELSE 0.0 END`;
+        }
+      }
+
+      params.push(topK);
+      const limitParamIdx = params.length;
+
       const searchSql = `
         SELECT 
           a.id,
@@ -578,24 +603,23 @@ class DatabaseService {
           d.issuer,
           d.issue_date as "issueDate",
           d.category,
+          d.status,
           ts_rank_cd(a.tsv, to_tsquery('simple', $1)) +
-          CASE WHEN d.document_code ILIKE $2 THEN 5.0 ELSE 0.0 END as rank
+          ${numberClause} +
+          CASE WHEN d.document_name ILIKE $2 THEN 10.0 ELSE 0.0 END as rank
         FROM articles a
         JOIN documents d ON a.document_id = d.id
         WHERE 
           a.tsv @@ to_tsquery('simple', $1)
           OR a.title ILIKE $2
           OR a.content ILIKE $2
-          OR d.document_code ILIKE $2
+          OR a.full_text ILIKE $2
+          OR (${numberClause} > 0)
         ORDER BY rank DESC, a.id ASC
-        LIMIT $3
+        LIMIT $${limitParamIdx}
       `;
 
-      const res = await this.pool.query(searchSql, [
-        tsQueryStr,
-        `%${queryStr.trim()}%`,
-        topK,
-      ]);
+      const res = await this.pool.query(searchSql, params);
 
       return res.rows.map(row => ({
         ...row,

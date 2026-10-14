@@ -81,8 +81,8 @@ CREATE INDEX IF NOT EXISTS idx_documents_code ON documents(document_code);
 -- Trigger tự động cập nhật TSVector phục vụ Full-Text Search tiếng Việt
 CREATE OR REPLACE FUNCTION update_article_tsv() RETURNS trigger AS $$
 BEGIN
-    NEW.full_text := COALESCE(NEW.title, '') || ' ' || COALESCE(NEW.content, '');
-    NEW.tsv := to_tsvector('simple', COALESCE(NEW.title, '') || ' ' || COALESCE(NEW.content, ''));
+    NEW.full_text := COALESCE(NEW.full_text, COALESCE(NEW.title, '') || ' ' || COALESCE(NEW.content, ''));
+    NEW.tsv := to_tsvector('simple', COALESCE(NEW.full_text, '') || ' ' || COALESCE(NEW.title, '') || ' ' || COALESCE(NEW.content, ''));
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

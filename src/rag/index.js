@@ -128,7 +128,8 @@ class RagEngine {
 
     const normalizedQuery = this._normalize(query);
     const queryTokens = this._tokenize(normalizedQuery);
-    const docNumbers = query.match(/\b\d{1,3}\b/g) || [];
+    const queryWithoutDates = query.replace(/\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b/g, ' ');
+    const docNumbers = queryWithoutDates.match(/\b\d{1,3}\b/g) || [];
 
     const scored = this.chunks.map(chunk => {
       const normChunk = this._normalize(chunk.fullText);
@@ -136,6 +137,7 @@ class RagEngine {
 
       // 1. Khớp số hiệu văn bản (vd: hỏi "17", "37", "05", "24"...)
       for (const num of docNumbers) {
+        if (parseInt(num, 10) > 1900 && parseInt(num, 10) < 2100) continue;
         if (chunk.documentCode?.includes(num)) {
           score += 15.0;
         }
