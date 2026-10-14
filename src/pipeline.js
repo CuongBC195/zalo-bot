@@ -100,7 +100,7 @@ class PipelineOrchestrator {
         `Chào ${senderName},\n\n` +
         `Hiện tại trong kho dữ liệu văn bản Đảng của hệ thống chưa tìm thấy quy định nào điều chỉnh trực tiếp nội dung:\n` +
         `"${query}"\n\n` +
-        `💡 Gợi ý:\n` +
+        `Gợi ý:\n` +
         `• Đồng chí có thể thử tìm bằng từ khóa cụ thể hơn (ví dụ: "tuổi kết nạp", "quy định 37", "thời hạn dự bị").\n` +
         `• Gõ /docs để xem danh mục các văn bản Đảng hiện có trong kho dữ liệu.`
       );
@@ -127,7 +127,7 @@ class PipelineOrchestrator {
       const check = await this.jev.checkFaithfulness(context, answer);
       if (!check.isFaithful) {
         console.warn(`[Pipeline] Cảnh báo: Câu trả lời có nguy cơ không khớp tài liệu trích dẫn!`);
-        answer += `\n\n⚠️ Lưu ý: Nội dung trên được tổng hợp tự động; đồng chí vui lòng đối chiếu lại văn bản gốc trước khi áp dụng chính thức.`;
+        answer += `\n\nLưu ý: Nội dung trên được tổng hợp tự động; đồng chí vui lòng đối chiếu lại văn bản gốc trước khi áp dụng chính thức.`;
       }
     }
 
@@ -177,15 +177,15 @@ class PipelineOrchestrator {
         }
 
         return (
-          `📚 DANH MỤC VĂN BẢN ĐẢNG TRONG KHO DỮ LIỆU (${docMap.size || 8} VĂN BẢN):\n` +
+          `DANH MỤC VĂN BẢN ĐẢNG TRONG KHO DỮ LIỆU (${docMap.size || 8} VĂN BẢN):\n` +
           `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           listText +
-          `\n💡 Đồng chí có thể nạp thêm văn bản mới qua Web Admin Dashboard hoặc thư mục /data/regulations/`
+          `\nLưu ý: Đồng chí có thể nạp thêm văn bản mới qua Web Admin Dashboard hoặc thư mục /data/regulations/`
         );
       }
 
       case '/ping':
-        return `🏓 Pong! Hệ thống AI (Jev + RAG + Gemini) đang hoạt động ổn định.`;
+        return `Pong! Hệ thống AI (Jev + RAG + Gemini) đang hoạt động ổn định.`;
 
       default:
         return `Lệnh ${cmd} không hợp lệ. Gõ /help để xem hướng dẫn.`;
@@ -194,20 +194,20 @@ class PipelineOrchestrator {
 
   _buildGreeting(senderName = 'Đồng chí') {
     return (
-      `🇻🇳 CHÀO MỪNG ${senderName.toUpperCase()} ĐẾN VỚI TRỢ LÝ VĂN BẢN ĐẢNG AI\n` +
+      `HỆ THỐNG TRỢ LÝ VĂN BẢN ĐẢNG & ZALO AI\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `Chào ${senderName},\n\n` +
       `Tôi là trợ lý AI chuyên giải đáp các thắc mắc về Cương lĩnh, Điều lệ, Quy định, Thông tư và Hướng dẫn của Đảng Cộng sản Việt Nam.\n\n` +
-      `✨ CÔNG NGHỆ ỨNG DỤNG:\n` +
-      `• Jev (TypeSafe System 1): Định tuyến ý định & kiểm duyệt độ tin cậy.\n` +
-      `• RAG: Truy xuất chính xác từng Điều/Khoản từ kho dữ liệu Đảng.\n` +
-      `• Gemini (System 2): Phân tích và soạn thảo phản hồi chuẩn mực.\n\n` +
-      `📌 MỘT SỐ CÂU HỎI MẪU:\n` +
-      `• "Tuổi đời và trình độ học vấn để được kết nạp Đảng quy định ra sao?"\n` +
+      `CÁC CHUYÊN MỤC HỖ TRỢ CHÍNH:\n` +
+      `• Thể thức và kỹ thuật trình bày văn bản Đảng (Hướng dẫn 17-HD/VPTW: thẩm quyền ký T/M, K/T, đóng dấu, định lề...).\n` +
+      `• Công tác văn thư và lưu trữ cơ quan Đảng (Hướng dẫn 05, Hướng dẫn 06, Thông tư 02 BNV: nộp lưu hồ sơ, lưu trữ điện tử...).\n` +
+      `• Quy định và thi hành Điều lệ Đảng (Quy định 24, Quy định 37 về 19 điều cấm, Hướng dẫn 01, Quy định 22 về kiểm tra kỷ luật...).\n\n` +
+      `MỘT SỐ CÂU HỎI MẪU:\n` +
       `• "Thẩm quyền ký thay mặt T/M và ký thay K/T trong văn bản Đảng quy định thế nào?"\n` +
+      `• "Quy định đóng dấu trên chữ ký và dấu giáp lai văn bản Đảng ra sao?"\n` +
       `• "Thời hạn nộp lưu hồ sơ vào Lưu trữ cơ quan Đảng là bao lâu?"\n` +
-      `• "Tiêu chuẩn định dạng tệp hồ sơ lưu trữ điện tử theo Thông tư 02 BNV?"\n` +
-      `• "Quy định 37 về những điều đảng viên không được làm gồm những gì?"\n\n` +
-      `💡 Gõ /docs để xem danh sách các văn bản hiện có.`
+      `• "Những điều đảng viên không được làm theo Quy định 37?"\n\n` +
+      `Gõ /docs để tra cứu toàn bộ danh mục văn bản hiện có trong cơ sở dữ liệu.`
     );
   }
 }

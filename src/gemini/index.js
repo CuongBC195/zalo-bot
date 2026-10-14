@@ -93,16 +93,16 @@ class GeminiService {
   _fallbackFormat(query, context) {
     if (!context || context.includes('Không tìm thấy tài liệu căn cứ')) {
       return (
-        `⚠️ Chưa tìm thấy quy định phù hợp trong kho dữ liệu văn bản hiện tại để giải đáp câu hỏi:\n` +
+        `Chưa tìm thấy quy định phù hợp trong kho dữ liệu văn bản hiện tại để giải đáp câu hỏi:\n` +
         `"${query}"\n\n` +
         `Đồng chí vui lòng kiểm tra lại từ khóa hoặc đối chiếu trực tiếp với cấp ủy/chi bộ.`
       );
     }
 
     return (
-      `📌 KẾT QUẢ TRA CỨU CĂN CỨ VĂN BẢN ĐẢNG:\n\n` +
+      `KẾT QUẢ TRA CỨU CĂN CỨ VĂN BẢN ĐẢNG:\n\n` +
       `${context}\n` +
-      `💡 Lưu ý: Hệ thống đang trích xuất trực tiếp từ các Điều/Khoản trong kho dữ liệu Đảng.`
+      `Lưu ý: Hệ thống đang trích xuất trực tiếp từ các Điều/Khoản trong kho dữ liệu Đảng.`
     );
   }
 }
