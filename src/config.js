@@ -22,6 +22,7 @@ const config = {
     baseUrl: process.env.GEMINI_API_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta',
     maxOutputTokens: 2048,
     temperature: 0.2, // Nhiệt độ thấp để đảm bảo câu trả lời chuẩn xác, không suy diễn
+    rewriteTimeoutMs: parseInt(process.env.GEMINI_REWRITE_TIMEOUT_MS || '2500', 10),
   },
 
   // TypeSafe Jev (System One - Judgment & Routing)
