@@ -28,6 +28,10 @@ const LEGACY_REPLACEMENT_MAP = [
   // Ánh xạ chuyên đề nghiệp vụ cấp xã
   { pattern: /(ph[oô]ng\s*l[uư]u\s*tr[uữ]|ph[uư][oơ]ng\s*[aá]n\s*ph[aâ]n\s*lo[aạ]i).*?(c[aấ]p\s*x[aã]|x[aã]|ph[uư][oờ]ng)/i, expansion: ' 17-HD/VPTW ' },
   { pattern: /(tr[iì]nh\s*b[aày]\s*th[eể]\s*th[uứ]c|[đd][oó]ng\s*d[aấ]u\s*v[aă]n\s*b[aả]n)/i, expansion: ' 05-HD/VPTW 399-QĐ/TW ' },
+  // Ánh xạ nghiệp vụ chi tiết: Giấy mời / Công văn triệu tập / Thư mời họp
+  { pattern: /(gi[aấ]y\s*m[oờ]i|th[uư]\s*m[oờ]i|tri[eệ]u\s*t[aậ]p\s*h[oọ]p|c[oô]ng\s*v[aă]n\s*tri[eệ]u\s*t[aậ]p)/i, expansion: ' công văn triệu tập danh sách đại biểu khách mời hồ sơ hội nghị đại hội đảng bộ cấp xã 24-HD/VPTW ' },
+  // Ánh xạ nghiệp vụ chi tiết: Phông chữ / Cỡ chữ (size) / Kiểu chữ / Căn lề thể thức Đảng
+  { pattern: /(ph[oô]ng\s*ch[uữ]|c[oỡ]\s*ch[uữ]|size\s*ch[uữ]|ki[eể]u\s*ch[uữ]|c[aă]n\s*l[eề]|kh[oổ]\s*gi[aấ]y)/i, expansion: ' phông chữ cỡ chữ kiểu chữ Times New Roman thể thức và kỹ thuật trình bày văn bản Đảng 05-HD/VPTW ' },
 ];
 
 function expandLegacyQuery(queryText) {
@@ -182,11 +186,26 @@ class PipelineOrchestrator {
       }
     }
 
-    // Bước 4. TẦNG RAG LƯỢT 1 & LAZY REWRITING (Fallback-on-Miss)
-    const searchQuery = expandLegacyQuery(expandedQuery);
+    // Bước 4. TẦNG 1 (GEMINI KEY 1): CHUẨN HÓA CÂU HỎI & MỞ RỘNG TỪ KHÓA NGHIỆP VỤ ĐẢNG / LƯU TRỮ
+    let effectiveQuery = expandedQuery;
+    let searchTarget = expandedQuery;
+
+    try {
+      console.log(`[Pipeline] Tầng 1: Đang chuẩn hóa câu hỏi với Gemini Key 1: "${rawQuery}"...`);
+      const normResult = await this.gemini.normalizeUserQuery(rawQuery);
+      if (normResult && (normResult.searchPhrase || normResult.normalizedQuery)) {
+        effectiveQuery = normResult.normalizedQuery || expandedQuery;
+        // Kết hợp chuỗi từ khóa chuyên ngành với câu gốc để tối ưu Full-Text Search
+        searchTarget = `${expandedQuery} ${normResult.searchPhrase || ''} ${(normResult.keywords || []).join(' ')}`.trim();
+        console.log(`[Pipeline] Tầng 1 hoàn tất. Search Target: "${searchTarget}"`);
+      }
+    } catch (normErr) {
+      console.warn(`[Pipeline] Tầng 1 chuẩn hóa câu hỏi gặp lỗi nhẹ (dùng fallback trực tiếp):`, normErr.message);
+    }
+
+    const searchQuery = expandLegacyQuery(searchTarget);
     console.log(`[Pipeline] Đang truy xuất tài liệu từ RAG lượt 1: "${searchQuery}"`);
     let candidatePassages = await this.rag.search(searchQuery, { topK: 8 });
-    let effectiveQuery = expandedQuery;
 
     // Hỗ trợ câu hỏi đa lĩnh vực / có đánh số mục (1)... (2)...
     const matchSubParts = expandedQuery.match(/(?:(?:\(1\)|1\.|thứ nhất)\s*)([\s\S]*?)(?:(?:\(2\)|2\.|thứ hai)\s*)([\s\S]*)/i);
@@ -233,23 +252,10 @@ class PipelineOrchestrator {
       candidatePassages = merged;
     }
 
-    // Điều kiện Lazy Rewriting:
-    // 1. Câu hỏi tiếng Việt không dấu VÀ kết quả RAG lượt 1 có điểm khớp thấp, HOẶC
-    // 2. Kết quả RAG lượt 1 trả về rỗng (candidatePassages.length === 0) do người dùng gõ sai chính tả nặng
-    const hasVietnameseAccent = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(rawQuery);
-    const firstScore = Number(candidatePassages?.[0]?.rank ?? candidatePassages?.[0]?.score ?? 0);
-    const isLowScoreMatch = !candidatePassages || candidatePassages.length === 0 || firstScore < 5.0;
-    const isMiss = !candidatePassages || candidatePassages.length === 0;
-
-    if ((!hasVietnameseAccent && isLowScoreMatch) || isMiss) {
-      console.log(`[Pipeline] Kích hoạt Lazy Query Rewriting (tiếng Việt không dấu hoặc hụt tài liệu)...`);
-      const rewritten = await this.gemini.rewriteQuery(rawQuery);
-      if (rewritten && rewritten !== rawQuery) {
-        effectiveQuery = rewritten;
-        const retrySearchQuery = expandLegacyQuery(expandAbbreviations(rewritten));
-        console.log(`[Pipeline] Đang truy xuất tài liệu từ RAG lượt 2 với truy vấn chuẩn hóa: "${retrySearchQuery}"`);
-        candidatePassages = await this.rag.search(retrySearchQuery, { topK: 8 });
-      }
+    // Điều kiện Lazy Rewriting bổ sung nếu vẫn bị miss
+    if (!candidatePassages || candidatePassages.length === 0) {
+      console.log(`[Pipeline] RAG chưa có kết quả, kích hoạt Retry với truy vấn gốc...`);
+      candidatePassages = await this.rag.search(expandLegacyQuery(expandedQuery), { topK: 8 });
     }
 
     if (!candidatePassages || !candidatePassages.length) {

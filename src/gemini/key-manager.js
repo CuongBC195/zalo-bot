@@ -36,6 +36,39 @@ class GeminiKeyManager {
   }
 
   /**
+   * Lấy API key chuyên biệt theo vai trò kiến trúc 2 tầng:
+   * - 'normalizer': Tầng 1 chuẩn hóa câu hỏi và trích xuất từ khóa nghiệp vụ (ưu tiên Key 1)
+   * - 'generator': Tầng 2 sinh câu trả lời căn cứ chính xác văn bản Đảng (ưu tiên Key 2)
+   * Tự động failover qua lại nếu một key bị hạn mức hoặc cooldown
+   */
+  getKeyForRole(role = 'generator') {
+    if (!this.keys.length) return '';
+    if (this.keys.length === 1) return this.getKey();
+
+    const now = Date.now();
+    const primaryIdx = role === 'normalizer' ? 0 : 1;
+    const secondaryIdx = role === 'normalizer' ? 1 : 0;
+
+    const primaryKey = this.keys[primaryIdx];
+    const primaryCooldown = this.cooldowns.get(primaryKey) || 0;
+
+    if (now > primaryCooldown) {
+      return primaryKey;
+    }
+
+    // Nếu key ưu tiên bị cooldown, dùng key dự phòng
+    const secondaryKey = this.keys[secondaryIdx];
+    const secondaryCooldown = this.cooldowns.get(secondaryKey) || 0;
+    if (now > secondaryCooldown) {
+      console.log(`[KeyManager] Key vai trò ${role} đang cooldown, tự động chuyển đổi sang key dự phòng.`);
+      return secondaryKey;
+    }
+
+    // Nếu cả hai đều cooldown, quay về lấy bất kỳ key nào khả dụng
+    return this.getKey();
+  }
+
+  /**
    * Đánh dấu key bị lỗi 429 hoặc lỗi hạn mức, tạm ngưng dùng trong cooldownMs
    */
   markRateLimited(key, cooldownMs = 60000) {
