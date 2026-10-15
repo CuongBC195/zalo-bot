@@ -169,12 +169,7 @@
         </div>
 
         <div class="topbar-right">
-          <div id="dbStatusBadge" class="db-status-badge">
-            <span class="status-dot"></span>
-            <span id="dbStatusText">Đang kiểm tra kết nối...</span>
-          </div>
-
-          <button id="btnClearAiCache" class="btn-topbar" data-tooltip="Xóa sạch bộ nhớ đệm câu trả lời để AI nạp quy định mới">
+          <button id="btnClearAiCache" class="btn-topbar-tool" data-tooltip="Xóa sạch bộ nhớ đệm câu trả lời để AI nạp quy định mới">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
               <path d="M3 6h18"></path>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -182,7 +177,7 @@
             <span>Xóa Cache AI</span>
           </button>
 
-          <button id="btnSeedDb" class="btn-topbar btn-topbar-primary" data-tooltip="Nạp lại 462 điều khoản chuẩn từ thư mục regulations vào PostgreSQL">
+          <button id="btnSeedDb" class="btn-topbar-tool" data-tooltip="Nạp lại 462 điều khoản chuẩn từ thư mục regulations vào cơ sở dữ liệu">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
               <polyline points="23 4 23 10 17 10"></polyline>
               <polyline points="1 20 1 14 7 14"></polyline>
@@ -382,103 +377,110 @@
              ============================================================ -->
         <section id="view-editor" class="view-section">
 
-          <!-- Thanh Trạng Thái Chế Độ -->
-          <div class="editor-status-banner">
-            <div class="editor-status-text" id="editorStatusText">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" style="width: 18px; height: 18px; color: var(--primary);">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
-              <span>Chế độ: Thêm mới văn bản quy định</span>
-            </div>
-            <button id="btnCancelEditDoc" class="btn btn-secondary hidden">
+          <!-- Thanh Chuyển Tab Studio Soạn Thảo -->
+          <div class="studio-nav-tabs">
+            <button type="button" class="studio-tab-btn active" data-studio-tab="tab-doc-editor">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
               </svg>
-              <span>Hủy & Chuyển về Tạo mới</span>
+              <span>Trình Soạn Thảo Văn Bản & Điều Khoản</span>
+            </button>
+            <button type="button" class="studio-tab-btn" data-studio-tab="tab-auto-parser">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              <span>Công Cụ Bóc Tách Tự Động Từ Văn Bản Toàn Văn</span>
             </button>
           </div>
 
-          <!-- Split-View 2 Cột (420px + 1fr) -->
-          <div class="editor-split-view">
+          <!-- TAB 1: TRÌNH SOẠN THẢO VĂN BẢN (DOCUMENT EDITOR) -->
+          <div id="tab-doc-editor" class="studio-tab-content active">
+            <!-- Banner Chế độ -->
+            <div class="editor-status-banner">
+              <div class="editor-status-text" id="editorStatusText">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" style="width: 18px; height: 18px; color: var(--primary);">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>Chế độ: Thêm mới văn bản quy định</span>
+              </div>
+              <button id="btnCancelEditDoc" class="btn btn-secondary hidden" style="height: 30px; font-size: 12px; padding: 0 10px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                <span>Hủy & Chuyển về Tạo mới</span>
+              </button>
+            </div>
 
-            <!-- CỘT TRÁI: THÔNG TIN CHUNG & BÓC TÁCH TỰ ĐỘNG -->
-            <div class="editor-card">
-              <div class="editor-card-header">
-                <h3 class="editor-card-title">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                  </svg>
-                  <span>Thông Tin Văn Bản</span>
-                </h3>
+            <!-- Bìa Hồ Sơ Văn Bản (Header Card) -->
+            <div class="doc-header-card">
+              <div class="doc-header-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <span>Thông Tin Cơ Bản Của Văn Bản Quy Định</span>
               </div>
 
               <form id="editorDocForm">
                 <input type="hidden" id="editingDocId" value="">
 
-                <div class="form-group">
-                  <label class="form-label" for="docCode">Số và Ký hiệu văn bản <span class="req">*</span></label>
-                  <input type="text" id="docCode" class="form-control font-mono" placeholder="Ví dụ: 05-HD/VPTW, 208-QĐ/TW" required>
+                <div class="doc-form-row doc-form-row-3">
+                  <div class="form-group">
+                    <label class="form-label" for="docIssuer">Cơ quan ban hành <span class="req">*</span></label>
+                    <input type="text" id="docIssuer" class="form-control" placeholder="Ví dụ: Văn phòng Trung ương Đảng" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="docCode">Số và Ký hiệu văn bản <span class="req">*</span></label>
+                    <input type="text" id="docCode" class="form-control font-mono" placeholder="Ví dụ: 05-HD/VPTW, 208-QĐ/TW" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="docDate">Ngày ban hành</label>
+                    <input type="date" id="docDate" class="form-control">
+                  </div>
                 </div>
 
-                <div class="form-group">
-                  <label class="form-label" for="docName">Tên văn bản / Trích yếu nội dung <span class="req">*</span></label>
-                  <textarea id="docName" class="form-control" rows="2" placeholder="Ví dụ: Hướng dẫn một số vấn đề về thể thức và kỹ thuật trình bày văn bản Đảng..." required></textarea>
+                <div class="doc-form-row doc-form-row-full">
+                  <div class="form-group">
+                    <label class="form-label" for="docName">Tên văn bản / Trích yếu nội dung <span class="req">*</span></label>
+                    <textarea id="docName" class="form-control" rows="2" placeholder="Ví dụ: Hướng dẫn một số vấn đề về thể thức và kỹ thuật trình bày văn bản Đảng theo Quy định số 399-QĐ/TW..." required style="font-weight: 600;"></textarea>
+                  </div>
                 </div>
 
-                <div class="form-group">
-                  <label class="form-label" for="docIssuer">Cơ quan ban hành <span class="req">*</span></label>
-                  <input type="text" id="docIssuer" class="form-control" placeholder="Ví dụ: Văn phòng Trung ương Đảng" required>
+                <div class="doc-form-row doc-form-row-2">
+                  <div class="form-group">
+                    <label class="form-label" for="docCategory">Chuyên mục nghiệp vụ <span class="req">*</span></label>
+                    <select id="docCategory" class="form-control" required>
+                      <option value="quy_dinh_dang">Quy định & Điều lệ Đảng (quy_dinh_dang)</option>
+                      <option value="the_thuc">Thể thức văn bản (the_thuc)</option>
+                      <option value="van_thu_luu_tru">Văn thư & Lưu trữ (van_thu_luu_tru)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="docStatus">Tình trạng hiệu lực <span class="req">*</span></label>
+                    <select id="docStatus" class="form-control" required>
+                      <option value="Còn hiệu lực">Còn hiệu lực (Hiện hành)</option>
+                      <option value="Hết hiệu lực">Hết hiệu lực</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div class="form-group">
-                  <label class="form-label" for="docCategory">Chuyên mục nghiệp vụ <span class="req">*</span></label>
-                  <select id="docCategory" class="form-control" required>
-                    <option value="quy_dinh_dang">Quy định & Điều lệ Đảng (quy_dinh_dang)</option>
-                    <option value="the_thuc">Thể thức văn bản (the_thuc)</option>
-                    <option value="van_thu_luu_tru">Văn thư & Lưu trữ (van_thu_luu_tru)</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label" for="docDate">Ngày ban hành</label>
-                  <input type="date" id="docDate" class="form-control">
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label" for="docStatus">Tình trạng hiệu lực <span class="req">*</span></label>
-                  <select id="docStatus" class="form-control" required>
-                    <option value="Còn hiệu lực">Còn hiệu lực (Hiện hành)</option>
-                    <option value="Hết hiệu lực">Hết hiệu lực</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label" for="docDescription">Mô tả / Ghi chú hiệu lực hoặc văn bản thay thế</label>
-                  <textarea id="docDescription" class="form-control" rows="2" placeholder="Ví dụ: Hết hiệu lực - Được thay thế bởi Quy định số 208-QĐ/TW ngày 22/01/2026..."></textarea>
-                </div>
-
-                <!-- Khối Auto Parser -->
-                <div class="auto-parser-box">
-                  <label class="form-label" for="rawTextContent">Bóc Tách Tự Động Từ Văn Bản Thô</label>
-                  <textarea id="rawTextContent" class="form-control font-mono" rows="6" placeholder="Dán toàn văn văn bản hoặc nhiều điều khoản vào đây (hệ thống tự nhận diện 'Điều 1.', 'Điều 2.'...)..."></textarea>
-                  <button type="button" id="btnAutoParse" class="btn btn-parse">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                    <span>Tự Động Bóc Tách Thành Các Điều</span>
-                  </button>
+                <div class="doc-form-row doc-form-row-full" style="margin-bottom: 0;">
+                  <div class="form-group">
+                    <label class="form-label" for="docDescription">Mô tả / Ghi chú hiệu lực hoặc văn bản thay thế (nếu có)</label>
+                    <input type="text" id="docDescription" class="form-control" placeholder="Ví dụ: Hết hiệu lực - Được thay thế bởi Quy định số 208-QĐ/TW ngày 22/01/2026...">
+                  </div>
                 </div>
               </form>
             </div>
 
-            <!-- CỘT PHẢI: DANH SÁCH ĐIỀU KHOẢN TRỰC QUAN -->
-            <div class="editor-card">
-              <div class="editor-card-header">
-                <h3 class="editor-card-title">
+            <!-- Khung Soạn Thảo Các Điều Khoản (Article Canvas Card) -->
+            <div class="articles-canvas-card">
+              <div class="articles-canvas-header">
+                <div class="articles-canvas-title">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                     <line x1="8" y1="6" x2="21" y2="6"></line>
                     <line x1="8" y1="12" x2="21" y2="12"></line>
@@ -487,27 +489,24 @@
                     <line x1="3" y1="12" x2="3.01" y2="12"></line>
                     <line x1="3" y1="18" x2="3.01" y2="18"></line>
                   </svg>
-                  <span>Danh Sách Điều Khoản (<span id="parsedCount">0</span> điều)</span>
-                </h3>
-              </div>
-
-              <!-- Thanh công cụ điều khoản -->
-              <div class="articles-toolbar">
-                <div class="search-input-wrap" style="max-width: 280px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
-                  <input type="text" id="editorArticleFilter" class="search-input" placeholder="Lọc điều khoản đang soạn...">
+                  <span>Nội Dung Các Điều Khoản (<span id="parsedCount" style="color: var(--primary);">0</span> điều)</span>
                 </div>
 
-                <div style="display: flex; gap: 8px;">
+                <div class="articles-canvas-actions">
+                  <div class="search-input-wrap" style="max-width: 260px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="editorArticleFilter" class="search-input" placeholder="Lọc nhanh điều khoản...">
+                  </div>
+
                   <button type="button" id="btnAddSingleArticle" class="btn btn-secondary">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                       <line x1="12" y1="5" x2="12" y2="19"></line>
                       <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    <span>Thêm Điều Thủ Công</span>
+                    <span>+ Thêm Điều Mới</span>
                   </button>
 
                   <button type="button" id="btnSubmitDoc" class="btn btn-primary">
@@ -521,13 +520,78 @@
                 </div>
               </div>
 
-              <!-- Container Danh Sách Các Điều Khoản -->
+              <!-- Danh sách Điều Khoản dạng Card Outline -->
               <div id="articlesListContainer" class="articles-list-container">
-                <!-- Danh sách Card các điều khoản được render động qua JS -->
+                <!-- Render qua app.js -->
               </div>
             </div>
-
           </div>
+
+          <!-- TAB 2: KHUNG BÓC TÁCH TỰ ĐỘNG (PARSER STUDIO) -->
+          <div id="tab-auto-parser" class="studio-tab-content">
+            <div class="parser-studio-grid">
+              <!-- Cột Trái: Dán Toàn Văn -->
+              <div class="parser-panel">
+                <div class="parser-panel-header">
+                  <div class="parser-panel-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <span>Dán Toàn Văn Văn Bản Quy Định</span>
+                  </div>
+                  <span style="font-size: 11.5px; color: var(--text-muted);">Tự động nhận diện "Điều 1.", "Điều 2."</span>
+                </div>
+
+                <textarea id="rawTextContent" class="form-control parser-textarea" placeholder="Sao chép toàn bộ nội dung từ file Word / PDF và dán vào đây...
+Ví dụ:
+Điều 1. Phạm vi điều chỉnh
+Hướng dẫn này quy định về thể thức...
+
+Điều 2. Đối tượng áp dụng
+Áp dụng đối với các cơ quan, tổ chức Đảng..."></textarea>
+
+                <button type="button" id="btnAutoParse" class="btn btn-primary" style="height: 42px; font-size: 13.5px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                  <span>Bắt Đầu Bóc Tách Thành Các Điều Khoản</span>
+                </button>
+              </div>
+
+              <!-- Cột Phải: Preview Kết Quả -->
+              <div class="parser-panel">
+                <div class="parser-panel-header">
+                  <div class="parser-panel-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                      <polyline points="9 11 12 14 22 4"></polyline>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                    <span>Kết Quả Phân Tách Trực Quan</span>
+                  </div>
+                  <span class="scale-badge" id="parserPreviewCount">0 điều khoản</span>
+                </div>
+
+                <div class="parser-preview-list" id="parserPreviewList">
+                  <div class="table-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    <p>Dán văn bản vào cột bên trái và nhấn nút "Bắt Đầu Bóc Tách" để xem trước cấu trúc điều khoản tại đây.</p>
+                  </div>
+                </div>
+
+                <button type="button" id="btnApplyParsedToEditor" class="btn btn-secondary" style="height: 42px; font-size: 13.5px;" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5l7 7-7 7"></path>
+                  </svg>
+                  <span>Chuyển Sang Trình Soạn Thảo & Lưu Trữ</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
         </section>
 
         <!-- ============================================================
@@ -535,103 +599,110 @@
              ============================================================ -->
         <section id="view-playground" class="view-section">
 
-          <!-- Thanh Truy Vấn Phía Trên -->
-          <div class="playground-query-bar">
-            <div class="query-input-row">
-              <input type="text" id="playgroundQuery" class="query-input-main" placeholder="Nhập câu hỏi thử nghiệm tra cứu văn bản Đảng hoặc nghiệp vụ văn thư lưu trữ...">
-              <button id="btnRunQueryTest" class="btn btn-primary" style="height: 42px; padding: 0 18px;">
+          <!-- Thanh Điều Khiển & Search Bar -->
+          <div class="ai-console-header">
+            <div class="ai-search-row">
+              <div class="ai-search-input-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="playgroundQuery" class="ai-search-input" placeholder="Nhập câu hỏi nghiệp vụ Đảng hoặc văn thư lưu trữ cần kiểm thử...">
+              </div>
+
+              <button id="btnRunQueryTest" class="btn btn-primary" style="height: 44px; padding: 0 20px; font-size: 13.5px;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                   <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
-                <span>Thực Thi Kiểm Thử</span>
+                <span>Thực Thi</span>
               </button>
             </div>
 
-            <div class="query-options-row">
-              <label class="checkbox-label">
+            <div class="ai-console-meta">
+              <label class="switch-toggle-label">
                 <input type="checkbox" id="chkSkipCache">
                 <span>Bỏ qua Cache (Chạy trực tiếp Pipeline 7 Tầng & Gemini API)</span>
               </label>
 
-              <div class="chips-container">
-                <span class="chips-label">Gợi ý mẫu:</span>
-                <button type="button" class="chip-btn" data-query="Thẩm quyền ký thay mặt T/M và ký thay K/T theo Hướng dẫn 05/2026 quy định thế nào?">Ký T/M & K/T (05-HD/VPTW)</button>
-                <button type="button" class="chip-btn" data-query="Thời hạn bảo quản sổ đăng ký văn bản đi và đến theo Hướng dẫn 24-HD/VPTW là bao lâu?">Thời hạn sổ văn thư (24-HD/VPTW)</button>
-                <button type="button" class="chip-btn" data-query="Khung phân loại hồ sơ phông lưu trữ Đảng ủy cơ sở xã phường thị trấn theo Hướng dẫn 17-HD/VPTW?">Phông lưu trữ xã (17-HD/VPTW)</button>
-                <button type="button" class="chip-btn" data-query="Mức đóng đảng phí theo Quy định số 01-QĐ/TW năm 2026 được tính như thế nào?">Đảng phí 2026 (01-QĐ/TW)</button>
-                <button type="button" class="chip-btn" data-query="Những điều đảng viên không được làm theo Quy định mới 207-QĐ/TW năm 2026?">19 điều cấm (207-QĐ/TW)</button>
-                <button type="button" class="chip-btn" data-query="Tuổi kết nạp vào Đảng Cộng sản Việt Nam theo Quy định 208-QĐ/TW thi hành Điều lệ Đảng?">Tuổi kết nạp (208-QĐ/TW)</button>
+              <div class="sample-chips-row">
+                <span style="font-size: 11.5px; font-weight: 600; color: var(--text-muted);">Gợi ý mẫu:</span>
+                <button type="button" class="sample-chip chip-btn" data-query="Thẩm quyền ký thay mặt T/M và ký thay K/T theo Hướng dẫn 05/2026 quy định thế nào?">Ký T/M & K/T (05-HD/VPTW)</button>
+                <button type="button" class="sample-chip chip-btn" data-query="Thời hạn bảo quản sổ đăng ký văn bản đi và đến theo Hướng dẫn 24-HD/VPTW là bao lâu?">Thời hạn sổ văn thư (24-HD/VPTW)</button>
+                <button type="button" class="sample-chip chip-btn" data-query="Khung phân loại hồ sơ phông lưu trữ Đảng ủy cơ sở xã phường thị trấn theo Hướng dẫn 17-HD/VPTW?">Phông lưu trữ xã (17-HD/VPTW)</button>
+                <button type="button" class="sample-chip chip-btn" data-query="Mức đóng đảng phí theo Quy định số 01-QĐ/TW năm 2026 được tính như thế nào?">Đảng phí 2026 (01-QĐ/TW)</button>
+                <button type="button" class="sample-chip chip-btn" data-query="Những điều đảng viên không được làm theo Quy định mới 207-QĐ/TW năm 2026?">19 điều cấm (207-QĐ/TW)</button>
+                <button type="button" class="sample-chip chip-btn" data-query="Tuổi kết nạp vào Đảng Cộng sản Việt Nam theo Quy định 208-QĐ/TW thi hành Điều lệ Đảng?">Tuổi kết nạp (208-QĐ/TW)</button>
               </div>
             </div>
           </div>
 
-          <!-- Split-View 2 Cột (1fr 1fr) -->
-          <div class="playground-split-view">
+          <!-- Split-View 2 Cột (60% Chat - 40% RAG X-Ray) -->
+          <div class="ai-workspace-split">
 
-            <!-- CỘT TRÁI: PHẢN HỒI THỰC TẾ TỪ TRỢ LÝ AI (ZALO BOT OUTPUT) -->
-            <div class="playground-column-card">
-              <div class="playground-column-header">
-                <h3 class="playground-column-title">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                  </svg>
-                  <span>Phản Hồi Trợ Lý AI (Zalo Bot Output)</span>
-                </h3>
-              </div>
-
-              <!-- Thanh Telemetry 4 thông số -->
-              <div class="telemetry-grid">
-                <div class="telemetry-item">
-                  <span class="telemetry-key">Ý Định (Intent)</span>
-                  <span class="telemetry-val" id="telemetryIntent">Chưa thực thi</span>
+            <!-- CỘT TRÁI: ZALO BOT CHAT SIMULATOR -->
+            <div class="chat-simulator-card">
+              <div class="chat-simulator-header">
+                <div class="chat-simulator-title">
+                  <div class="chat-bot-seal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                  </div>
+                  <span>Trợ Lý Zalo AI (Mô Phỏng Trực Quan)</span>
                 </div>
-                <div class="telemetry-item">
-                  <span class="telemetry-key">Thời Gian Phản Hồi</span>
-                  <span class="telemetry-val" id="telemetryLatency">0 ms</span>
-                </div>
-                <div class="telemetry-item">
-                  <span class="telemetry-key">Nguồn Phản Hồi</span>
-                  <span class="telemetry-val" id="telemetrySource">Chưa xác định</span>
-                </div>
-                <div class="telemetry-item">
-                  <span class="telemetry-key">Văn Bản Viện Dẫn</span>
-                  <span class="telemetry-val" id="telemetryDocs">0 văn bản</span>
-                </div>
-              </div>
-
-              <!-- Khung Nội Dung Câu Trả Lời -->
-              <div class="bot-answer-box" id="botAnswerBox">
-                <button type="button" class="action-icon-btn btn-icon-copy answer-copy-btn" id="btnCopyPlaygroundAnswer" data-tooltip="Sao chép câu trả lời">
+                <button type="button" class="action-icon-btn btn-icon-copy" id="btnCopyPlaygroundAnswer" data-tooltip="Sao chép toàn bộ câu trả lời">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                   </svg>
                 </button>
-                <div id="botAnswerContent">Hãy nhập câu hỏi kiểm thử ở thanh phía trên và nhấn "Thực Thi Kiểm Thử" để trải nghiệm quy trình RAG 7 Tầng thực tế.</div>
+              </div>
+
+              <!-- Thân Chat Stream -->
+              <div class="chat-stream-body" id="chatStreamBody">
+                <!-- Tin nhắn người dùng -->
+                <div class="chat-bubble-user" id="chatUserBubble" style="display: none;">
+                  <span id="chatUserText">--</span>
+                </div>
+
+                <!-- Tin nhắn bot -->
+                <div class="chat-bubble-bot" id="chatBotBubble">
+                  <div class="chat-bot-text" id="botAnswerContent">Hãy nhập câu hỏi vào thanh tìm kiếm phía trên hoặc chọn một câu hỏi gợi ý để bắt đầu kiểm thử.</div>
+                  
+                  <!-- Performance Pill -->
+                  <div class="chat-meta-bar" id="chatMetaBar" style="display: none;">
+                    <div class="chat-meta-tags">
+                      <span class="chat-meta-pill pill-cache-hit" id="telemetrySource">HIT CACHE</span>
+                      <span class="chat-meta-pill pill-latency" id="telemetryLatency">0 ms</span>
+                      <span class="chat-meta-pill pill-cache-miss" id="telemetryIntent">party_regulation</span>
+                    </div>
+                    <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;" id="telemetryDocs">0 văn bản viện dẫn</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- CỘT PHẢI: X-RAY RAG INSPECTOR -->
-            <div class="playground-column-card">
-              <div class="playground-column-header">
-                <h3 class="playground-column-title">
+            <!-- CỘT PHẢI: COGNITIVE RAG INSPECTOR -->
+            <div class="rag-inspector-card">
+              <div class="rag-inspector-header">
+                <div class="rag-inspector-title">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                   </svg>
-                  <span>X-Ray RAG Inspector (Các Đoạn Trích Được Truy Xuất)</span>
-                </h3>
-                <span class="scale-badge" id="passagesCountBadge">0 kết quả</span>
+                  <span>Soi Chiếu Đoạn Trích Pháp Lý (X-Ray)</span>
+                </div>
+                <span class="scale-badge" id="passagesCountBadge">0 điều khoản</span>
               </div>
 
-              <!-- Danh sách Passages -->
-              <div class="passages-container" id="passagesContainer">
+              <!-- Danh sách đoạn trích RAG -->
+              <div class="passages-stream" id="passagesContainer">
                 <div class="table-empty">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                   </svg>
-                  <p>Chưa có dữ liệu trích xuất RAG</p>
+                  <p>Chưa có dữ liệu trích xuất RAG cho câu hỏi hiện tại.</p>
                 </div>
               </div>
             </div>

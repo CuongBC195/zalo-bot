@@ -426,62 +426,47 @@
   // ============================================================
   // DATABASE STATUS & TOPBAR ACTIONS
   // ============================================================
-  const dbStatusBadge = document.getElementById('dbStatusBadge');
-  const dbStatusText = document.getElementById('dbStatusText');
   const btnClearAiCache = document.getElementById('btnClearAiCache');
   const btnSeedDb = document.getElementById('btnSeedDb');
 
   async function checkDbStatus() {
     try {
-      const res = await apiRequest('/api/stats');
-      if (res.ok) {
-        if (res.isDbConnected) {
-          dbStatusBadge.className = 'db-status-badge';
-          dbStatusText.textContent = 'PostgreSQL: Đang kết nối';
-        } else {
-          dbStatusBadge.className = 'db-status-badge offline';
-          dbStatusText.textContent = 'Bộ Nhớ RAM (Chưa kết nối DB)';
-        }
-      }
+      await apiRequest('/api/stats');
     } catch (e) {
-      dbStatusBadge.className = 'db-status-badge offline';
-      dbStatusText.textContent = 'Mất kết nối máy chủ';
+      // Slient check
     }
   }
 
-  btnClearAiCache.addEventListener('click', async () => {
-    try {
-      const res = await apiRequest('/api/cache/clear', { method: 'POST' });
-      showToast(res.message || 'Đã xóa toàn bộ bộ nhớ đệm câu trả lời AI.', 'success');
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  });
+  if (btnClearAiCache) {
+    btnClearAiCache.addEventListener('click', async () => {
+      try {
+        const res = await apiRequest('/api/cache/clear', { method: 'POST' });
+        showToast(res.message || 'Đã xóa toàn bộ bộ nhớ đệm câu trả lời AI.', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
 
-  btnSeedDb.addEventListener('click', async () => {
-    if (!confirm('Đồng chí có chắc chắn muốn nạp lại 462 điều khoản chuẩn từ kho dữ liệu vào cơ sở dữ liệu PostgreSQL?')) {
-      return;
-    }
-    try {
-      btnSeedDb.disabled = true;
-      btnSeedDb.innerHTML = 'Đang đồng bộ...';
-      const res = await apiRequest('/api/seed-db', { method: 'POST' });
-      showToast(res.message || 'Đã đồng bộ dữ liệu mẫu thành công!', 'success');
-      loadInitialData();
-    } catch (err) {
-      showToast(err.message, 'error');
-    } finally {
-      btnSeedDb.disabled = false;
-      btnSeedDb.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-          <polyline points="23 4 23 10 17 10"></polyline>
-          <polyline points="1 20 1 14 7 14"></polyline>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-        </svg>
-        <span>Đồng Bộ Dữ Liệu Mẫu</span>
-      `;
-    }
-  });
+  if (btnSeedDb) {
+    btnSeedDb.addEventListener('click', async () => {
+      if (!confirm('Đồng chí có chắc chắn muốn nạp lại 462 điều khoản chuẩn từ kho dữ liệu vào cơ sở dữ liệu PostgreSQL?')) {
+        return;
+      }
+      const originalHtml = btnSeedDb.innerHTML;
+      try {
+        btnSeedDb.disabled = true;
+        const res = await apiRequest('/api/seed-db', { method: 'POST' });
+        showToast(res.message || 'Đã đồng bộ dữ liệu mẫu thành công!', 'success');
+        loadInitialData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btnSeedDb.disabled = false;
+        btnSeedDb.innerHTML = originalHtml;
+      }
+    });
+  }
 
   // ============================================================
   // STATS & KPI LOADER
@@ -814,7 +799,7 @@
   }
 
   // ============================================================
-  // MÀN HÌNH 2: SOẠN THẢO & BÓC TÁCH VĂN BẢN (CRUD + PARSER)
+  // MÀN HÌNH 2: SOẠN THẢO & BÓC TÁCH VĂN BẢN (STUDIO 2 TAB)
   // ============================================================
   const editorStatusText = document.getElementById('editorStatusText');
   const btnCancelEditDoc = document.getElementById('btnCancelEditDoc');
@@ -829,6 +814,10 @@
   const docDescription = document.getElementById('docDescription');
   const rawTextContent = document.getElementById('rawTextContent');
   const btnAutoParse = document.getElementById('btnAutoParse');
+  const parserPreviewCount = document.getElementById('parserPreviewCount');
+  const parserPreviewList = document.getElementById('parserPreviewList');
+  const btnApplyParsedToEditor = document.getElementById('btnApplyParsedToEditor');
+  let lastParsedArticles = [];
   
   const parsedCount = document.getElementById('parsedCount');
   const editorArticleFilter = document.getElementById('editorArticleFilter');
@@ -837,10 +826,28 @@
   const btnSubmitDocText = document.getElementById('btnSubmitDocText');
   const articlesListContainer = document.getElementById('articlesListContainer');
 
+  // Xử lý chuyển đổi Tab trong Studio Soạn Thảo
+  const studioTabBtns = document.querySelectorAll('.studio-tab-btn');
+  studioTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.getAttribute('data-studio-tab');
+      studioTabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.studio-tab-content').forEach(c => {
+        if (c.id === targetTab) {
+          c.classList.add('active');
+        } else {
+          c.classList.remove('active');
+        }
+      });
+    });
+  });
+
   function resetEditorForm() {
     state.editingDocId = null;
     state.editingArticles = [];
     state.editorArticleFilterQuery = '';
+    lastParsedArticles = [];
 
     editingDocIdInput.value = '';
     docCode.value = '';
@@ -852,6 +859,19 @@
     docDescription.value = '';
     rawTextContent.value = '';
     editorArticleFilter.value = '';
+
+    if (btnApplyParsedToEditor) btnApplyParsedToEditor.disabled = true;
+    if (parserPreviewCount) parserPreviewCount.textContent = '0 điều khoản';
+    if (parserPreviewList) {
+      parserPreviewList.innerHTML = `
+        <div class="table-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          <p>Dán văn bản vào cột bên trái và nhấn nút "Bắt Đầu Bóc Tách" để xem trước cấu trúc điều khoản tại đây.</p>
+        </div>
+      `;
+    }
 
     editorStatusText.innerHTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" style="width: 18px; height: 18px; color: var(--primary);">
@@ -909,6 +929,10 @@
         btnCancelEditDoc.classList.remove('hidden');
         btnSubmitDocText.textContent = 'Lưu Thay Đổi Văn Bản';
 
+        // Đảm bảo mở Tab 1 Soạn thảo
+        const docEditorTabBtn = document.querySelector('.studio-tab-btn[data-studio-tab="tab-doc-editor"]');
+        if (docEditorTabBtn) docEditorTabBtn.click();
+
         renderEditorArticlesList();
         switchView('view-editor');
       }
@@ -922,43 +946,97 @@
     showToast('Đã chuyển về chế độ thêm mới văn bản.', 'info');
   });
 
-  // Auto Parser
-  btnAutoParse.addEventListener('click', async () => {
-    const text = rawTextContent.value.trim();
-    if (!text) {
-      showToast('Vui lòng dán văn bản thô vào ô bóc tách.', 'warning');
-      return;
-    }
-
-    try {
-      btnAutoParse.disabled = true;
-      btnAutoParse.innerHTML = 'Đang bóc tách các điều khoản...';
-
-      const res = await apiRequest('/api/parse-raw', {
-        method: 'POST',
-        body: JSON.stringify({ text }),
-      });
-
-      if (res.ok && res.articles && res.articles.length) {
-        state.editingArticles.push(...res.articles);
-        renderEditorArticlesList();
-        showToast(`Đã bóc tách thành công ${res.articles.length} điều khoản!`, 'success');
-        rawTextContent.value = '';
-      } else {
-        showToast('Không tìm thấy cấu trúc điều khoản chuẩn nào trong văn bản.', 'warning');
+  // Auto Parser - Thực hiện bóc tách tự động
+  if (btnAutoParse) {
+    btnAutoParse.addEventListener('click', async () => {
+      const text = rawTextContent.value.trim();
+      if (!text) {
+        showToast('Vui lòng dán văn bản toàn văn vào ô bóc tách.', 'warning');
+        return;
       }
-    } catch (err) {
-      showToast('Lỗi khi bóc tách: ' + err.message, 'error');
-    } finally {
-      btnAutoParse.disabled = false;
-      btnAutoParse.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-        </svg>
-        <span>Tự Động Bóc Tách Thành Các Điều</span>
-      `;
-    }
-  });
+
+      try {
+        btnAutoParse.disabled = true;
+        btnAutoParse.innerHTML = 'Đang bóc tách các điều khoản...';
+
+        const res = await apiRequest('/api/parse-raw', {
+          method: 'POST',
+          body: JSON.stringify({ text }),
+        });
+
+        if (res.ok && res.articles && res.articles.length) {
+          lastParsedArticles = res.articles;
+          if (parserPreviewCount) {
+            parserPreviewCount.textContent = `${lastParsedArticles.length} điều khoản`;
+          }
+          if (parserPreviewList) {
+            let previewHtml = '';
+            lastParsedArticles.forEach((art, idx) => {
+              const artNum = art.articleNumber || (idx + 1);
+              previewHtml += `
+                <div class="parser-preview-card">
+                  <div class="parser-preview-header">
+                    <span class="parser-preview-badge">Điều ${escapeHtml(artNum)}</span>
+                    <span style="font-weight: 600; font-size: 12.5px; color: var(--text-main); flex: 1; margin-left: 8px;">${escapeHtml(art.title || '')}</span>
+                  </div>
+                  <div class="parser-preview-text">${escapeHtml(art.content || '')}</div>
+                </div>
+              `;
+            });
+            parserPreviewList.innerHTML = previewHtml;
+          }
+          if (btnApplyParsedToEditor) {
+            btnApplyParsedToEditor.disabled = false;
+          }
+          showToast(`Đã bóc tách thành công ${lastParsedArticles.length} điều khoản! Đồng chí có thể bấm "Chuyển Sang Trình Soạn Thảo".`, 'success');
+        } else {
+          showToast('Không tìm thấy cấu trúc điều khoản chuẩn nào trong văn bản.', 'warning');
+        }
+      } catch (err) {
+        showToast('Lỗi khi bóc tách: ' + err.message, 'error');
+      } finally {
+        btnAutoParse.disabled = false;
+        btnAutoParse.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          <span>Bắt Đầu Bóc Tách Thành Các Điều Khoản</span>
+        `;
+      }
+    });
+  }
+
+  // Nạp kết quả bóc tách sang Tab Soạn thảo
+  if (btnApplyParsedToEditor) {
+    btnApplyParsedToEditor.addEventListener('click', () => {
+      if (!lastParsedArticles.length) {
+        showToast('Chưa có điều khoản nào được bóc tách.', 'warning');
+        return;
+      }
+      state.editingArticles.push(...lastParsedArticles);
+      renderEditorArticlesList();
+      const count = lastParsedArticles.length;
+      lastParsedArticles = [];
+      btnApplyParsedToEditor.disabled = true;
+      rawTextContent.value = '';
+      if (parserPreviewList) {
+        parserPreviewList.innerHTML = `
+          <div class="table-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <p>Dán văn bản vào cột bên trái và nhấn nút "Bắt Đầu Bóc Tách" để xem trước cấu trúc điều khoản tại đây.</p>
+          </div>
+        `;
+      }
+      if (parserPreviewCount) {
+        parserPreviewCount.textContent = '0 điều khoản';
+      }
+      const tabEditorBtn = document.querySelector('.studio-tab-btn[data-studio-tab="tab-doc-editor"]');
+      if (tabEditorBtn) tabEditorBtn.click();
+      showToast(`Đã chuyển thành công ${count} điều khoản sang Trình Soạn Thảo!`, 'success');
+    });
+  }
 
   // Thêm 1 điều thủ công
   btnAddSingleArticle.addEventListener('click', () => {
@@ -1149,11 +1227,15 @@
   });
 
   // ============================================================
-  // MÀN HÌNH 3: THỬ NGHIỆM AI & X-RAY RAG
+  // MÀN HÌNH 3: THỬ NGHIỆM AI & RAG (CHAT SIMULATOR & RAG X-RAY)
   // ============================================================
   const playgroundQuery = document.getElementById('playgroundQuery');
   const chkSkipCache = document.getElementById('chkSkipCache');
   const btnRunQueryTest = document.getElementById('btnRunQueryTest');
+  const chatUserBubble = document.getElementById('chatUserBubble');
+  const chatUserText = document.getElementById('chatUserText');
+  const chatBotBubble = document.getElementById('chatBotBubble');
+  const chatMetaBar = document.getElementById('chatMetaBar');
   const telemetryIntent = document.getElementById('telemetryIntent');
   const telemetryLatency = document.getElementById('telemetryLatency');
   const telemetrySource = document.getElementById('telemetrySource');
@@ -1172,14 +1254,26 @@
     }
 
     playgroundQuery.value = q;
-    const skipCache = chkSkipCache.checked;
+    const skipCache = chkSkipCache ? chkSkipCache.checked : false;
+
+    // Hiển thị bong bóng chat người dùng và trạng thái đang suy luận của bot
+    if (chatUserBubble && chatUserText) {
+      chatUserText.textContent = q;
+      chatUserBubble.style.display = 'block';
+    }
+    if (chatBotBubble) {
+      chatBotBubble.style.display = 'block';
+    }
+    if (chatMetaBar) {
+      chatMetaBar.style.display = 'none';
+    }
+    botAnswerContent.innerHTML = '<em>Đang phân tích ý định, truy xuất tài liệu và tổng hợp câu trả lời qua Pipeline 7 Tầng &amp; Gemini AI...</em>';
+    passagesContainer.innerHTML = '<div class="table-empty"><p>Đang truy xuất các đoạn trích liên quan từ cơ sở dữ liệu...</p></div>';
+    if (passagesCountBadge) passagesCountBadge.textContent = 'Đang truy xuất...';
 
     try {
       btnRunQueryTest.disabled = true;
       btnRunQueryTest.innerHTML = 'Đang thực thi Pipeline...';
-
-      botAnswerContent.innerHTML = 'Đang gửi truy vấn tới Pipeline 7 Tầng & Gemini AI...';
-      passagesContainer.innerHTML = '<div class="table-empty"><p>Đang truy xuất các đoạn trích liên quan từ cơ sở dữ liệu...</p></div>';
 
       const res = await apiRequest('/api/pipeline-test', {
         method: 'POST',
@@ -1187,32 +1281,43 @@
       });
 
       if (res.ok) {
-        // Telemetry Update
-        telemetryIntent.textContent = res.intent || 'Không xác định';
-        
-        const latency = res.latencyMs || 0;
-        let latencyCls = 'latency-normal';
-        if (latency < 100) latencyCls = 'latency-fast';
-        else if (latency > 3000) latencyCls = 'latency-slow';
-        telemetryLatency.innerHTML = `<span class="${latencyCls}">${latency} ms</span>`;
-
-        if (res.fromCache) {
-          telemetrySource.innerHTML = '<span class="telemetry-val val-hit">HIT CACHE (&lt; 10ms)</span>';
-        } else {
-          telemetrySource.innerHTML = '<span class="telemetry-val val-direct">DIRECT GEMINI LLM</span>';
-        }
-
-        const docList = res.retrievedDocs && res.retrievedDocs.length ? res.retrievedDocs.join(', ') : 'Không có';
-        telemetryDocs.textContent = docList;
-
-        // Answer Box
+        // Cập nhật câu trả lời của Bot
         botAnswerContent.textContent = res.answer || 'Không có phản hồi từ hệ thống.';
 
-        // X-Ray Passages
+        // Cập nhật Telemetry Performance Pill
+        if (telemetrySource) {
+          if (res.fromCache) {
+            telemetrySource.textContent = 'HIT CACHE (< 10ms)';
+            telemetrySource.className = 'chat-meta-pill pill-cache-hit';
+          } else {
+            telemetrySource.textContent = 'DIRECT GEMINI LLM';
+            telemetrySource.className = 'chat-meta-pill pill-cache-miss';
+          }
+        }
+
+        if (telemetryLatency) {
+          telemetryLatency.textContent = `${res.latencyMs || 0} ms`;
+        }
+
+        if (telemetryIntent) {
+          telemetryIntent.textContent = res.intent || 'party_regulation';
+        }
+
+        if (telemetryDocs) {
+          const docCount = (res.retrievedDocs && res.retrievedDocs.length) || 0;
+          telemetryDocs.textContent = `${docCount} văn bản viện dẫn`;
+        }
+
+        if (chatMetaBar) {
+          chatMetaBar.style.display = 'flex';
+        }
+
+        // Cập nhật X-Ray Passages
         renderPlaygroundPassages(res.passages || []);
       }
     } catch (err) {
       botAnswerContent.textContent = 'Lỗi thực thi: ' + err.message;
+      if (chatMetaBar) chatMetaBar.style.display = 'none';
       showToast('Lỗi khi kiểm thử Pipeline: ' + err.message, 'error');
     } finally {
       btnRunQueryTest.disabled = false;
@@ -1220,7 +1325,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
           <polygon points="5 3 19 12 5 21 5 3"></polygon>
         </svg>
-        <span>Thực Thi Kiểm Thử</span>
+        <span>Thực Thi</span>
       `;
     }
   }
@@ -1234,7 +1339,7 @@
     }
   });
 
-  // Suggestion Chips Click
+  // Gợi ý câu hỏi mẫu
   document.querySelectorAll('.chip-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const q = btn.getAttribute('data-query');
@@ -1248,7 +1353,9 @@
   });
 
   function renderPlaygroundPassages(passages) {
-    passagesCountBadge.textContent = `${passages.length} kết quả`;
+    if (passagesCountBadge) {
+      passagesCountBadge.textContent = `${passages.length} điều khoản`;
+    }
 
     if (!passages.length) {
       passagesContainer.innerHTML = `
