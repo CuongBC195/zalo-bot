@@ -1,37 +1,57 @@
 {
-  "documentId": "06-HD/VPTW-2026",
+  "documentId": "HD-06-VPTW-2026",
   "documentCode": "06-HD/VPTW",
-  "documentName": "Hướng dẫn về việc lập hồ sơ và nộp hồ sơ, tài liệu vào lưu trữ hiện hành",
+  "documentName": "Hướng dẫn lập hồ sơ và nộp hồ sơ, tài liệu vào lưu trữ hiện hành",
   "issuer": "Văn phòng Trung ương Đảng",
   "category": "van_thu_luu_tru",
   "issueDate": "2026-05-29",
   "status": "Còn hiệu lực (Hiện hành)",
-  "description": "Hướng dẫn số 06-HD/VPTW ngày 29/05/2026 của Văn phòng Trung ương Đảng (do Phó Chánh Văn phòng Lê Khánh Toàn ký) căn cứ Luật Lưu trữ số 33/2024/QH15 và Quy định số 383-QĐ/TW ngày 19/11/2025 của Ban Bí thư; hướng dẫn chi tiết nghiệp vụ lập danh mục hồ sơ, lập hồ sơ công việc và nộp hồ sơ, tài liệu giấy và điện tử vào lưu trữ hiện hành.",
+  "description": "Hướng dẫn số 06-HD/VPTW ngày 29/05/2026 của Văn phòng Trung ương Đảng thực hiện Luật Lưu trữ số 33/2024/QH15 và Quy định số 383-QĐ/TW ngày 19/11/2025 về Phông Lưu trữ Đảng Cộng sản Việt Nam; quy định toàn diện quy trình lập hồ sơ tài liệu điện tử, tài liệu giấy và thời hạn nộp lưu hồ sơ vào lưu trữ hiện hành từ Trung ương đến cơ sở.",
   "articles": [
     {
       "articleNumber": "1",
-      "title": "Phạm vi điều chỉnh và đối tượng áp dụng",
-      "content": "1. Hướng dẫn này áp dụng đối với việc lập và nộp hồ sơ, tài liệu có giá trị (bao gồm cả tài liệu điện tử, tài liệu giấy và các vật mang tin khác) hình thành trong quá trình hoạt động của các cơ quan, tổ chức đảng, Mặt trận Tổ quốc Việt Nam, các tổ chức chính trị - xã hội và các hội quần chúng được Đảng, Nhà nước giao nhiệm vụ từ Trung ương đến cơ sở.\n2. Căn cứ pháp lý cốt lõi: Luật Lưu trữ số 33/2024/QH15 của Quốc hội và Quy định số 383-QĐ/TW ngày 19/11/2025 của Ban Bí thư về Phông Lưu trữ Đảng Cộng sản Việt Nam."
+      "title": "Phạm vi điều chỉnh và đối tượng áp dụng theo Hướng dẫn 06-HD/VPTW",
+      "content": "1. Phạm vi điều chỉnh: Hướng dẫn việc lập hồ sơ và nộp hồ sơ, tài liệu có giá trị (bao gồm tài liệu điện tử, tài liệu giấy và tài liệu trên các vật mang tin khác) vào lưu trữ hiện hành đối với văn bản, tài liệu hình thành trong quá trình hoạt động của các cơ quan, tổ chức đảng, Mặt trận Tổ quốc Việt Nam (gồm các tổ chức chính trị - xã hội, các hội quần chúng do Đảng, Nhà nước giao nhiệm vụ) từ Trung ương đến cơ sở.\n2. Đối tượng áp dụng: Các cơ quan, tổ chức đảng, Mặt trận Tổ quốc Việt Nam và các tổ chức chính trị - xã hội từ cấp Trung ương, cấp tỉnh (tỉnh, thành phố) đến cấp cơ sở (xã, phường, đặc khu)."
     },
     {
       "articleNumber": "2",
-      "title": "Xây dựng và ban hành Danh mục hồ sơ cơ quan hằng năm",
-      "content": "1. Danh mục hồ sơ là bảng kê hệ thống tên các hồ sơ dự kiến sẽ lập trong năm công tác của cơ quan, tổ chức đảng.\n2. Trách nhiệm xây dựng: Quý IV hằng năm, bộ phận văn thư - lưu trữ chủ trì, phối hợp với các ban, bộ phận chuyên môn xây dựng Danh mục hồ sơ cho năm sau, trình Chánh văn phòng (hoặc người phụ trách công tác văn phòng) ký ban hành vào đầu tháng 01 hằng năm.\n3. Tiêu chí: Xác định rõ mã số hồ sơ, tiêu đề hồ sơ, đơn vị/cá nhân chủ trì lập hồ sơ và thời hạn bảo quản dự kiến (Vĩnh viễn hoặc Có thời hạn theo Bảng thời hạn bảo quản)."
+      "title": "Giải thích từ ngữ chuyên ngành công tác lập hồ sơ và lưu trữ hiện hành",
+      "content": "1. 'Hồ sơ' là tập hợp các văn bản, tài liệu có liên quan với nhau về một vấn đề, một sự việc, một đối tượng cụ thể hoặc có đặc điểm chung, hình thành trong quá trình theo dõi, giải quyết công việc thuộc phạm vi chức năng, nhiệm vụ của cơ quan, tổ chức, cá nhân.\n2. 'Lập hồ sơ' là việc tập hợp, sắp xếp văn bản, tài liệu hình thành trong quá trình theo dõi, giải quyết công việc của cơ quan, tổ chức, cá nhân thành hồ sơ theo những nguyên tắc và phương pháp nhất định.\n3. 'Hồ sơ điện tử' là tập hợp các tài liệu điện tử có liên quan với nhau về một vấn đề, sự việc, đối tượng cụ thể hoặc có đặc điểm chung, hình thành trong quá trình theo dõi, giải quyết công việc của cơ quan, tổ chức, cá nhân.\n4. 'Lưu trữ hiện hành' (trước đây gọi là Lưu trữ cơ quan) là bộ phận lưu trữ của cơ quan, tổ chức có nhiệm vụ thu thập, chỉnh lý, bảo quản và phục vụ khai thác, sử dụng tài liệu lưu trữ hình thành trong quá trình hoạt động của cơ quan, tổ chức trước khi nộp vào Lưu trữ lịch sử."
     },
     {
       "articleNumber": "3",
-      "title": "Nghiệp vụ lập hồ sơ công việc hiện hành (hồ sơ giấy và hồ sơ điện tử)",
-      "content": "1. Đối với hồ sơ giấy: Thu thập đầy đủ văn bản theo diễn biến công việc; loại bỏ bản trùng thừa, bản nháp; đánh số tờ bằng bút chì vào góc phải; lập mục lục văn bản và tờ kết thúc hồ sơ.\n2. Đối với hồ sơ điện tử: Tạo lập trên Hệ thống quản lý tài liệu điện tử cơ quan Đảng; gắn đầy đủ siêu dữ liệu (Metadata) đầu vào theo chuẩn quy định; bảo đảm tính toàn vẹn, tính xác thực và chữ ký số của người tạo lập và cơ quan phát hành."
+      "title": "Yêu cầu đối với hồ sơ được lập trong cơ quan Đảng",
+      "content": "1. Hồ sơ được lập phải phản ánh đúng chức năng, nhiệm vụ của cơ quan, tổ chức, đơn vị và của cá nhân được giao theo dõi, giải quyết công việc.\n2. Văn bản, tài liệu được thu thập vào hồ sơ phải có sự liên quan chặt chẽ với nhau và phản ánh đúng trình tự diễn biến của sự việc hoặc trình tự giải quyết công việc.\n3. Văn bản, tài liệu trong hồ sơ phải có giá trị pháp lý và giá trị thực tiễn; đối với tài liệu giấy phải là bản chính hoặc bản sao hợp pháp; đối với tài liệu điện tử phải đáp ứng các tiêu chuẩn dữ liệu thông tin đầu vào theo quy định của Trung ương Đảng và pháp luật về lưu trữ điện tử.\n4. Hồ sơ phải được kết thúc đúng thời điểm sự việc kết thúc hoặc công việc được giải quyết xong."
     },
     {
       "articleNumber": "4",
-      "title": "Thời hạn và thủ tục giao nộp hồ sơ vào Lưu trữ hiện hành",
-      "content": "1. Thời hạn giao nộp:\n- Sau 01 năm kể từ năm công việc kết thúc đối với hồ sơ, tài liệu hành chính thông thường.\n- Sau 03 tháng kể từ ngày quyết toán ngân sách nhà nước được phê duyệt đối với hồ sơ tài chính, kế toán.\n- Sau 01 năm kể từ ngày đề án, đề tài nghiên cứu được nghiệm thu chính thức.\n2. Thủ tục giao nộp: Lập 02 bản 'Mục lục hồ sơ, tài liệu nộp lưu' và 02 bản 'Biên bản giao nhận hồ sơ, tài liệu' có đầy đủ chữ ký của người giao và người nhận lưu trữ."
+      "title": "Trách nhiệm của người đứng đầu, cán bộ và lưu trữ hiện hành",
+      "content": "1. Người đứng đầu cơ quan, tổ chức: Có trách nhiệm chỉ đạo, kiểm tra, đôn đốc việc lập hồ sơ và nộp hồ sơ, tài liệu vào lưu trữ hiện hành; bảo đảm các điều kiện về cơ sở vật chất, kinh phí và phương tiện kỹ thuật cho công tác lưu trữ.\n2. Người đứng đầu các đơn vị trực thuộc: Có trách nhiệm tổ chức thực hiện việc lập hồ sơ và giao nộp hồ sơ, tài liệu của đơn vị mình vào lưu trữ hiện hành đúng thời hạn quy định.\n3. Cán bộ, công chức, nhân viên: Khi được giao theo dõi, giải quyết công việc có trách nhiệm lập hồ sơ về công việc đó và nộp hồ sơ, tài liệu vào lưu trữ hiện hành theo đúng danh mục hồ sơ và quy trình; trước khi chuyển công tác, thôi việc, nghỉ hưởng chế độ phải bàn giao toàn bộ hồ sơ, tài liệu cho người kế nhiệm hoặc lưu trữ hiện hành.\n4. Cán bộ lưu trữ hiện hành: Có trách nhiệm tham mưu xây dựng Danh mục hồ sơ hằng năm; hướng dẫn nghiệp vụ lập hồ sơ; tiếp nhận, kiểm tra hồ sơ nộp lưu; tổ chức bảo quản an toàn và phục vụ khai thác, sử dụng tài liệu."
     },
     {
       "articleNumber": "5",
-      "title": "Thời hạn nộp lưu tài liệu từ Lưu trữ hiện hành vào Lưu trữ lịch sử của Đảng",
-      "content": "1. Trong thời hạn 10 năm đối với tài liệu giấy và trong thời hạn 05 năm đối với tài liệu điện tử kể từ năm nộp lưu vào Lưu trữ hiện hành, cơ quan, tổ chức đảng có trách nhiệm chỉnh lý hoàn chỉnh và nộp lưu các hồ sơ có giá trị bảo quản vĩnh viễn vào Lưu trữ lịch sử của Đảng (Kho Lưu trữ Trung ương Đảng hoặc Kho Lưu trữ Tỉnh ủy, Thành ủy).\n2. Tài liệu thuộc Phông lưu trữ Đảng Cộng sản Việt Nam phải được quản lý chặt chẽ theo Quy định số 383-QĐ/TW ngày 19/11/2025 của Ban Bí thư."
+      "title": "Lập Danh mục hồ sơ tài liệu điện tử và tài liệu giấy hằng năm",
+      "content": "1. Căn cứ lập Danh mục hồ sơ: Căn cứ chức năng, nhiệm vụ, quyền hạn của cơ quan, tổ chức và các đơn vị trực thuộc; Quy chế làm việc; Kế hoạch công tác năm; Bảng thời hạn lưu trữ hồ sơ, tài liệu; Danh mục hồ sơ của các năm trước.\n2. Cấu trúc Danh mục hồ sơ: Được phân chia theo cơ cấu tổ chức (các phòng, ban, đơn vị) hoặc theo mặt hoạt động nghiệp vụ. Trong từng đơn vị hoặc mặt hoạt động, các hồ sơ được sắp xếp theo trình tự: Hồ sơ công việc chung -> Hồ sơ công việc chuyên môn -> Hồ sơ vụ việc, chuyên đề -> Hồ sơ nhân sự, tài chính, quản trị.\n3. Tiêu đề hồ sơ: Phải ngắn gọn, rõ ràng, phản ánh chính xác nội dung tài liệu bên trong; nêu rõ tác giả, nội dung, thời gian và địa điểm (nếu có).\n4. Thời hạn bảo quản: Ghi rõ thời hạn lưu trữ (Vĩnh viễn hoặc số năm cụ thể như 70 năm, 30 năm, 20 năm, 10 năm, 5 năm) theo Bảng thời hạn lưu trữ hiện hành của Trung ương Đảng."
+    },
+    {
+      "articleNumber": "6",
+      "title": "Quy trình lập hồ sơ tài liệu điện tử trên Hệ thống thông tin điều hành tác nghiệp",
+      "content": "1. Mở hồ sơ điện tử: Đầu năm hoặc khi phát sinh công việc cần giải quyết, cán bộ được phân công mở hồ sơ điện tử trên Hệ thống thông tin điều hành tác nghiệp theo Danh mục hồ sơ đã được phê duyệt.\n2. Thu thập và cập nhật tài liệu điện tử: Cán bộ cập nhật toàn bộ văn bản đến, dự thảo văn bản, văn bản đi chính thức có ký số, ý kiến chỉ đạo, báo cáo, tài liệu đính kèm liên quan đến công việc vào đúng mã hồ sơ điện tử đã mở.\n3. Đóng và kết thúc hồ sơ điện tử: Khi công việc giải quyết xong, cán bộ kiểm tra lại thành phần tài liệu trong hồ sơ, rà soát tính toàn vẹn của siêu dữ liệu (metadata), đóng hồ sơ và chuyển trạng thái hoàn thành trên phần mềm quản lý văn bản và điều hành."
+    },
+    {
+      "articleNumber": "7",
+      "title": "Quy trình lập hồ sơ tài liệu giấy và tài liệu trên vật mang tin khác",
+      "content": "1. Mở hồ sơ giấy: Chuẩn bị bìa hồ sơ, ghi các thông tin ban đầu: Tên cơ quan, tên đơn vị, tiêu đề hồ sơ, năm mở hồ sơ, ký hiệu hồ sơ theo Danh mục hồ sơ.\n2. Thu thập, sắp xếp tài liệu vào hồ sơ giấy: Thu thập đầy đủ các văn bản đi, đến, bản thảo có bút tích chỉ đạo của lãnh đạo; sắp xếp theo trình tự thời gian giải quyết sự việc hoặc theo trình tự tầm quan trọng của văn bản; loại bỏ bản trùng thừa, bản nháp không cần thiết.\n3. Kết thúc hồ sơ giấy: Kiểm tra sự hoàn thiện của văn bản; đánh số tờ bằng bút chì ở góc trên bên phải của từng tờ tài liệu; viết Mục lục văn bản trong hồ sơ; viết Tờ chứng từ kết thúc (ghi rõ số lượng tờ tài liệu, tình trạng vật lý); hoàn thiện thông tin trên bìa hồ sơ (ngày bắt đầu, ngày kết thúc, số lượng tờ, thời hạn bảo quản)."
+    },
+    {
+      "articleNumber": "8",
+      "title": "Thời hạn giao nộp hồ sơ, tài liệu vào lưu trữ hiện hành",
+      "content": "1. Đối với hồ sơ, tài liệu hành chính thông thường (cả điện tử và giấy): Phải nộp vào lưu trữ hiện hành trong thời hạn 01 năm kể từ ngày công việc kết thúc (ví dụ: hồ sơ năm 2026 nộp lưu trong năm 2027).\n2. Đối với hồ sơ, tài liệu nghiên cứu khoa học, đề tài, đề án: Phải nộp vào lưu trữ hiện hành trong thời hạn 01 năm kể từ ngày đề tài, đề án được nghiệm thu chính thức.\n3. Đối với hồ sơ, tài liệu xây dựng cơ bản: Phải nộp vào lưu trữ hiện hành trong thời hạn 03 tháng kể từ ngày công trình được quyết toán hoặc bàn giao đưa vào sử dụng.\n4. Đối với tài liệu về giải thể, sáp nhập, chia tách cơ quan: Phải hoàn thành việc lập hồ sơ và nộp vào lưu trữ hiện hành trong thời hạn 03 tháng kể từ ngày có quyết định giải thể, sáp nhập, chia tách của cấp có thẩm quyền."
+    },
+    {
+      "articleNumber": "9",
+      "title": "Thủ tục nộp hồ sơ vào lưu trữ hiện hành và tổ chức thực hiện",
+      "content": "1. Thủ tục giao nộp: Đơn vị, cá nhân giao nộp hồ sơ phải lập 02 bản 'Mục lục hồ sơ, tài liệu nộp lưu' và 02 bản 'Biên bản giao nhận hồ sơ, tài liệu'. Cán bộ lưu trữ hiện hành tiến hành đối chiếu, kiểm tra thực tế giữa Mục lục và hồ sơ tài liệu trước khi ký xác nhận.\n2. Sau khi ký biên bản giao nhận, bên giao giữ 01 bản Mục lục và 01 bản Biên bản, bên nhận (lưu trữ hiện hành) giữ 01 bản Mục lục và 01 bản Biên bản để đưa vào hồ sơ phông lưu trữ.\n3. Tổ chức thực hiện: Hướng dẫn này có hiệu lực từ ngày ký (29/05/2026). Giao Cục Lưu trữ Văn phòng Trung ương Đảng theo dõi, kiểm tra, đôn đốc việc thực hiện trong toàn Đảng."
     }
   ]
 }

@@ -7,7 +7,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
-const { extractDocNumbers } = require('../rag/abbreviations');
+const { extractDocNumbers, extractDocSignatures } = require('../rag/abbreviations');
 
 class DatabaseService {
   constructor() {
@@ -24,8 +24,27 @@ class DatabaseService {
     this.initPool();
   }
 
+  _getAdminPasswordHash() {
+    if (process.env.ADMIN_PASSWORD_HASH) {
+      return process.env.ADMIN_PASSWORD_HASH.trim();
+    }
+    if (process.env.ADMIN_PASSWORD) {
+      return bcrypt.hashSync(process.env.ADMIN_PASSWORD, 10);
+    }
+    const isCloudOrProd = Boolean(process.env.VERCEL || process.env.NODE_ENV === 'production');
+    if (isCloudOrProd) {
+      return null;
+    }
+    return bcrypt.hashSync('Admin@123456', 10);
+  }
+
   _initLocalAdmin() {
-    const passwordHash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'Admin@123456', 10);
+    const passwordHash = this._getAdminPasswordHash();
+    if (!passwordHash) {
+      console.warn('[Security] Môi trường Production/Cloud phát hiện chưa cấu hình ADMIN_PASSWORD hoặc ADMIN_PASSWORD_HASH. Bỏ qua khởi tạo local superadmin mặc định.');
+      this.localUsers = [];
+      return;
+    }
     this.localUsers = [
       {
         id: 1,
@@ -98,40 +117,59 @@ class DatabaseService {
       const schemaPath = path.join(__dirname, 'schema.sql');
       const sql = fs.readFileSync(schemaPath, 'utf8');
       await this.pool.query(sql);
-      console.log('✅ [Postgres] Đã khởi tạo schema bảng (documents, articles, users, zalo_users, query_logs).');
+      console.log('[Postgres] Da khoi tao schema bang (documents, articles, users, zalo_users, query_logs).');
 
-      // Tự động khởi tạo tài khoản superadmin mặc định nếu bảng users trống
+      // Tu dong khoi tao tai khoan superadmin mac dinh neu bang users trong
       await this.seedAdminUser();
       return true;
     } catch (err) {
-      console.error('[Postgres] Lỗi khởi tạo schema:', err.message);
+      console.error('[Postgres] Loi khoi tao schema:', err.message);
       return false;
     }
   }
 
   // ============================================================
-  // QUẢN LÝ TÀI KHOẢN ADMIN (USERS)
+  // QUAN LY TAI KHOAN ADMIN (USERS)
   // ============================================================
 
   async seedAdminUser() {
     const username = process.env.ADMIN_USERNAME || 'admin';
-    const password = process.env.ADMIN_PASSWORD || 'Admin@123456';
+    const passwordHash = this._getAdminPasswordHash();
+
+    if (!passwordHash) {
+      console.warn('[Security] Bo qua seedAdminUser vi chua cau hinh ADMIN_PASSWORD hoac ADMIN_PASSWORD_HASH tren moi truong Production/Cloud.');
+      return;
+    }
+
+    const hasExplicitEnvPass = Boolean(process.env.ADMIN_PASSWORD_HASH || process.env.ADMIN_PASSWORD);
 
     const isOk = await this.checkConnection();
     if (isOk) {
       try {
-        const exist = await this.pool.query('SELECT id FROM users WHERE username = $1', [username]);
+        const exist = await this.pool.query(
+          'SELECT id, password_hash, last_login FROM users WHERE username = $1',
+          [username]
+        );
         if (!exist.rows.length) {
-          const hash = await bcrypt.hash(password, 10);
           await this.pool.query(
             `INSERT INTO users (username, password_hash, full_name, email, role, is_active)
              VALUES ($1, $2, $3, $4, 'superadmin', true)`,
-            [username, hash, 'Quản Trị Viên Hệ Thống', 'admin@party.gov.vn']
+            [username, passwordHash, 'Quan Tri Vien He Thong', 'admin@party.gov.vn']
           );
-          console.log(`👤 [Postgres] Đã tạo tài khoản quản trị mặc định: "${username}"`);
+          console.log(`[Postgres] Da tao tai khoan quan tri: "${username}"`);
+        } else if (hasExplicitEnvPass) {
+          const user = exist.rows[0];
+          // Neu tai khoan chua tung dang nhap (last_login IS NULL) va co cau hinh mat khau tu Env, dong bo mat khau moi
+          if (user.last_login === null && user.password_hash !== passwordHash) {
+            await this.pool.query(
+              'UPDATE users SET password_hash = $1 WHERE id = $2',
+              [passwordHash, user.id]
+            );
+            console.log(`[Postgres] Da dong bo mat khau moi tu bien moi truong cho tai khoan: "${username}" (chua dang nhap lan nao)`);
+          }
         }
       } catch (err) {
-        console.error('[Postgres] Lỗi tạo tài khoản admin mặc định:', err.message);
+        console.error('[Postgres] Loi tao/cap nhat tai khoan admin:', err.message);
       }
     }
   }
@@ -689,7 +727,7 @@ class DatabaseService {
     return res.rows[0] || null;
   }
 
-  async searchArticles(queryStr, { topK = 4 } = {}) {
+  async searchArticles(queryStr, { topK = 8 } = {}) {
     const isOk = await this.checkConnection();
     if (!isOk) return null;
 
@@ -704,8 +742,9 @@ class DatabaseService {
       if (!cleanWords.length) return [];
       const tsQueryStr = cleanWords.join(' | ');
 
-      // Tìm số hiệu văn bản trong câu hỏi bằng hàm chuẩn ngữ pháp dùng chung
+      // Tìm số hiệu văn bản và chữ ký loại văn bản trong câu hỏi bằng hàm chuẩn dùng chung
       const docNumbers = extractDocNumbers(queryStr);
+      const docSignatures = extractDocSignatures(queryStr);
 
       let numberClause = '0.0';
       const params = [tsQueryStr, `%${queryStr.trim()}%`];
@@ -714,15 +753,66 @@ class DatabaseService {
         const conds = [];
         for (const num of docNumbers) {
           params.push(num);
-          conds.push(`d.document_code ~ ('(^|[^0-9])0*' || $${params.length} || '([^0-9]|$)')`);
+          const pIdx = params.length;
+          // Khớp số hiệu trong mã văn bản, hoặc trong tiêu đề/nội dung điều khoản (đặc biệt cho Công văn 561-CV/CLT, 457-CV/CLT)
+          conds.push(`d.document_code ~ ('(^|[^0-9])0*' || $${pIdx} || '([^0-9]|$)')`);
+          conds.push(`a.title ~ ('(^|[^0-9])0*' || $${pIdx} || '([^0-9]|$)')`);
+          conds.push(`a.content ~ ('(^|[^0-9])0*' || $${pIdx} || '([^0-9]|$)')`);
         }
         if (conds.length > 0) {
           numberClause = `CASE WHEN (${conds.join(' OR ')}) THEN 30.0 ELSE 0.0 END`;
         }
       }
 
+      // 1.1 Phân biệt tiền tố loại văn bản (HD vs QĐ vs CT vs CV) để tránh va chạm số 24 và 50
+      let sigBonusClause = '';
+      if (docSignatures.length > 0) {
+        const sigConds = [];
+        for (const sig of docSignatures) {
+          if (sig.type) {
+            params.push(`%${sig.number}-${sig.type}%`);
+            const pIdx = params.length;
+            params.push(sig.number);
+            const numIdx = params.length;
+            sigConds.push(`
+              CASE 
+                WHEN d.document_code ILIKE $${pIdx} OR a.title ILIKE $${pIdx} OR (d.document_code = 'KHUNG-PHAN-LOAI-VPTW' AND a.content ILIKE $${pIdx}) THEN 25.0
+                WHEN d.document_code ~ ('(^|[^0-9])0*' || $${numIdx} || '([^0-9]|$)') THEN -15.0
+                ELSE 0.0
+              END
+            `);
+          }
+        }
+        if (sigConds.length > 0) {
+          sigBonusClause = `${sigConds.join(' + ')} + `;
+        }
+      }
+
+      // Tăng trọng số đặc thù cho từ khóa "xóa tên"
+      const isXoaTen = /x[oó]a\s*t[eê]n/i.test(queryStr) || /xoa\s*ten/i.test(queryStr);
+      const xoaTenClause = isXoaTen
+        ? `CASE WHEN a.title ILIKE '%xóa tên%' OR a.title ILIKE '%xoa ten%' THEN 15.0 WHEN a.content ILIKE '%xóa tên%' OR a.content ILIKE '%xoa ten%' THEN 8.0 ELSE 0.0 END + `
+        : '';
+
+      // Tăng trọng số cho các câu hỏi về giai đoạn chỉnh lý hoặc xử lý tài liệu loại ra
+      const isGiaiDoan = /giai\s*[đd]o[aạ]n/i.test(queryStr);
+      const giaiDoanClause = isGiaiDoan
+        ? `CASE WHEN a.title ILIKE '%giai đoạn%' THEN 15.0 ELSE 0.0 END + `
+        : '';
+
+      const isLoaiRa = /lo[aạ]i\s*ra/i.test(queryStr);
+      const loaiRaClause = isLoaiRa
+        ? `CASE WHEN a.title ILIKE '%loại ra%' THEN 15.0 WHEN a.content ILIKE '%loại ra%' THEN 8.0 ELSE 0.0 END + `
+        : '';
+
+      // Tăng trọng số ưu tiên đặc biệt cho KHUNG-PHAN-LOAI-VPTW khi câu hỏi hỏi về khung/phương án phân loại
+      const isKhungPlQuery = /(khung\s*ph[aâ]n\s*lo[aạ]i|ph[uư][oơ]ng\s*[aá]n\s*ph[aâ]n\s*lo[aạ]i)/i.test(queryStr);
+      const khungPlClause = isKhungPlQuery
+        ? `CASE WHEN d.document_code = 'KHUNG-PHAN-LOAI-VPTW' THEN 18.0 ELSE 0.0 END + `
+        : '';
+
       // Lấy dư số lượng để sau đó áp dụng Diversity Cap chống 1 văn bản độc chiếm topK
-      const fetchLimit = Math.max(topK * 2, 12);
+      const fetchLimit = Math.max(topK * 3, 24);
       params.push(fetchLimit);
       const limitParamIdx = params.length;
 
@@ -741,11 +831,16 @@ class DatabaseService {
           d.description,
           ts_rank_cd(a.tsv, to_tsquery('simple', $1)) +
           ${numberClause} +
+          ${sigBonusClause}
+          ${xoaTenClause}
+          ${giaiDoanClause}
+          ${loaiRaClause}
+          ${khungPlClause}
           CASE WHEN a.article_number = '0' THEN 8.0 ELSE 0.0 END +
           CASE WHEN d.document_name ILIKE $2 THEN 10.0 ELSE 0.0 END +
           CASE 
-            WHEN d.status ILIKE '%Hết hiệu lực%' AND (${numberClause} = 0) THEN -15.0 
-            WHEN d.status ILIKE '%Còn hiệu lực%' THEN 3.0 
+            WHEN d.status ILIKE '%Hết hiệu lực%' THEN -10.0 
+            WHEN d.status ILIKE '%Còn hiệu lực%' THEN 10.0 
             ELSE 0.0 
           END as rank
         FROM articles a
@@ -756,28 +851,33 @@ class DatabaseService {
           OR a.content ILIKE $2
           OR a.full_text ILIKE $2
           OR (${numberClause} > 0)
+          ${isXoaTen ? "OR a.title ILIKE '%xóa tên%' OR a.content ILIKE '%xóa tên%'" : ''}
         ORDER BY rank DESC, a.id ASC
         LIMIT $${limitParamIdx}
       `;
 
       const res = await this.pool.query(searchSql, params);
 
-      // Diversity Cap: Nếu câu hỏi nhắc tới >= 2 số hiệu văn bản, giới hạn mỗi văn bản tối đa 3 điều khoản
+      // Diversity Cap thông minh: Cho phép lấy tối đa 6 điều khoản cho KHUNG-PHAN-LOAI-VPTW hoặc văn bản đơn lẻ
       const validDocNums = docNumbers.filter(n => !(parseInt(n, 10) > 1900 && parseInt(n, 10) < 2100));
-      let finalRows = res.rows;
-      if (validDocNums.length >= 2) {
-        const docCount = {};
-        finalRows = [];
-        for (const row of res.rows) {
-          const code = row.documentCode;
-          docCount[code] = (docCount[code] || 0) + 1;
-          if (docCount[code] <= 3) {
-            finalRows.push(row);
-          }
-          if (finalRows.length >= topK) break;
+      const isKhungPhanLoai = /(khung\s*ph[aâ]n\s*lo[aạ]i|ph[uư][oơ]ng\s*[aá]n\s*ph[aâ]n\s*lo[aạ]i)/i.test(queryStr);
+      const isSingleDocQuery = validDocNums.length === 1;
+
+      const docCount = {};
+      const finalRows = [];
+      for (const row of res.rows) {
+        const code = row.documentCode;
+        docCount[code] = (docCount[code] || 0) + 1;
+        let maxCap = 3;
+        if (code === 'KHUNG-PHAN-LOAI-VPTW' && isKhungPhanLoai) {
+          maxCap = 6;
+        } else if (isSingleDocQuery) {
+          maxCap = 6;
         }
-      } else {
-        finalRows = finalRows.slice(0, topK);
+        if (docCount[code] <= maxCap) {
+          finalRows.push(row);
+        }
+        if (finalRows.length >= topK) break;
       }
 
       return finalRows.map(row => {

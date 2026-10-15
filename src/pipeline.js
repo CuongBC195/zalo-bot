@@ -9,7 +9,7 @@ const gemini = require('./gemini');
 const db = require('./db');
 const config = require('./config');
 
-const { expandAbbreviations, buildCacheKey } = require('./rag/abbreviations');
+const { expandAbbreviations, buildCacheKey, extractDocNumbers, extractDocSignatures } = require('./rag/abbreviations');
 
 // Bảng ánh xạ tự động mở rộng truy vấn từ văn bản hết hiệu lực sang văn bản hiện hành (Legacy Replacement Map)
 const LEGACY_REPLACEMENT_MAP = [
@@ -17,10 +17,17 @@ const LEGACY_REPLACEMENT_MAP = [
   { pattern: /(37-q[đd]|quy\s*[đd][iị]nh\s*37\b|kh[oô]ng\s*[đd][uư][oợ]c\s*l[aà]m|19\s*[đd]i[eề]u|[đd][aá]nh\s*b[aạ]c)/i, expansion: ' 207-QĐ/TW ' },
   { pattern: /(22-q[đd]|296-q[đd]|quy\s*[đd][iị]nh\s*22\b)/i, expansion: ' 21-QĐ/TW ' },
   { pattern: /(342-q[đd]|quy[eế]t\s*[đd][iị]nh\s*342\b)/i, expansion: ' 01-QĐ/TW ' },
-  { pattern: /(17-h[dđ]|36-h[dđ]|66-q[đd]|h[uư][oơ]ng\s*d[aẫ]n\s*17\b)/i, expansion: ' 05-HD/VPTW 399-QĐ/TW ' },
+  // Hướng dẫn 35-HD/VPTW năm 2010 về thời hạn bảo quản tài liệu -> thay thế bởi 24-HD/VPTW ngày 03/10/2026
+  { pattern: /(35-h[dđ]|h[uư][oơ]ng\s*d[aẫ]n\s*35\b)/i, expansion: ' 24-HD/VPTW ' },
+  // 17-HD/VPTW ngày 31/07/2026 là văn bản hiện hành về lập phông và phân loại cấp xã (KHÔNG chuyển hướng sang thể thức)
+  // Chỉ chuyển hướng 36-HD/VPTW 2018 và 66-QĐ/TW về thể thức sang 05-HD/VPTW và 399-QĐ/TW
+  { pattern: /(36-h[dđ]|66-q[đd]|h[uư][oơ]ng\s*d[aẫ]n\s*36\b)/i, expansion: ' 05-HD/VPTW 399-QĐ/TW ' },
   { pattern: /(01-h[dđ]|h[uư][oơ]ng\s*d[aẫ]n\s*01\b)/i, expansion: ' 02-HD/TW ' },
   { pattern: /(12-h[dđ]|h[uư][oơ]ng\s*d[aẫ]n\s*12\b)/i, expansion: ' 42-HD/BTCTW ' },
   { pattern: /(124-q[đd]|quy\s*[đd][iị]nh\s*124\b)/i, expansion: ' 366-QĐ/TW ' },
+  // Ánh xạ chuyên đề nghiệp vụ cấp xã
+  { pattern: /(ph[oô]ng\s*l[uư]u\s*tr[uữ]|ph[uư][oơ]ng\s*[aá]n\s*ph[aâ]n\s*lo[aạ]i).*?(c[aấ]p\s*x[aã]|x[aã]|ph[uư][oờ]ng)/i, expansion: ' 17-HD/VPTW ' },
+  { pattern: /(tr[iì]nh\s*b[aày]\s*th[eể]\s*th[uứ]c|[đd][oó]ng\s*d[aấ]u\s*v[aă]n\s*b[aả]n)/i, expansion: ' 05-HD/VPTW 399-QĐ/TW ' },
 ];
 
 function expandLegacyQuery(queryText) {
@@ -30,6 +37,17 @@ function expandLegacyQuery(queryText) {
       expanded += item.expansion;
     }
   }
+
+  // Phân biệt ngữ cảnh thời hạn bảo quản: Mặt trận / Đoàn thể (30-HD) vs Cấp tỉnh / Cấp xã (24-HD)
+  const isThoiHan = /(th[oờ]i\s*h[aạ]n\s*b[aả]o\s*qu[aả]n|th[oờ]i\s*h[aạ]n\s*l[uư]u\s*tr[uữ]|b[aả]ng\s*th[oờ]i\s*h[aạ]n)/i.test(queryText);
+  if (isThoiHan) {
+    if (/(m[aặ]t\s*tr[aậ]n|mttq|[đd]o[aà]n\s*th[eể]|ch[ií]nh\s*tr[iị]\s*-\s*x[aã]\s*h[oộ]i)/i.test(queryText)) {
+      expanded += ' 30-HD/VPTW ';
+    } else if (/(c[aấ]p\s*x[aã]|c[aấ]p\s*t[iỉ]nh|x[aã]|ph[uư][oờ]ng|t[iỉ]nh\s*u[yỷ]|[đd][aả]ng\s*u[yỷ]|[đd][aả]ng\s*b[oộ]|vptw)/i.test(queryText)) {
+      expanded += ' 24-HD/VPTW ';
+    }
+  }
+
   return expanded;
 }
 
@@ -115,7 +133,7 @@ class PipelineOrchestrator {
     }
 
     // Bước 1. BUNG TỪ VIẾT TẮT NỘI BỘ (0ms, 0đ token)
-    const expandedQuery = expandAbbreviations(rawQuery);
+    let expandedQuery = expandAbbreviations(rawQuery);
 
     // Bước 2. TẦNG JEV: Phân loại ý định & Chặn sớm chào hỏi / ngoài phạm vi (0ms, 0đ token)
     const route = await this.jev.routeIntent(expandedQuery);
@@ -154,11 +172,66 @@ class PipelineOrchestrator {
       return new PipelineResult(cached.response_text, cached.intent || route.intent, cached.retrieved_doc_codes || [], true);
     }
 
+    // Tự động mở rộng truy vấn nếu hỏi về khung phân loại / phương án phân loại của các cơ quan địa phương
+    if (
+      /(khung\s*ph[aâ]n\s*lo[aạ]i|ph[uư][oơ]ng\s*[aá]n\s*ph[aâ]n\s*lo[aạ]i)/i.test(expandedQuery) &&
+      /(ban\s*t[oổ]\s*ch[uứ]c|u[yỷ]\s*ban\s*ki[eể]m\s*tra|ubkt|tuy[eê]n\s*gi[aá]o|tr[uư][oờ]ng\s*ch[ií]nh\s*tr[iị]|m[aặ]t\s*tr[aậ]n|mttq|li[eê]n\s*[đd]o[aà]n\s*lao\s*[đd][oộ]ng|l[đd]l[đd]|n[oô]ng\s*d[aâ]n|ph[uụ]\s*n[uữ]|c[uự]u\s*chi[eế]n\s*binh|[đd]o[aà]n\s*thanh\s*ni[eê]n|[đd]o[aà]n\s*tncs|qu[aâ]n\s*s[uự]|c[oô]ng\s*an)/i.test(expandedQuery)
+    ) {
+      if (!expandedQuery.includes('KHUNG-PHAN-LOAI-VPTW')) {
+        expandedQuery += ' KHUNG-PHAN-LOAI-VPTW';
+      }
+    }
+
     // Bước 4. TẦNG RAG LƯỢT 1 & LAZY REWRITING (Fallback-on-Miss)
     const searchQuery = expandLegacyQuery(expandedQuery);
     console.log(`[Pipeline] Đang truy xuất tài liệu từ RAG lượt 1: "${searchQuery}"`);
-    let candidatePassages = await this.rag.search(searchQuery, { topK: config.rag.topK });
+    let candidatePassages = await this.rag.search(searchQuery, { topK: 8 });
     let effectiveQuery = expandedQuery;
+
+    // Hỗ trợ câu hỏi đa lĩnh vực / có đánh số mục (1)... (2)...
+    const matchSubParts = expandedQuery.match(/(?:(?:\(1\)|1\.|thứ nhất)\s*)([\s\S]*?)(?:(?:\(2\)|2\.|thứ hai)\s*)([\s\S]*)/i);
+    const hasFormatting = /(thể\s*thức|đóng\s*dấu|chữ\s*ký\s*số|thẩm\s*quyền\s*ký)/i.test(expandedQuery);
+    const hasArchiving = /(lưu\s*trữ|phông|chỉnh\s*lý|thời\s*hạn\s*bảo\s*quản|thời\s*hạn\s*lưu|danh\s*mục\s*hồ\s*sơ)/i.test(expandedQuery);
+
+    if (matchSubParts) {
+      const q1 = expandLegacyQuery(expandAbbreviations(matchSubParts[1]));
+      const q2 = expandLegacyQuery(expandAbbreviations(matchSubParts[2]));
+      const [r1, r2] = await Promise.all([
+        this.rag.search(q1, { topK: 6 }),
+        this.rag.search(q2, { topK: 6 }),
+      ]);
+      const combined = [];
+      const maxLen = Math.max((r1 || []).length, (r2 || []).length);
+      for (let i = 0; i < maxLen; i++) {
+        if (r1 && r1[i]) combined.push(r1[i]);
+        if (r2 && r2[i]) combined.push(r2[i]);
+      }
+      if (candidatePassages) combined.push(...candidatePassages);
+      const seen = new Set();
+      const merged = [];
+      for (const p of combined) {
+        const uid = `${p.documentCode || p.documentId}_${p.articleNumber}`;
+        if (!seen.has(uid)) {
+          seen.add(uid);
+          merged.push(p);
+        }
+      }
+      candidatePassages = merged;
+    } else if (hasFormatting && hasArchiving && candidatePassages.length < 8) {
+      const qFormat = expandLegacyQuery('thể thức và kỹ thuật trình bày văn bản Đảng đóng dấu văn bản');
+      const extraRes = await this.rag.search(qFormat, { topK: 4 });
+      const combined = [...(candidatePassages || []), ...(extraRes || [])];
+      const seen = new Set();
+      const merged = [];
+      for (const p of combined) {
+        const uid = `${p.documentCode || p.documentId}_${p.articleNumber}`;
+        if (!seen.has(uid)) {
+          seen.add(uid);
+          merged.push(p);
+        }
+      }
+      candidatePassages = merged;
+    }
 
     // Điều kiện Lazy Rewriting:
     // 1. Câu hỏi tiếng Việt không dấu VÀ kết quả RAG lượt 1 có điểm khớp thấp, HOẶC
@@ -175,7 +248,7 @@ class PipelineOrchestrator {
         effectiveQuery = rewritten;
         const retrySearchQuery = expandLegacyQuery(expandAbbreviations(rewritten));
         console.log(`[Pipeline] Đang truy xuất tài liệu từ RAG lượt 2 với truy vấn chuẩn hóa: "${retrySearchQuery}"`);
-        candidatePassages = await this.rag.search(retrySearchQuery, { topK: config.rag.topK });
+        candidatePassages = await this.rag.search(retrySearchQuery, { topK: 8 });
       }
     }
 
@@ -194,7 +267,37 @@ class PipelineOrchestrator {
     // Bước 5. TẦNG JEV: Lọc và Rerank các đoạn trích (System One Relevance Filter)
     console.log(`[Pipeline] Jev đang lọc ${candidatePassages.length} đoạn trích liên quan...`);
     const filteredPassages = await this.jev.filterRelevantPassages(effectiveQuery, candidatePassages);
-    const finalPassages = filteredPassages.length > 0 ? filteredPassages : candidatePassages.slice(0, 2);
+    let rawPassages = filteredPassages.length > 0 ? filteredPassages : candidatePassages.slice(0, 8);
+
+    // Document Diversity: Cho phép lấy tối đa 6 điều khoản cho KHUNG-PHAN-LOAI-VPTW hoặc câu hỏi 1 văn bản đích danh
+    const isKhungPhanLoai = /(khung\s*ph[aâ]n\s*lo[aạ]i|ph[uư][oơ]ng\s*[aá]n\s*ph[aâ]n\s*lo[aạ]i)/i.test(expandedQuery);
+    const docNumbersInQuery = extractDocNumbers(expandedQuery).filter(n => !(parseInt(n, 10) > 1900 && parseInt(n, 10) < 2100));
+    const isSingleDocQuery = docNumbersInQuery.length === 1;
+
+    const docPassageCount = {};
+    let diversified = [];
+    for (const p of rawPassages) {
+      const c = p.documentCode || p.documentId;
+      docPassageCount[c] = (docPassageCount[c] || 0) + 1;
+      let maxCapForDoc = 3;
+      if (c === 'KHUNG-PHAN-LOAI-VPTW' && isKhungPhanLoai) {
+        maxCapForDoc = 6;
+      } else if (isSingleDocQuery) {
+        maxCapForDoc = 6;
+      }
+      if (docPassageCount[c] <= maxCapForDoc) {
+        diversified.push(p);
+      }
+    }
+    if (diversified.length < 6) {
+      for (const p of rawPassages) {
+        if (!diversified.includes(p)) {
+          diversified.push(p);
+          if (diversified.length >= 8) break;
+        }
+      }
+    }
+    let finalPassages = diversified.slice(0, 8);
 
     const docCodes = [...new Set(finalPassages.map(p => p.documentCode || p.documentId).filter(Boolean))];
 
@@ -221,7 +324,8 @@ class PipelineOrchestrator {
     const isNetworkOrFallback = (
       answer.includes('Lưu ý: Hệ thống đang hoạt động ở chế độ dự phòng') ||
       answer.includes('Hiện tại các API Key cấu hình cho Gemini đều tạm thời bị giới hạn') ||
-      answer.includes('Lỗi hệ thống khi tạo câu trả lời')
+      answer.includes('Lỗi hệ thống khi tạo câu trả lời') ||
+      answer.includes('chưa có thông tin quy định chi tiết')
     );
 
     if (isFaithful && !isNetworkOrFallback) {
@@ -316,7 +420,7 @@ class PipelineOrchestrator {
       `• "Mức đóng đảng phí theo Quy định số 01-QĐ/TW năm 2026 được tính như thế nào?"\n` +
       `• "Những điều đảng viên không được làm theo Quy định mới 207-QĐ/TW năm 2026?"\n` +
       `• "Quy định về thời hạn nộp lưu hồ sơ vào Lưu trữ hiện hành theo Hướng dẫn 06/2026?"\n\n` +
-      `Gõ /docs để tra cứu toàn bộ danh mục 22 văn bản hiện có trong cơ sở dữ liệu.`
+      `Gõ /docs để tra cứu toàn bộ danh mục 32 văn bản hiện có trong cơ sở dữ liệu.`
     );
   }
 }

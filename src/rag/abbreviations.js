@@ -67,6 +67,11 @@ const ABBR_MAP = {
   'tl': 'tài liệu',
   'vb': 'văn bản',
   'kỉ luật': 'kỷ luật',
+  'kĩ luật': 'kỷ luật',
+  'ki luat': 'kỷ luật',
+  'xoa ten': 'xóa tên',
+  'cv': 'công văn',
+  'clt': 'cục lưu trữ',
 };
 
 // Sắp xếp các từ viết tắt theo độ dài giảm dần
@@ -89,11 +94,22 @@ const SINGLE_PASS_ABBR_REGEX = new RegExp(
  */
 function expandAbbreviations(text = '') {
   if (!text) return '';
-  return text.replace(SINGLE_PASS_ABBR_REGEX, (match, prefix, abbr) => {
+
+  // Loc bo payload tan cong SQL Injection doc hai de giu cau hoi tra cuu trong sach
+  let cleanText = text.replace(/;\s*(drop|delete|insert|update|select|alter|truncate)\b.*/gi, '');
+
+  let res = cleanText.replace(SINGLE_PASS_ABBR_REGEX, (match, prefix, abbr) => {
     const lower = abbr.toLowerCase();
     const replacement = ABBR_MAP[lower] || abbr;
     return prefix + replacement;
   });
+
+  // Mở rộng ngữ nghĩa cho câu hỏi có con số đi kèm chữ tuổi hoặc hỏi về tuổi kết nạp Đảng
+  if (/\b\d{1,3}\s*tu[oổ]i\b/i.test(res) || /(tu[oổ]i\s*k[eế]t\s*n[aạ]p|ng[uư][oợ]i\s*v[aà]o\s*[đd][aả]ng|[đd][oộ]\s*tu[oổ]i)/i.test(res)) {
+    res += ' tuổi đời độ tuổi tiêu chuẩn người vào đảng Điều 1 ';
+  }
+
+  return res;
 }
 
 // Danh sách từ dừng và từ đệm không mang ngữ nghĩa nội dung tra cứu
@@ -149,6 +165,7 @@ function buildCacheKey(text = '') {
 /**
  * Trích xuất số hiệu văn bản chuẩn ngữ pháp tiếng Việt (Dùng chung cho RAG, DB và JEV)
  * Chỉ bắt số đứng sau loại văn bản hoặc đứng trước ký hiệu viết tắt
+ * Bao gồm cả công văn (CV), cục lưu trữ (CLT)
  * Loại trừ hoàn toàn các số đếm (3 bước, 5 chuẩn mực, 19 điều, 12 tháng, 30 ngày)
  * @param {string} queryStr
  * @returns {Array<string>}
@@ -159,9 +176,9 @@ function extractDocNumbers(queryStr = '') {
   // Loại bỏ các định dạng ngày tháng như 27/05/2026, 09-01-2026
   const queryWithoutDates = queryStr.replace(/\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b/g, ' ');
 
-  // 1. Đi sau danh từ chỉ loại văn bản: (?:quy định|quyết định|hướng dẫn|chỉ thị|thông tư|kết luận|nghị quyết|luật|qđ|hd|ct|tt|kl|nq)\s*(?:số\s*)?(\d{1,4})\b
-  // 2. Đi liền trước ký hiệu viết tắt: \b(\d{1,4})(?=[-\/](?:qđ|hd|ct|tt|kl|nq|tw|vptw|btctw|bnv|qh15|qh))
-  const docNumRegex = /(?:quy\s*[đd][iị]nh|quy[eế]t\s*[đd][iị]nh|h[uư][oơ]ng\s*d[aẫãắằặẳẵáàảạâ]n|ch[iỉ]\s*th[iị]|th[oô]ng\s*t[uư]|k[eế]t\s*lu[aậãảạ]n|ngh[iị]\s*quy[eế]t|lu[aậ]t|q[đd]|h[dđ]|ct|tt|kl|nq)\s*(?:s[oố]\s*)?(\d{1,4})\b|\b(\d{1,4})(?=[-\/](?:q[đd]|h[dđ]|ct|tt|kl|nq|tw|vptw|btctw|bnv|qh15|qh))/gi;
+  // 1. Đi sau danh từ chỉ loại văn bản: (quy định|hướng dẫn|chỉ thị|công văn|thông tư|kết luận|nghị quyết|luật|qđ|hd|ct|cv|tt|kl|nq) số? 123
+  // 2. Đi liền trước ký hiệu viết tắt: 123-(qđ|hd|ct|cv|tt|kl|nq|tw|vptw|btctw|clt|bnv|qh15|qh)
+  const docNumRegex = /(?:quy\s*[đd][iị]nh|quy[eế]t\s*[đd][iị]nh|h[uư][oơ]ng\s*d[aẫãắằặẳẵáàảạâ]n|ch[iỉ]\s*th[iị]|c[oô]ng\s*v[aă]n|th[oô]ng\s*t[uư]|k[eế]t\s*lu[aậãảạ]n|ngh[iị]\s*quy[eế]t|lu[aậ]t|q[đd]|h[dđ]|ct|cv|tt|kl|nq)\s*(?:s[oố]\s*)?(\d{1,4})\b|\b(\d{1,4})(?=[-\/](?:q[đd]|h[dđ]|ct|cv|tt|kl|nq|tw|vptw|btctw|clt|bnv|qh15|qh))/gi;
 
   const docNumbers = [];
   let m;
@@ -179,9 +196,80 @@ function extractDocNumbers(queryStr = '') {
   return docNumbers;
 }
 
+/**
+ * Trích xuất chi tiết số hiệu và loại văn bản (HD, QĐ, CT, CV, TT...)
+ * Phân biệt rạch ròi giữa 24-HD (Thời hạn lưu trữ) và 24-QĐ (Thi hành Điều lệ Đảng),
+ * 50-HD (Chỉnh lý tài liệu) và 50-CT (Chỉ thị 50).
+ * @param {string} queryStr
+ * @returns {Array<object>}
+ */
+function extractDocSignatures(queryStr = '') {
+  if (!queryStr) return [];
+  const queryWithoutDates = queryStr.replace(/\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b/g, ' ');
+
+  const signatures = [];
+
+  // Pattern 1: Tiền tố loại văn bản + số
+  const prefixRegex = /\b(quy\s*[đd][iị]nh|quy[eế]t\s*[đd][iị]nh|h[uư][oơ]ng\s*d[aẫãắằặẳẵáàảạâ]n|ch[iỉ]\s*th[iị]|c[oô]ng\s*v[aă]n|th[oô]ng\s*t[uư]|k[eế]t\s*lu[aậãảạ]n|ngh[iị]\s*quy[eế]t|lu[aậ]t|q[đd]|h[dđ]|ct|cv|tt|kl|nq)\s*(?:s[oố]\s*)?(\d{1,4})\b/gi;
+  let m;
+  while ((m = prefixRegex.exec(queryWithoutDates)) !== null) {
+    const rawType = m[1].toLowerCase();
+    const num = m[2];
+    const nInt = parseInt(num, 10);
+    if (nInt > 1900 && nInt < 2100) continue;
+
+    let type = null;
+    if (/h[uư][oơ]ng\s*d[aẫãắằặẳẵáàảạâ]n|h[dđ]/i.test(rawType)) type = 'HD';
+    else if (/quy\s*[đd][iị]nh|quy[eế]t\s*[đd][iị]nh|q[đd]/i.test(rawType)) type = 'QD';
+    else if (/ch[iỉ]\s*th[iị]|ct/i.test(rawType)) type = 'CT';
+    else if (/c[oô]ng\s*v[aă]n|cv/i.test(rawType)) type = 'CV';
+    else if (/th[oô]ng\s*t[uư]|tt/i.test(rawType)) type = 'TT';
+    else if (/k[eế]t\s*lu[aậãảạ]n|kl/i.test(rawType)) type = 'KL';
+    else if (/ngh[iị]\s*quy[eế]t|nq/i.test(rawType)) type = 'NQ';
+    else if (/lu[aậ]t/i.test(rawType)) type = 'LUAT';
+
+    signatures.push({
+      number: num,
+      type,
+      rawType,
+      fullCode: type ? `${num}-${type}` : num,
+    });
+  }
+
+  // Pattern 2: Dạng viết tắt có gạch nối: 24-HD, 24-QĐ, 50-CT, 561-CV...
+  const hyphenRegex = /\b(\d{1,4})[-\/](q[đd]|h[dđ]|ct|cv|tt|kl|nq)(?:[-\/](?:tw|vptw|btctw|clt|bnv|qh15|qh))?/gi;
+  while ((m = hyphenRegex.exec(queryWithoutDates)) !== null) {
+    const num = m[1];
+    const rawType = m[2].toLowerCase();
+    const nInt = parseInt(num, 10);
+    if (nInt > 1900 && nInt < 2100) continue;
+
+    let type = null;
+    if (/h[dđ]/i.test(rawType)) type = 'HD';
+    else if (/q[đd]/i.test(rawType)) type = 'QD';
+    else if (/ct/i.test(rawType)) type = 'CT';
+    else if (/cv/i.test(rawType)) type = 'CV';
+    else if (/tt/i.test(rawType)) type = 'TT';
+    else if (/kl/i.test(rawType)) type = 'KL';
+    else if (/nq/i.test(rawType)) type = 'NQ';
+
+    if (!signatures.some(s => s.number === num && s.type === type)) {
+      signatures.push({
+        number: num,
+        type,
+        rawType,
+        fullCode: type ? `${num}-${type}` : num,
+      });
+    }
+  }
+
+  return signatures;
+}
+
 module.exports = {
   ABBR_MAP,
   expandAbbreviations,
   buildCacheKey,
   extractDocNumbers,
+  extractDocSignatures,
 };

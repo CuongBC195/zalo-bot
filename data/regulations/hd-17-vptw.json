@@ -1,52 +1,42 @@
 {
-  "documentId": "17-HD/VPTW",
+  "documentId": "HD-17-VPTW-2026",
   "documentCode": "17-HD/VPTW",
-  "documentName": "Hướng dẫn về thể thức và kỹ thuật trình bày văn bản của Đảng",
+  "documentName": "Hướng dẫn lập phông lưu trữ và phương án phân loại tài liệu của cơ quan lãnh đạo đảng, các cơ quan chuyên trách tham mưu, giúp việc đảng uỷ xã, phường, đặc khu",
   "issuer": "Văn phòng Trung ương Đảng",
-  "category": "the_thuc",
-  "issueDate": "2015-10-05",
-  "status": "Hết hiệu lực",
-  "description": "Hướng dẫn số 17-HD/VPTW ngày 05/10/2015 của Văn phòng Trung ương Đảng đã hết hiệu lực thi hành; trước đây từng được thay thế bằng Hướng dẫn số 36-HD/VPTW ngày 03/04/2018, và hiện nay toàn bộ thể thức văn bản Đảng được thực hiện thống nhất theo Hướng dẫn số 05-HD/VPTW ngày 27/05/2026 của Văn phòng Trung ương Đảng và Quy định số 399-QĐ/TW ngày 09/01/2026 của Ban Bí thư.",
+  "category": "van_thu_luu_tru",
+  "issueDate": "2026-07-31",
+  "status": "Còn hiệu lực (Hiện hành)",
+  "description": "Hướng dẫn số 17-HD/VPTW ngày 31/07/2026 của Văn phòng Trung ương Đảng hướng dẫn lập phông lưu trữ và phương án phân loại tài liệu của cơ quan lãnh đạo đảng, các cơ quan chuyên trách tham mưu, giúp việc đảng uỷ xã, phường, đặc khu; chuẩn hóa mô hình tổ chức lưu trữ cơ sở phù hợp chính quyền địa phương 2 cấp.",
   "articles": [
     {
       "articleNumber": "1",
-      "title": "Hiệu lực văn bản và quy định thay thế hiện hành",
-      "content": "Hướng dẫn số 17-HD/VPTW ngày 05/10/2015 đã hết hiệu lực thi hành (trước đây từng được thay thế bằng Hướng dẫn số 36-HD/VPTW). Hiện nay, căn cứ Quy định số 399-QĐ/TW ngày 09/01/2026 của Ban Bí thư, toàn bộ công tác thể thức và kỹ thuật trình bày văn bản giấy và văn bản điện tử của Đảng được áp dụng theo Hướng dẫn mới nhất là Hướng dẫn số 05-HD/VPTW ngày 27/05/2026 của Văn phòng Trung ương Đảng."
+      "title": "Phạm vi điều chỉnh và đối tượng áp dụng tại cấp xã theo Hướng dẫn 17-HD/VPTW",
+      "content": "1. Phạm vi điều chỉnh: Lập phông lưu trữ và phương án phân loại tài liệu (tài liệu giấy, tài liệu điện tử, tài liệu trên các vật mang tin khác) của cơ quan lãnh đạo đảng, các cơ quan chuyên trách tham mưu, giúp việc đảng uỷ xã, phường, đặc khu.\n2. Đối tượng áp dụng: Đảng uỷ xã, phường, đặc khu (sau đây gọi chung là đảng uỷ xã); các cơ quan chuyên trách tham mưu, giúp việc đảng uỷ xã (Văn phòng đảng ủy, Cơ quan UBKT đảng ủy, Ban Xây dựng Đảng đảng ủy xã); và lưu trữ lịch sử của Đảng ở cấp tỉnh."
     },
     {
       "articleNumber": "2",
-      "title": "Các thành phần thể thức bắt buộc của văn bản Đảng",
-      "content": "Văn bản của Đảng bắt buộc phải có đầy đủ các thành phần thể thức sau:\n1. Tiêu đề: ĐẢNG CỘNG SẢN VIỆT NAM (in hoa, đứng, đậm).\n2. Tên cơ quan ban hành văn bản (ghi rõ tên cấp ủy, cơ quan ban hành).\n3. Số và ký hiệu văn bản (gồm số thứ tự, tên loại viết tắt và cơ quan ban hành, ví dụ: 17-HD/VPTW, 24-QĐ/TW, 123-CV/TU).\n4. Địa danh và ngày, tháng, năm ban hành văn bản.\n5. Tên loại văn bản và trích yếu nội dung văn bản.\n6. Nội dung văn bản.\n7. Quyền hạn, chức vụ, chữ ký và họ tên của người có thẩm quyền ký văn bản.\n8. Con dấu của cơ quan, tổ chức ban hành văn bản (hoặc chữ ký số cơ quan đối với văn bản điện tử).\n9. Nơi nhận văn bản."
+      "title": "Xác định phông, thành phần tài liệu và tên phông lưu trữ cấp xã",
+      "content": "1. Phông lưu trữ cơ quan lãnh đạo đảng xã: Toàn bộ tài liệu hình thành trong quá trình hoạt động của đại hội đại biểu đảng bộ xã, ban chấp hành đảng bộ xã lập thành một phông lưu trữ duy nhất, tên phông là: 'Phông lưu trữ cơ quan lãnh đạo đảng xã (kèm tên đơn vị hành chính xã)'.\n2. Phông lưu trữ các cơ quan chuyên trách tham mưu, giúp việc đảng uỷ xã: Toàn bộ tài liệu hình thành trong quá trình hoạt động của mỗi cơ quan chuyên trách tham mưu, giúp việc đảng uỷ xã lập thành một phông lưu trữ riêng độc lập, tên phông đặt theo tên của cơ quan đó (ví dụ: 'Phông lưu trữ văn phòng đảng uỷ xã...', 'Phông lưu trữ cơ quan uỷ ban kiểm tra đảng uỷ xã...', 'Phông lưu trữ ban xây dựng đảng đảng uỷ xã...').\n3. Giới hạn thời gian của phông: Bắt đầu và kết thúc theo quyết định thành lập hoặc chỉ định và quyết định kết thúc hoạt động của đảng bộ xã hoặc cơ quan chuyên trách tham mưu cấp xã."
     },
     {
       "articleNumber": "3",
-      "title": "Các thành phần thể thức bổ sung của văn bản",
-      "content": "Tùy theo tính chất và nội dung của từng văn bản, văn bản của Đảng có thể có thêm các thành phần thể thức sau:\n1. Dấu chỉ mức độ mật: TUYỆT MẬT, TỐI MẬT, MẬT.\n2. Dấu chỉ mức độ khẩn: HOẢ TỐC, THƯỢNG KHẨN, KHẨN.\n3. Các chỉ dẫn về phạm vi lưu hành: LƯU HÀNH NỘI BỘ, THU HỒI, KHÔNG PHỔ BIẾN...\n4. Ký hiệu người soạn thảo và số lượng bản phát hành.\n5. Địa chỉ cơ quan ban hành, số điện thoại, số fax, trang thông tin điện tử.\n6. Phụ lục văn bản kèm theo."
+      "title": "Nguyên tắc xây dựng phương án phân loại tài liệu phông cấp xã",
+      "content": "1. Phương án phân loại tài liệu là bản đề cương phân chia tài liệu của một phông lưu trữ thành các nhóm lớn, nhóm vừa và nhóm nhỏ theo những đặc trưng nhất định nhằm quản lý khoa học, tra cứu thuận tiện và bảo quản an toàn.\n2. Đối với Phông lưu trữ cơ quan lãnh đạo đảng xã: Áp dụng phương án phân loại theo 'Thời gian - Vấn đề' hoặc 'Mặt hoạt động - Thời gian' (phân chia theo nhiệm kỳ Đại hội, theo năm công tác và theo các nhóm chuyên đề lãnh đạo của cấp ủy).\n3. Đối với Phông lưu trữ các cơ quan chuyên trách tham mưu giúp việc đảng ủy xã: Áp dụng phương án phân loại theo 'Thời gian - Mặt hoạt động' hoặc 'Cơ cấu tổ chức - Thời gian' kết hợp với tính chất vụ việc chuyên môn."
     },
     {
       "articleNumber": "4",
-      "title": "Thẩm quyền và cách thức ghi quyền hạn ký văn bản Đảng (T/M, K/T, T/L, T/U)",
-      "content": "1. Ký thay mặt (T/M):\n- Tổng Bí thư ký T/M Ban Chấp hành Trung ương Đảng đối với các nghị quyết, quyết định, quy định của Ban Chấp hành Trung ương.\n- Thường trực Ban Bí thư ký T/M Ban Bí thư.\n- Bí thư cấp ủy ký T/M ban chấp hành, ban thường vụ cấp ủy các cấp.\n- Phó Bí thư ký T/M cấp ủy khi được Bí thư phân công hoặc thay mặt giải quyết công việc chung của cấp ủy.\n2. Ký thay (K/T):\n- Phó Bí thư ký thay (K/T) Bí thư khi ký văn bản thuộc lĩnh vực phụ trách hoặc được Bí thư giao xử lý.\n- Phó Trưởng ban ký K/T Trưởng ban; Phó Chánh Văn phòng ký K/T Chánh Văn phòng các cơ quan tham mưu giúp việc cấp ủy.\n3. Ký thừa lệnh (T/L):\n- Chánh Văn phòng cấp ủy ký T/L ban thường vụ cấp ủy các văn bản hướng dẫn nghiệp vụ công tác đảng, thông báo kết luận cuộc họp, truyền đạt ý kiến chỉ đạo theo thẩm quyền.\n- Cấp phó của người đứng đầu cơ quan ký T/L theo phân công bằng văn bản của người đứng đầu.\n4. Ký thừa ủy quyền (T/U):\n- Chỉ áp dụng khi người đứng đầu cơ quan ủy quyền bằng văn bản cho cấp phó hoặc người đứng đầu cơ quan cấp dưới ký một số văn bản cụ thể trong phạm vi được giao."
+      "title": "Mẫu phương án phân loại tài liệu Phông cơ quan lãnh đạo đảng cấp xã",
+      "content": "Tài liệu cơ quan lãnh đạo đảng cấp xã được phân thành các nhóm chủ yếu sau:\n1. Tài liệu Đại hội Đảng bộ xã: Hồ sơ chuẩn bị nhân sự, báo cáo chính trị, báo cáo kiểm điểm, biên bản đại hội, nghị quyết đại hội, biên bản bầu cử ban chấp hành và đoàn đại biểu đi dự đại hội cấp trên.\n2. Tài liệu Ban Chấp hành, Ban Thường vụ Đảng ủy xã: Biên bản các kỳ họp định kỳ, đột xuất; các nghị quyết, chỉ thị, kết luận, quy định, chương trình công tác toàn khóa và hằng năm.\n3. Tài liệu công tác xây dựng Đảng: Công tác tổ chức cán bộ, đảng viên (hồ sơ đề nghị kết nạp, công nhận chính thức, khen thưởng, kỷ luật, xóa tên đảng viên do cấp ủy xem xét); công tác tuyên giáo, dân vận; công tác kiểm tra, giám sát của Đảng ủy.\n4. Tài liệu chỉ đạo hệ thống chính trị cấp xã: Lãnh đạo hoạt động của Hội đồng nhân dân, Ủy ban nhân dân, Mặt trận Tổ quốc và các đoàn thể chính trị - xã hội cơ sở."
     },
     {
       "articleNumber": "5",
-      "title": "Quy chuẩn quản lý và đóng dấu cơ quan Đảng trên văn bản",
-      "content": "1. Dấu đóng trên văn bản phải rõ ràng, ngay ngắn, đúng chiều và dùng mực dấu màu đỏ tươi theo quy định.\n2. Vị trí đóng dấu: Dấu đóng trùm lên khoảng 1/3 chữ ký của người ký về phía bên trái.\n3. Đóng dấu giáp lai: Áp dụng đối với văn bản hoặc phụ lục có từ 02 trang trở lên (in một mặt) hoặc từ 03 trang trở lên (in hai mặt). Dấu giáp lai được đóng vào mép phải của văn bản, trùm lên các tờ giấy (mỗi dấu đóng trùm tối đa không quá 05 tờ).\n4. Đóng dấu treo: Được đóng ở góc trên bên trái, trùm lên dòng tên cơ quan ban hành văn bản hoặc phụ lục văn bản.\n5. Nghiêm cấm: Đóng dấu khống chỉ (đóng dấu vào giấy trắng chưa có nội dung hoặc chữ ký); đóng dấu trước khi người có thẩm quyền ký."
+      "title": "Mẫu phương án phân loại tài liệu Phông Văn phòng Đảng ủy cấp xã",
+      "content": "Tài liệu Văn phòng Đảng ủy cấp xã được phân loại theo các nhóm nghiệp vụ:\n1. Tài liệu về công tác tham mưu tổng hợp: Xây dựng lịch công tác tuần, tháng, quý của Thường trực Đảng ủy; báo cáo tổng hợp tình hình cơ sở; hồ sơ tiếp công dân của Bí thư Đảng ủy xã.\n2. Tài liệu về công tác văn thư, lưu trữ cơ quan Đảng: Tập lưu văn bản đi (nghị quyết, quyết định, thông báo, công văn...); sổ đăng ký văn bản đi, đến; sổ quản lý con dấu; hồ sơ giao nộp tài liệu vào lưu trữ hiện hành.\n3. Tài liệu về công tác tài chính, đảng phí: Chứng từ thu nộp đảng phí của các chi bộ trực thuộc; báo cáo quyết toán tài chính đảng ủy xã; hồ sơ quản lý tài sản, cơ sở vật chất của đảng ủy.\n4. Tài liệu về ứng dụng công nghệ thông tin và chuyển đổi số: Quản trị phần mềm quản lý văn bản, điều hành tác nghiệp, tài khoản Cơ sở dữ liệu đảng viên liên thông."
     },
     {
       "articleNumber": "6",
-      "title": "Kỹ thuật trình bày, phông chữ, cỡ chữ và canh lề văn bản giấy",
-      "content": "1. Khổ giấy: Trình bày trên khổ giấy A4 (210 mm x 297 mm), định hướng trang theo chiều đứng (trường hợp bảng biểu, sơ đồ phức tạp có thể trình bày theo chiều ngang).\n2. Định lề trang văn bản:\n- Lề trên: Cách mép trên từ 20 đến 25 mm.\n- Lề dưới: Cách mép dưới từ 20 đến 25 mm.\n- Lề trái: Cách mép trái từ 30 đến 35 mm.\n- Lề phải: Cách mép phải từ 15 đến 20 mm.\n3. Phông chữ: Sử dụng phông chữ tiếng Việt chuẩn bảng mã Unicode, kiểu chữ Times New Roman.\n4. Cỡ chữ và kiểu chữ:\n- Tiêu đề ĐẢNG CỘNG SẢN VIỆT NAM: Cỡ chữ 12 - 13, in hoa, đứng, đậm.\n- Tên cơ quan ban hành: Cỡ chữ 12 - 13, in hoa, đứng, đậm.\n- Tên loại văn bản (Nghị quyết, Quyết định...): Cỡ chữ 14 - 15, in hoa, đứng, đậm.\n- Trích yếu nội dung: Cỡ chữ 12 - 13, in thường, đứng, đậm.\n- Nội dung văn bản: Cỡ chữ 13 - 14, in thường, đứng.\n- Nơi nhận: Từ 'Nơi nhận' cỡ chữ 12, in thường, nghiêng, đậm; danh sách các cơ quan nhận cỡ chữ 11, in thường, đứng."
-    },
-    {
-      "articleNumber": "7",
-      "title": "Kỹ thuật trình bày văn bản điện tử và chữ ký số trong cơ quan Đảng",
-      "content": "1. Văn bản điện tử của Đảng phải được định dạng theo chuẩn PDF (khuyến nghị chuẩn PDF/A-1a hoặc PDF/A-2a), bảo đảm tính toàn vẹn và khả năng đọc mở lâu dài.\n2. Chữ ký số của cá nhân người có thẩm quyền: Thể hiện bằng hình ảnh chữ ký tay màu xanh, định dạng tệp .png có nền trong suốt, đặt canh giữa chức vụ và họ tên người ký.\n3. Chữ ký số của cơ quan, tổ chức: Thể hiện bằng hình ảnh con dấu cơ quan màu đỏ, đúng kích thước thực tế, định dạng tệp .png có nền trong suốt, đặt trùm lên khoảng 1/3 chữ ký số cá nhân về phía bên trái.\n4. Văn bản số hóa từ bản giấy sang bản điện tử (Scan): Phải quét ở độ phân giải tối thiểu 200 dpi, tỷ lệ 100%, ảnh màu và gắn chứng thư số của cơ quan thực hiện số hóa."
-    },
-    {
-      "articleNumber": "8",
-      "title": "Ký hiệu viết tắt các loại văn bản phổ biến của Đảng",
-      "content": "Quy định ký hiệu viết tắt các loại văn bản trong cơ quan Đảng:\n- Nghị quyết: -NQ/...\n- Quyết định: -QĐ/...\n- Quy định: -QĐ/...\n- Chỉ thị: -CT/...\n- Kết luận: -KL/...\n- Hướng dẫn: -HD/...\n- Thông báo: -TB/...\n- Báo cáo: -BC/...\n- Kế hoạch: -KH/...\n- Tờ trình: -TTr/...\n- Biên bản: -BB/...\n- Công văn: Không ghi tên loại văn bản, chỉ ghi số thứ tự và ký hiệu cơ quan, ví dụ: Số 123-CV/VPTW hoặc Số 45-CV/TU."
+      "title": "Mẫu phương án phân loại tài liệu Phông Ủy ban Kiểm tra và Ban Xây dựng Đảng cấp xã",
+      "content": "1. Tài liệu Phông Cơ quan Ủy ban Kiểm tra Đảng ủy xã: Hồ sơ các cuộc kiểm tra, giám sát định kỳ đối với chi bộ trực thuộc và đảng viên; hồ sơ giải quyết khiếu nại, tố cáo đối với tổ chức đảng và đảng viên; hồ sơ xử lý kỷ luật đảng viên (khiển trách, cảnh cáo thuộc thẩm quyền hoặc đề nghị cấp ủy cấp trên khai trừ); hồ sơ kiểm tra tài chính đảng.\n2. Tài liệu Phông Ban Xây dựng Đảng (hoặc Tổ công tác xây dựng Đảng cấp xã): Hồ sơ phát triển đảng viên (hồ sơ quần chúng ưu tú, thẩm tra lý lịch, đề nghị kết nạp, xét công nhận đảng viên chính thức); hồ sơ chuyển sinh hoạt đảng (chính thức, tạm thời); hồ sơ quản lý cơ sở dữ liệu đảng viên; tài liệu bồi dưỡng lý luận chính trị, nghiệp vụ công tác đảng cơ sở."
     }
   ]
 }

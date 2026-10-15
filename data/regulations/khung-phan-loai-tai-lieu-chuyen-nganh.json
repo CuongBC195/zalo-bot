@@ -1,0 +1,72 @@
+{
+  "documentId": "KHUNG-PHAN-LOAI-VPTW",
+  "documentCode": "KHUNG-PHAN-LOAI-VPTW",
+  "documentName": "Mẫu khung phân loại tài liệu các phông lưu trữ cơ quan Đảng, đoàn thể và lực lượng vũ trang địa phương",
+  "issuer": "Cục Lưu trữ - Văn phòng Trung ương Đảng",
+  "category": "van_thu_luu_tru",
+  "issueDate": "2013-07-15",
+  "status": "Còn hiệu lực (Hiện hành)",
+  "description": "Tổng hợp hệ thống Mẫu Khung phân loại tài liệu các phông lưu trữ chuyên ngành do Cục Lưu trữ Văn phòng Trung ương Đảng và Văn phòng Tỉnh ủy ban hành áp dụng cho 12 khối cơ quan Đảng, chính quyền, lực lượng vũ trang (Quân sự, Công an), các đoàn thể chính trị - xã hội và đơn vị sự nghiệp của Đảng.",
+  "articles": [
+    {
+      "articleNumber": "1",
+      "title": "Khung phân loại tài liệu Phông lưu trữ Đảng bộ Quân sự địa phương (Công văn 561-CV/CLT)",
+      "content": "Theo hướng dẫn tại Công văn số 561-CV/CLT ngày 16/12/2010 của Cục Lưu trữ Văn phòng Trung ương Đảng, tài liệu Đảng bộ Quân sự tỉnh/thành phố được phân loại theo các nhóm chính:\n1. Tài liệu Đại hội Đảng bộ Quân sự tỉnh.\n2. Tài liệu Đảng ủy, Ban Thường vụ Đảng ủy Quân sự tỉnh (nghị quyết lãnh đạo nhiệm vụ quân sự, quốc phòng địa phương, quy chế làm việc).\n3. Tài liệu về công tác quân sự, tác chiến, huấn luyện sẵn sàng chiến đấu, tuyển quân, động viên quân đội.\n4. Tài liệu về công tác đảng, công tác chính trị trong lực lượng vũ trang tỉnh (công tác cán bộ, đảng viên, bảo vệ an ninh quân đội, giáo dục chính trị).\n5. Tài liệu về công tác hậu cần, kỹ thuật quân sự và tài chính quân đội.\n6. Tài liệu về công tác thanh tra quốc phòng, tiếp công dân và công tác văn thư, lưu trữ quân sự."
+    },
+    {
+      "articleNumber": "2",
+      "title": "Khung phân loại tài liệu Phông lưu trữ Công an cấp tỉnh (Công văn 457-CV/CLT)",
+      "content": "Theo hướng dẫn tại Công văn số 457-CV/CLT ngày 14/04/2010 của Cục Lưu trữ Văn phòng Trung ương Đảng, tài liệu Đảng ủy và cơ quan Công an cấp tỉnh được phân loại theo các nhóm:\n1. Tài liệu Đại hội Đảng bộ Công an tỉnh.\n2. Tài liệu Đảng ủy, Ban Thường vụ Đảng ủy Công an tỉnh lãnh đạo công tác an ninh trật tự.\n3. Tài liệu về công tác an ninh nhân dân (chống phản động, bảo vệ an ninh chính trị nội bộ, an ninh kinh tế, an ninh tư tưởng văn hóa).\n4. Tài liệu về công tác cảnh sát nhân dân (phòng chống tội phạm hình sự, ma túy, kinh tế, quản lý hành chính về trật tự xã hội, an toàn giao thông, PCCC).\n5. Tài liệu về công tác xây dựng lực lượng, tổ chức cán bộ, đảng viên, đào tạo, thanh tra, kiểm tra trong công an.\n6. Tài liệu về hậu cần kỹ thuật, trang thiết bị chuyên dùng và tài chính công an."
+    },
+    {
+      "articleNumber": "3",
+      "title": "Khung phân loại tài liệu Phông lưu trữ Ban Tổ chức Tỉnh ủy",
+      "content": "Khung phân loại tài liệu Phông Ban Tổ chức Tỉnh ủy gồm các nhóm nghiệp vụ:\n1. Tài liệu chung về công tác tổ chức xây dựng Đảng của tỉnh.\n2. Tài liệu về tổ chức bộ máy, biên chế các cơ quan đảng, đoàn thể trong tỉnh.\n3. Tài liệu về công tác cán bộ: Quy hoạch, đào tạo, bồi dưỡng, điều động, bổ nhiệm, luân chuyển, bổ nhiệm lại, giới thiệu ứng cử đối với cán bộ thuộc diện BTV Tỉnh ủy quản lý.\n4. Tài liệu về công tác bảo vệ chính trị nội bộ: Thẩm tra, kết luận lịch sử chính trị và chính trị hiện nay của cán bộ, đảng viên.\n5. Tài liệu về công tác đảng viên: Kết nạp đảng, phát thẻ đảng viên, chuyển sinh hoạt đảng, thống kê đảng viên, huy hiệu đảng.\n6. Tài liệu về công tác chính sách cán bộ và quản lý hồ sơ cán bộ diện Ban Thường vụ Tỉnh ủy quản lý."
+    },
+    {
+      "articleNumber": "4",
+      "title": "Khung phân loại tài liệu Phông lưu trữ Cơ quan Ủy ban Kiểm tra Tỉnh ủy",
+      "content": "Khung phân loại tài liệu Phông Ủy ban Kiểm tra Tỉnh ủy gồm các nhóm nghiệp vụ:\n1. Tài liệu hội nghị, kỳ họp Ủy ban Kiểm tra Tỉnh ủy.\n2. Tài liệu về công tác kiểm tra tổ chức đảng và đảng viên khi có dấu hiệu vi phạm.\n3. Tài liệu về công tác giám sát chuyên đề đối với cấp ủy viên và tổ chức đảng cấp dưới.\n4. Tài liệu về xử lý kỷ luật đảng (khiển trách, cảnh cáo, cách chức, đề nghị khai trừ).\n5. Tài liệu về giải quyết đơn thư khiếu nại, tố cáo đối với tổ chức đảng và đảng viên.\n6. Tài liệu về kiểm tra tài chính đảng đối với các cơ quan đảng cùng cấp và cấp dưới."
+    },
+    {
+      "articleNumber": "5",
+      "title": "Khung phân loại tài liệu Phông lưu trữ Ban Tuyên giáo Tỉnh ủy",
+      "content": "Khung phân loại tài liệu Phông Ban Tuyên giáo Tỉnh ủy gồm các nhóm nghiệp vụ:\n1. Tài liệu về công tác lý luận chính trị và nghiên cứu, học tập nghị quyết của Đảng.\n2. Tài liệu về công tác tuyên truyền cổ động, báo chí, xuất bản, văn hóa văn nghệ.\n3. Tài liệu về học tập và làm theo tư tưởng, đạo đức, phong cách Hồ Chí Minh.\n4. Tài liệu về công tác khoa giáo (giáo dục, y tế, khoa học công nghệ, bảo vệ môi trường, thể thao).\n5. Tài liệu về điều tra nắm bắt dư luận xã hội và đấu tranh bảo vệ nền tảng tư tưởng của Đảng (Ban chỉ đạo 35).\n6. Tài liệu về công tác nghiên cứu, biên soạn lịch sử đảng bộ địa phương."
+    },
+    {
+      "articleNumber": "6",
+      "title": "Khung phân loại tài liệu Phông lưu trữ Trường Chính trị tỉnh",
+      "content": "Khung phân loại tài liệu Phông Trường Chính trị cấp tỉnh gồm các nhóm nghiệp vụ:\n1. Tài liệu chung về công tác đào tạo, bồi dưỡng cán bộ lãnh đạo, quản lý của tỉnh.\n2. Tài liệu về công tác giảng dạy, học tập các lớp trung cấp lý luận chính trị, bồi dưỡng chuyên viên, chuyên viên chính, cập nhật kiến thức cán bộ cơ sở.\n3. Tài liệu về quản lý học viên, hồ sơ tuyển sinh, sổ điểm, quyết định công nhận tốt nghiệp, sổ cấp văn bằng chứng chỉ đào tạo.\n4. Tài liệu về nghiên cứu khoa học, hội thảo khoa học và tổng kết thực tiễn địa phương.\n5. Tài liệu về công tác tổ chức bộ máy, giảng viên và quản trị cơ sở vật chất nhà trường."
+    },
+    {
+      "articleNumber": "7",
+      "title": "Khung phân loại tài liệu Phông lưu trữ Mặt trận Tổ quốc Việt Nam cấp tỉnh",
+      "content": "Khung phân loại tài liệu Phông Ủy ban Mặt trận Tổ quốc Việt Nam cấp tỉnh gồm:\n1. Tài liệu Đại hội đại biểu Mặt trận Tổ quốc tỉnh.\n2. Tài liệu các kỳ họp Ủy ban và Ban Thường trực Ủy ban MTTQ tỉnh.\n3. Tài liệu về công tác dân tộc, tôn giáo và phát huy khối đại đoàn kết toàn dân tộc.\n4. Tài liệu về các phong trào thi đua yêu nước, các cuộc vận động xã hội (Quỹ Vì người nghèo, cứu trợ thiên tai, Đền ơn đáp nghĩa).\n5. Tài liệu về hoạt động giám sát, phản biện xã hội và tham gia xây dựng Đảng, chính quyền.\n6. Tài liệu về công tác đối ngoại nhân dân và kiều bào."
+    },
+    {
+      "articleNumber": "8",
+      "title": "Khung phân loại tài liệu Phông lưu trữ Liên đoàn Lao động cấp tỉnh",
+      "content": "Khung phân loại tài liệu Phông Liên đoàn Lao động cấp tỉnh gồm:\n1. Tài liệu Đại hội Công đoàn tỉnh và các kỳ họp Ban Chấp hành, Ban Thường vụ LĐLĐ tỉnh.\n2. Tài liệu về bảo vệ quyền, lợi ích hợp pháp, chính đáng của đoàn viên, công nhân viên chức lao động (thương lượng, ký kết thỏa ước lao động tập thể, an toàn vệ sinh lao động).\n3. Tài liệu về phong trào thi đua Lao động giỏi, Lao động sáng tạo, phong trào thi đua trong doanh nghiệp.\n4. Tài liệu về công tác phát triển đoàn viên, thành lập công đoàn cơ sở (đặc biệt trong các doanh nghiệp ngoài nhà nước).\n5. Tài liệu về công tác tài chính công đoàn và quản lý tài sản công đoàn."
+    },
+    {
+      "articleNumber": "9",
+      "title": "Khung phân loại tài liệu Phông lưu trữ Hội Nông dân cấp tỉnh",
+      "content": "Khung phân loại tài liệu Phông Hội Nông dân cấp tỉnh gồm:\n1. Tài liệu Đại hội đại biểu Hội Nông dân tỉnh và hoạt động của Ban Chấp hành, Ban Thường vụ Hội.\n2. Tài liệu về phong trào 'Nông dân thi đua sản xuất, kinh doanh giỏi, đoàn kết giúp nhau làm giàu và giảm nghèo bền vững'.\n3. Tài liệu về vận động nông dân tham gia xây dựng nông thôn mới, bảo vệ môi trường nông thôn.\n4. Tài liệu về hoạt động hỗ trợ nông dân: Vốn vay Quỹ Hỗ trợ nông dân, ủy thác Ngân hàng Chính sách xã hội, chuyển giao khoa học kỹ thuật.\n5. Tài liệu về xây dựng tổ chức hội, phát triển hội viên và câu lạc bộ nông dân."
+    },
+    {
+      "articleNumber": "10",
+      "title": "Khung phân loại tài liệu Phông lưu trữ Hội Liên hiệp Phụ nữ cấp tỉnh",
+      "content": "Khung phân loại tài liệu Phông Hội Liên hiệp Phụ nữ cấp tỉnh gồm:\n1. Tài liệu Đại hội đại biểu Phụ nữ tỉnh và hoạt động của Ban Chấp hành, Ban Thường vụ Hội.\n2. Tài liệu về phong trào thi đua 'Phụ nữ tích cực học tập, lao động sáng tạo, xây dựng gia đình hạnh phúc' và cuộc vận động 'Xây dựng gia đình 5 không, 3 sạch'.\n3. Tài liệu về công tác vì sự tiến bộ của phụ nữ, bình đẳng giới, phòng chống bạo lực gia đình.\n4. Tài liệu về hỗ trợ phụ nữ khởi nghiệp, phát triển kinh tế gia đình và quản lý vốn vay ủy thác.\n5. Tài liệu về công tác tập hợp phụ nữ, xây dựng hội viên nòng cốt."
+    },
+    {
+      "articleNumber": "11",
+      "title": "Khung phân loại tài liệu Phông lưu trữ Hội Cựu chiến binh cấp tỉnh",
+      "content": "Khung phân loại tài liệu Phông Hội Cựu chiến binh cấp tỉnh gồm:\n1. Tài liệu Đại hội đại biểu Cựu chiến binh tỉnh và hoạt động của Ban Chấp hành, Ban Thường vụ Hội.\n2. Tài liệu về phong trào 'Cựu chiến binh gương mẫu', tham gia giữ gìn an ninh trật tự và xây dựng Đảng, chính quyền cơ sở.\n3. Tài liệu về công tác nghĩa tình đồng đội, cựu chiến binh giúp nhau giảm nghèo, làm kinh tế giỏi.\n4. Tài liệu về phối hợp giải quyết chế độ, chính sách đối với cựu chiến binh, cựu quân nhân, tìm kiếm quy tập hài cốt liệt sĩ.\n5. Tài liệu về công tác xây dựng hội, kết nạp hội viên cựu chiến binh."
+    },
+    {
+      "articleNumber": "12",
+      "title": "Khung phân loại tài liệu Phông lưu trữ Đoàn TNCS Hồ Chí Minh cấp tỉnh",
+      "content": "Khung phân loại tài liệu Phông Đoàn Thanh niên Cộng sản Hồ Chí Minh cấp tỉnh gồm:\n1. Tài liệu Đại hội Đoàn TNCS Hồ Chí Minh tỉnh và hoạt động của Ban Chấp hành, Ban Thường vụ Tỉnh đoàn.\n2. Tài liệu về các phong trào hành động cách mạng: 'Thanh niên tình nguyện', 'Tuổi trẻ sáng tạo', 'Tuổi trẻ xung kích bảo vệ Tổ quốc'.\n3. Tài liệu về các chương trình đồng hành với thanh niên: Học tập, khởi nghiệp, lập nghiệp, rèn luyện và phát triển kỹ năng xã hội.\n4. Tài liệu về công tác phụ trách Đội Thiếu niên Tiền phong Hồ Chí Minh và chăm sóc thiếu niên, nhi đồng.\n5. Tài liệu về công tác đoàn viên, phát triển đoàn viên mới và bồi dưỡng đoàn viên ưu tú giới thiệu cho Đảng xem xét kết nạp."
+    }
+  ]
+}

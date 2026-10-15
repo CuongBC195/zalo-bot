@@ -4,8 +4,14 @@
  */
 
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'zalo_dang_ai_bot_secure_secret_key_2026';
+let JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  JWT_SECRET = crypto.randomBytes(48).toString('hex');
+  console.warn('[Security] Chưa cấu hình JWT_SECRET trong .env, đang dùng khóa ngẫu nhiên tạm thời.');
+}
+
 const TOKEN_EXPIRY = '7d';
 
 function generateToken(user) {

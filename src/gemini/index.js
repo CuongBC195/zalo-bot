@@ -47,7 +47,7 @@ class GeminiService {
     const currentKey = this.apiKey;
     if (!currentKey) return text;
 
-    const rewriteCandidates = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest'];
+    const rewriteCandidates = ['gemini-flash-lite-latest', 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite'];
     for (const model of rewriteCandidates) {
       const activeKey = this.keyManager.getKey() || currentKey;
       try {
@@ -104,9 +104,9 @@ class GeminiService {
 
     // Danh sách model ưu tiên (phản hồi cực nhanh < 2s, dự phòng đa tầng ổn định 100%)
     const modelCandidates = Array.from(new Set([
+      'gemini-flash-lite-latest',
       'gemini-3.1-flash-lite',
       'gemini-3.5-flash-lite',
-      'gemini-flash-lite-latest',
       this.primaryModel,
       'gemini-flash-latest',
     ]));
@@ -138,7 +138,7 @@ class GeminiService {
               maxOutputTokens: config.gemini.maxOutputTokens,
             },
           }),
-          signal: AbortSignal.timeout(8000),
+          signal: AbortSignal.timeout(12000),
         });
 
         if (response.status === 429) {

@@ -13,23 +13,28 @@ const {
   buildFaithfulnessQuestion,
 } = require('./prompts');
 
-// Danh sách từ khóa ngoài phạm vi (Out-of-Scope Blacklist)
-const OUT_OF_SCOPE_KEYWORDS = [
+// 1. Tầng 1: Hard Out-of-Scope Blacklist (Tuyệt đối không thuộc nghiệp vụ Đảng - Kiểm tra TRƯỚC Whitelist để chặn Prompt Injection ở 0ms)
+const HARD_OUT_OF_SCOPE_KEYWORDS = [
+  'python', 'javascript', 'java', 'c++', 'viết code', 'lập trình', 'giải phương trình',
+  'bitcoin', 'crypto', 'ethereum', 'tiền ảo', 'cổ phiếu', 'chứng khoán', 'xổ số', 'lô đề',
+  'nấu phở', 'bún bò', 'cơm tấm', 'ngoại hạng anh', 'world cup', 'dự báo thời tiết',
+  'playstation', 'chơi game', 'trò chơi', 'game', 'sửa xe', 'sửa máy tính', 'iphone', 'samsung', 'điện thoại', 'laptop',
+  'toán học', 'vật lý', 'hóa học', 'bài tập về nhà',
+  'crack', 'phần mềm crack', 'phim chiếu rạp', 'google drive'
+];
+
+// 2. Tầng 2: Soft Out-of-Scope Blacklist (Các từ có thể xuất hiện trong quy định kỷ luật Đảng - Kiểm tra SAU Whitelist)
+const SOFT_OUT_OF_SCOPE_KEYWORDS = [
   // Đời thường & Giải trí
-  'thời tiết', 'dự báo thời tiết', 'mưa', 'nắng', 'nhiệt độ', 'độ ẩm',
-  'nấu ăn', 'công thức', 'món ăn', 'phở', 'bún bò', 'cơm tấm', 'bánh mì',
-  'chơi game', 'trò chơi', 'game', 'playstation', 'bài thơ', 'thơ ca',
-  'tình yêu', 'tỏ tình', 'hẹn hò', 'người yêu', 'phim', 'điện ảnh', 'diễn viên',
-  'nhạc', 'bài hát', 'ca sĩ', 'showbiz', 'bóng đá', 'ngoại hạng anh', 'world cup',
-  'kết quả bóng đá', 'thể thao', 'gym', 'thể hình', 'du lịch', 'khách sạn', 'vé máy bay',
-  // Tài chính cá nhân, đầu tư & Tiêu cực
-  'giá vàng', 'xổ số', 'kết quả xổ số', 'chứng khoán', 'cổ phiếu', 'tiền ảo', 'crypto',
-  'bitcoin', 'ethereum', 'vay tiền', 'tín dụng đen', 'lãi suất ngân hàng', 'cá độ',
-  'đánh bạc', 'lô đề', 'bói toán', 'tử vi', 'phong thủy', 'xem bói',
-  // Công nghệ, lập trình & Khoa học tự nhiên
-  'lập trình', 'viết code', 'python', 'javascript', 'java', 'c++', 'html', 'css',
-  'toán học', 'giải phương trình', 'vật lý', 'hóa học', 'bài tập về nhà',
-  'sửa xe', 'sửa máy tính', 'iphone', 'samsung', 'điện thoại', 'laptop'
+  'thời tiết', 'mưa', 'nắng', 'nhiệt độ', 'độ ẩm',
+  'nấu ăn', 'công thức', 'món ăn', 'bánh mì',
+  'bài thơ', 'thơ ca', 'tình yêu', 'tỏ tình', 'hẹn hò', 'người yêu',
+  'phim', 'điện ảnh', 'diễn viên', 'nhạc', 'bài hát', 'ca sĩ', 'showbiz',
+  'bóng đá', 'kết quả bóng đá', 'thể thao', 'gym', 'thể hình',
+  // Hành vi có thể liên quan kỷ luật Đảng nhưng ngoài phạm vi tra cứu thông thường
+  'đánh bạc', 'du lịch', 'khách sạn', 'vé máy bay', 'vay tiền', 'tín dụng đen',
+  'rượu bia', 'mê tín', 'tử vi', 'phong thủy', 'xem bói', 'bói toán',
+  'giá vàng', 'kết quả xổ số', 'lãi suất ngân hàng', 'cá độ'
 ];
 
 // Danh sách từ khóa thuộc phạm vi nghiệp vụ Đảng, Thể thức & Văn thư lưu trữ (Scope Whitelist)
@@ -56,18 +61,21 @@ const PARTY_AND_REGULATION_KEYWORDS = [
   'khổ giấy', 'khổ a4', 'ký hiệu', 'số và ký hiệu', 'trích yếu', 'nơi nhận', 'thẩm quyền ban hành',
   'in nghiêng', 'in đậm', 'times new roman', 'bản sao', 'sao y', 'sao lục', 'trích sao',
   'công văn', 'tờ trình', 'thông báo', 'biên bản', 'báo cáo', 'kế hoạch', 'chương trình',
-  // 3. Công tác Văn thư & Lưu trữ Đảng và Nhà nước (HD 05, HD 06, TT 02/2019/TT-BNV)
+  // 3. Công tác Văn thư & Lưu trữ Đảng và Nhà nước (HD 05, HD 06, HD 24, HD 50, HD 29, HD 30, TT 02/2019/TT-BNV)
   'văn thư', 'lưu trữ', 'nộp lưu', 'hồ sơ', 'danh mục hồ sơ', 'tiêu hủy', 'hủy tài liệu',
-  'thời hạn bảo quản', '05-hd', '06-hd', 'tt-bnv', 'bộ nội vụ', '02/2019', 'lưu trữ điện tử',
-  'pdf/a', 'siêu dữ liệu', 'metadata', 'bảo quản tài liệu', 'chỉnh lý tài liệu', 'số hóa tài liệu',
-  'nộp lưu hồ sơ', 'thu thập tài liệu', 'lưu trữ cơ quan', 'lưu trữ lịch sử',
+  'thời hạn bảo quản', 'thời hạn lưu trữ', '05-hd', '06-hd', '06-hd/vptw', '24-hd', '24-hd/vptw', '50-hd', '50-hd/vptw', '29-hd', '29-hd/vptw', '30-hd', '30-hd/vptw', '35-hd', '35-hd/vptw', 'tt-bnv', 'bộ nội vụ', '02/2019', 'lưu trữ điện tử',
+  'pdf/a', 'siêu dữ liệu', 'metadata', 'bảo quản tài liệu', 'chỉnh lý tài liệu', 'chỉnh lý', 'số hóa tài liệu',
+  'nộp lưu hồ sơ', 'thu thập tài liệu', 'lưu trữ cơ quan', 'lưu trữ hiện hành', 'lưu trữ lịch sử',
+  'khung phân loại', 'phương án phân loại', 'xác định giá trị', 'xác định giá trị tài liệu', 'xét hủy', 'tài liệu hết giá trị', 'hội đồng xác định giá trị',
+  'sổ đăng ký', 'sổ văn bản', 'bí mật nhà nước', 'cục lưu trữ', '561-cv', '457-cv', '561-cv/clt', '457-cv/clt',
+  'quân sự', 'công an', 'tuyên giáo', 'trường chính trị', 'liên đoàn lao động', 'hội nông dân', 'hội phụ nữ', 'cựu chiến binh', 'đoàn tncs', 'đoàn tncs hồ chí minh',
   // 4. Hệ thống chính trị cơ sở cấp xã/phường/thị trấn
   'đảng ủy xã', 'đảng bộ xã', 'văn phòng đảng ủy', 'chuyên viên', 'thường trực đảng ủy',
   '299-qđ', 'tham mưu cấp ủy', 'lịch công tác', 'tiếp công dân', 'mặt trận tổ quốc',
   'đoàn thanh niên', 'hội phụ nữ', 'hội nông dân', 'hội cựu chiến binh', 'công đoàn cơ sở',
   'ủy ban nhân dân', 'hội đồng nhân dân',
   // Bộ từ khóa tiếng Việt không dấu bổ trợ
-  'dang vien', 'du bi', 'bieu quyet', 'ket nap', 'chi bo', 'ky luat', 'dang phi', 'the thuc', 'luu tru'
+  'dang vien', 'du bi', 'bieu quyet', 'ket nap', 'chi bo', 'ky luat', 'dang phi', 'the thuc', 'luu tru', 'chinh ly', 'thoi han'
 ];
 
 function stripAccents(str) {
@@ -79,8 +87,9 @@ function stripAccents(str) {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
+const NORM_HARD_OUT_OF_SCOPE_KEYWORDS = HARD_OUT_OF_SCOPE_KEYWORDS.map(kw => stripAccents(kw));
+const NORM_SOFT_OUT_OF_SCOPE_KEYWORDS = SOFT_OUT_OF_SCOPE_KEYWORDS.map(kw => stripAccents(kw));
 const NORM_PARTY_KEYWORDS = PARTY_AND_REGULATION_KEYWORDS.map(kw => stripAccents(kw));
-const NORM_OUT_OF_SCOPE_KEYWORDS = OUT_OF_SCOPE_KEYWORDS.map(kw => stripAccents(kw));
 
 class JevService {
   constructor() {
@@ -267,7 +276,19 @@ class JevService {
       };
     }
 
-    // 2. Kiểm tra Whitelist TRƯỚC: Nếu câu hỏi chứa từ khóa nghiệp vụ Đảng, thể thức hoặc văn thư lưu trữ
+    // 2. Chặn TẦNG 1: Hard Out-of-Scope Blacklist (Chặn tuyệt đối TRƯỚC Whitelist, ngăn chặn Prompt Injection gài từ khóa Đảng ở 0ms)
+    const isHardOutOfScope = HARD_OUT_OF_SCOPE_KEYWORDS.some((kw, i) =>
+      text.includes(kw) || normText.includes(NORM_HARD_OUT_OF_SCOPE_KEYWORDS[i])
+    );
+    if (isHardOutOfScope) {
+      return {
+        choice: 'out_of_scope',
+        confidence: 0.99,
+        probabilities: { out_of_scope: 0.99, party_regulation: 0.01 },
+      };
+    }
+
+    // 3. Kiểm tra Whitelist: Nếu câu hỏi chứa từ khóa nghiệp vụ Đảng, thể thức hoặc văn thư lưu trữ
     const hasValidScopeKeyword = PARTY_AND_REGULATION_KEYWORDS.some((kw, i) =>
       text.includes(kw) || normText.includes(NORM_PARTY_KEYWORDS[i])
     );
@@ -290,11 +311,11 @@ class JevService {
       };
     }
 
-    // 3. Chặn Blacklist: Kiểm tra từ khóa ngoài phạm vi đời thường/giải trí
-    const isExplicitlyOutOfScope = OUT_OF_SCOPE_KEYWORDS.some((kw, i) =>
-      text.includes(kw) || normText.includes(NORM_OUT_OF_SCOPE_KEYWORDS[i])
+    // 4. Chặn TẦNG 2: Soft Out-of-Scope Blacklist (Kiểm tra SAU Whitelist, cho phép từ ngữ xuất hiện trong bối cảnh kỷ luật)
+    const isSoftOutOfScope = SOFT_OUT_OF_SCOPE_KEYWORDS.some((kw, i) =>
+      text.includes(kw) || normText.includes(NORM_SOFT_OUT_OF_SCOPE_KEYWORDS[i])
     );
-    if (isExplicitlyOutOfScope) {
+    if (isSoftOutOfScope) {
       return {
         choice: 'out_of_scope',
         confidence: 0.99,
@@ -302,7 +323,7 @@ class JevService {
       };
     }
 
-    // 4. Nếu không chứa từ khóa chuyên môn nào -> BẮT BUỘC coi là OUT OF SCOPE
+    // 5. Nếu không chứa từ khóa chuyên môn nào -> BẮT BUỘC coi là OUT OF SCOPE
     return {
       choice: 'out_of_scope',
       confidence: 0.90,
