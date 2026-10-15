@@ -70,10 +70,10 @@ Câu hỏi cần chuẩn hóa: "${text}"`;
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             generationConfig: {
               temperature: 0.1,
-              maxOutputTokens: 250,
+              maxOutputTokens: 80,
             },
           }),
-          signal: AbortSignal.timeout(4500),
+          signal: AbortSignal.timeout(2500), // Kiểm soát độ trễ tối đa 2.5s
         });
 
         if (response.status === 429) {
@@ -84,7 +84,6 @@ Câu hỏi cần chuẩn hóa: "${text}"`;
         if (response.ok) {
           const data = await response.json();
           let rawRes = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-          // Bóc tách JSON nếu bị bọc trong markdown ```json ... ```
           rawRes = rawRes.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
           try {
             const parsed = JSON.parse(rawRes);
@@ -97,17 +96,17 @@ Câu hỏi cần chuẩn hóa: "${text}"`;
               };
             }
           } catch (_) {
-            // Nếu parse JSON lỗi nhưng có chuỗi trả về
             if (rawRes.length > 5) {
               return { normalizedQuery: rawRes, keywords: [], searchPhrase: rawRes };
             }
           }
         }
       } catch (err) {
-        // Thử model tiếp theo
+        console.warn(`[Normalizer-Key1] Model ${model} quá hạn (timeout 2.5s) hoặc gặp lỗi mạng:`, err.message);
       }
     }
 
+    // Fail-open thông minh: Trả về câu gốc để RAG chạy với ABBR_MAP và RAM 0ms không bị khựng
     return { normalizedQuery: text, keywords: [], searchPhrase: text };
   }
 

@@ -13,9 +13,11 @@ const config = {
     deleteWebhookOnStart: process.env.DELETE_WEBHOOK_ON_START !== 'false',
   },
 
-  // Gemini (System Two - Generation)
+  // Gemini (System 1.5 Rewrite & System 2 Generation)
   gemini: {
     apiKey: process.env.GEMINI_API_KEY || '',
+    rewriteApiKey: process.env.GEMINI_REWRITE_API_KEY || '',
+    generateApiKey: process.env.GEMINI_GENERATE_API_KEY || '',
     model: process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite',
     baseUrl: process.env.GEMINI_API_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta',
     maxOutputTokens: 2048,
