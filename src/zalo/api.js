@@ -1,17 +1,94 @@
 /**
  * Zalo Bot API Client Adapter
+ * Triển khai Native HTTP Client chuẩn xác, độc lập 100%, tương thích hoàn toàn Zalo Bot API
+ * Loại bỏ sự phụ thuộc vào thư viện bên thứ ba bị obfuscate (nguyên nhân gây lỗi module errors trên Vercel)
  */
 
-const ZaloBot = require('node-zalo-bot');
 const config = require('../config');
 
 const MESSAGE_CHUNK_SIZE = 1800;
 
+class NativeZaloBot {
+  constructor(token, options = {}) {
+    this.token = token;
+    this.baseApiUrl = options.baseApiUrl || config.zalo.baseUrl || 'https://bot-api.zaloplatforms.com';
+  }
+
+  _getUrl(method) {
+    return `${this.baseApiUrl}/bot${this.token}/${method}`;
+  }
+
+  async _request(method, payload = {}) {
+    if (!this.token) {
+      throw new Error('Zalo Bot Token not provided!');
+    }
+
+    const url = this._getUrl(method);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.ok) {
+      const err = new Error(data.description || `Zalo API Error (${data.error_code || response.status})`);
+      err.response = { status: response.status, data };
+      throw err;
+    }
+
+    return data.result;
+  }
+
+  async getMe() {
+    if (!this.token) {
+      throw new Error('Zalo Bot Token not provided!');
+    }
+    const url = this._getUrl('getMe');
+    const response = await fetch(url, { method: 'GET' });
+    const data = await response.json();
+    if (!response.ok || !data.ok) {
+      const err = new Error(data.description || `Zalo API Error (${data.error_code || response.status})`);
+      err.response = { status: response.status, data };
+      throw err;
+    }
+    return data.result;
+  }
+
+  async getUpdates(options = {}) {
+    return this._request('getUpdates', options);
+  }
+
+  async sendMessage(chatId, text, options = {}) {
+    return this._request('sendMessage', {
+      chat_id: String(chatId),
+      text,
+      ...options,
+    });
+  }
+
+  async setWebHook(url, options = {}) {
+    return this._request('setWebhook', {
+      url,
+      ...options,
+    });
+  }
+
+  async getWebHookInfo() {
+    return this._request('getWebhookInfo', {});
+  }
+
+  async deleteWebHook() {
+    return this._request('deleteWebhook', {});
+  }
+}
+
 class ZaloAPI {
   constructor(token = config.zalo.token) {
     this.token = token;
-    this.bot = new ZaloBot(token, {
-      polling: false,
+    this.bot = new NativeZaloBot(token, {
       baseApiUrl: config.zalo.baseUrl,
     });
   }
