@@ -1,22 +1,42 @@
 {
   "documentId": "66-QD/TW-2017",
   "documentCode": "66-QĐ/TW",
-  "documentName": "Quy định về thể loại, thẩm quyền ban hành và thể thức văn bản của Đảng (Ban hành ngày 06/02/2017)",
+  "documentName": "Quy định về thể loại, thẩm quyền ban hành và thể thức văn bản của Đảng",
   "issuer": "Ban Bí thư Trung ương Đảng",
   "category": "the_thuc",
   "issueDate": "2017-02-06",
-  "status": "Hết hiệu lực (từ 09/01/2026)",
-  "description": "Quy định số 66-QĐ/TW ngày 06/02/2017 của Ban Bí thư về thể loại, thẩm quyền ban hành và thể thức văn bản của Đảng. Hiện nay văn bản này đã hết hiệu lực thi hành và được thay thế chính thức bởi Quy định số 399-QĐ/TW ngày 09/01/2026 của Ban Bí thư.",
+  "status": "Hết hiệu lực (từ 09/01/2026 theo Quy định số 399-QĐ/TW)",
+  "description": "Quy định số 66-QĐ/TW ngày 06/02/2017 của Ban Bí thư về thể loại, thẩm quyền ban hành và thể thức văn bản của Đảng; được áp dụng thống nhất trong toàn Đảng giai đoạn 2017 - 2026 trước khi được thay thế bởi Quy định số 399-QĐ/TW ngày 09/01/2026.",
   "articles": [
     {
+      "articleNumber": "0",
+      "title": "Hiệu lực văn bản và quy định thay thế hiện hành",
+      "content": "Quy định số 66-QĐ/TW ngày 06/02/2017 của Ban Bí thư đã hết hiệu lực thi hành kể từ ngày 09/01/2026. Hiện nay, thẩm quyền ban hành, 25 thể loại văn bản của Đảng và các quy định chung về thể thức văn bản giấy và văn bản điện tử được áp dụng thống nhất theo Quy định số 399-QĐ/TW ngày 09/01/2026 của Ban Bí thư và Hướng dẫn số 05-HD/VPTW ngày 27/05/2026 của Văn phòng Trung ương Đảng."
+    },
+    {
       "articleNumber": "1",
-      "title": "Hiệu lực văn bản và quy định thay thế hiện hành năm 2026",
-      "content": "Quy định số 66-QĐ/TW ngày 06/02/2017 của Ban Bí thư đã hết hiệu lực thi hành từ ngày 09/01/2026. Hiện nay, thẩm quyền ban hành, 25 thể loại văn bản của Đảng và các quy định chung về thể thức được áp dụng thống nhất theo Quy định số 399-QĐ/TW ngày 09/01/2026 của Ban Bí thư."
+      "title": "Phạm vi điều chỉnh và đối tượng áp dụng",
+      "content": "1. Quy định này quy định về thể loại, thẩm quyền ban hành và thể thức văn bản của Đảng trong toàn hệ thống tổ chức của Đảng.\n2. Áp dụng đối với các cấp ủy, tổ chức đảng, cơ quan chuyên trách tham mưu, giúp việc của cấp ủy, ban cán sự đảng, đảng đoàn từ Trung ương đến chi bộ cơ sở."
     },
     {
       "articleNumber": "2",
-      "title": "Lịch sử thay thế quy định thể loại và thẩm quyền ban hành văn bản Đảng",
-      "content": "Quy định số 66-QĐ/TW (năm 2017) từng thay thế cho Quy định số 25-QĐ/TW ngày 28/02/2007 của Ban Bí thư. Đến ngày 09/01/2026, Ban Bí thư đã ban hành Quy định số 399-QĐ/TW để thay thế hoàn toàn Quy định số 66-QĐ/TW nhằm chuẩn hóa 25 thể loại văn bản Đảng và thể thức văn bản điện tử trong kỷ nguyên mới."
+      "title": "Hệ thống các thể loại văn bản của Đảng",
+      "content": "Văn bản của Đảng gồm các thể loại chính thức sau:\n1. Cương lĩnh chính trị.\n2. Điều lệ Đảng.\n3. Chiến lược.\n4. Nghị quyết.\n5. Quyết định.\n6. Chỉ thị.\n7. Kết luận.\n8. Quy chế.\n9. Quy định.\n10. Thông tri.\n11. Hướng dẫn.\n12. Thông báo.\n13. Thông cáo.\n14. Tuyên bố.\n15. Lời kêu gọi.\n16. Báo cáo.\n17. Kế hoạch.\n18. Quy hoạch.\n19. Chương trình.\n20. Đề án.\n21. Phương án.\n22. Dự án.\n23. Tờ trình.\n24. Công văn (không ghi tên loại văn bản trên đầu văn bản).\n25. Biên bản.\nNgoài ra, các cơ quan đảng được sử dụng các giấy tờ hành chính thông thường như: Giấy giới thiệu, giấy chứng nhận, giấy đi đường, giấy nghỉ phép, giấy mời, phiếu chuyển..."
+    },
+    {
+      "articleNumber": "3",
+      "title": "Thẩm quyền ban hành văn bản của Ban Chấp hành Trung ương, Bộ Chính trị, Ban Bí thư",
+      "content": "1. Ban Chấp hành Trung ương Đảng ban hành: Cương lĩnh chính trị, Điều lệ Đảng, Chiến lược, Nghị quyết, Quyết định, Quy chế, Quy định, Kết luận, Tuyên bố, Lời kêu gọi, Báo cáo...\n2. Bộ Chính trị ban hành: Nghị quyết, Quyết định, Chỉ thị, Quy chế, Quy định, Kết luận, Thông báo, Kế hoạch, Báo cáo, Tờ trình...\n3. Ban Bí thư ban hành: Quyết định, Chỉ thị, Quy chế, Quy định, Kết luận, Thông báo, Thông tri, Hướng dẫn, Kế hoạch, Báo cáo, Tờ trình, Công văn..."
+    },
+    {
+      "articleNumber": "4",
+      "title": "Thẩm quyền ban hành văn bản của cấp ủy địa phương (Tỉnh ủy, Huyện ủy, Đảng ủy xã/phường)",
+      "content": "1. Ban Chấp hành, Ban Thường vụ Tỉnh ủy/Thành ủy ban hành: Nghị quyết, Quyết định, Chỉ thị, Quy chế, Quy định, Kết luận, Thông báo, Kế hoạch, Chương trình, Báo cáo, Tờ trình, Công văn, Biên bản...\n2. Ban Chấp hành, Ban Thường vụ Huyện ủy/Quận ủy/Thị ủy ban hành: Nghị quyết, Quyết định, Chỉ thị, Quy chế, Quy định, Kết luận, Thông báo, Kế hoạch, Chương trình, Báo cáo, Tờ trình, Công văn, Biên bản...\n3. Đảng ủy cơ sở (xã, phường, thị trấn, cơ quan, doanh nghiệp) ban hành: Nghị quyết, Quyết định, Quy chế, Kế hoạch, Chương trình, Thông báo, Báo cáo, Tờ trình, Công văn, Biên bản...\n4. Chi bộ cơ sở và chi bộ trực thuộc ban hành: Nghị quyết, Quyết định (đối với chi bộ cơ sở), Kế hoạch, Thông báo, Báo cáo, Tờ trình, Công văn, Biên bản..."
+    },
+    {
+      "articleNumber": "5",
+      "title": "Nguyên tắc chung về giá trị pháp lý và thể thức văn bản Đảng",
+      "content": "1. Văn bản của Đảng chỉ có giá trị pháp lý khi được ban hành đúng thể loại, đúng thẩm quyền và tuân thủ chặt chẽ thể thức, kỹ thuật trình bày do Ban Bí thư và Văn phòng Trung ương Đảng quy định.\n2. Mọi văn bản ban hành sai thể loại hoặc vượt quá thẩm quyền đều không có giá trị thi hành và phải được cấp ủy có thẩm quyền hủy bỏ, thu hồi kịp thời."
     }
   ]
 }

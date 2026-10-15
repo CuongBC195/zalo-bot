@@ -1,22 +1,47 @@
 {
   "documentId": "36-HD/VPTW-2018",
   "documentCode": "36-HD/VPTW",
-  "documentName": "Hướng dẫn về thể thức và kỹ thuật trình bày văn bản của Đảng (Ban hành ngày 03/04/2018)",
+  "documentName": "Hướng dẫn về thể thức và kỹ thuật trình bày văn bản của Đảng",
   "issuer": "Văn phòng Trung ương Đảng",
   "category": "the_thuc",
   "issueDate": "2018-04-03",
-  "status": "Hết hiệu lực (từ 27/05/2026)",
-  "description": "Hướng dẫn số 36-HD/VPTW ngày 03/04/2018 của Văn phòng Trung ương Đảng (từng thay thế Hướng dẫn 17-HD/VPTW năm 2015). Hiện nay văn bản này đã hết hiệu lực thi hành và được thay thế thống nhất bởi Hướng dẫn số 05-HD/VPTW ngày 27/05/2026 của Văn phòng Trung ương Đảng và Quy định số 399-QĐ/TW ngày 09/01/2026 của Ban Bí thư.",
+  "status": "Hết hiệu lực (từ 27/05/2026 theo Hướng dẫn số 05-HD/VPTW)",
+  "description": "Hướng dẫn số 36-HD/VPTW ngày 03/04/2018 của Văn phòng Trung ương Đảng quy định về thể thức và kỹ thuật trình bày văn bản của Đảng; được áp dụng thống nhất giai đoạn 2018 - 2026 trước khi được thay thế bởi Hướng dẫn số 05-HD/VPTW ngày 27/05/2026.",
   "articles": [
     {
+      "articleNumber": "0",
+      "title": "Hiệu lực văn bản và quy định thay thế hiện hành",
+      "content": "Hướng dẫn số 36-HD/VPTW ngày 03/04/2018 của Văn phòng Ban Chấp hành Trung ương Đảng đã hết hiệu lực thi hành kể từ ngày 27/05/2026. Toàn bộ công tác thể thức và kỹ thuật trình bày văn bản giấy và văn bản điện tử của Đảng hiện nay được thực hiện thống nhất theo Hướng dẫn số 05-HD/VPTW ngày 27/05/2026 của Văn phòng Trung ương Đảng và Quy định số 399-QĐ/TW ngày 09/01/2026 của Ban Bí thư."
+    },
+    {
       "articleNumber": "1",
-      "title": "Hiệu lực văn bản và quy định thay thế hiện hành năm 2026",
-      "content": "Hướng dẫn số 36-HD/VPTW ngày 03/04/2018 của Văn phòng Trung ương Đảng đã hết hiệu lực thi hành từ ngày 27/05/2026. Toàn bộ công tác thể thức và kỹ thuật trình bày văn bản giấy và văn bản điện tử của Đảng hiện nay được thực hiện theo Hướng dẫn số 05-HD/VPTW ngày 27/05/2026 của Văn phòng Trung ương Đảng và Quy định số 399-QĐ/TW ngày 09/01/2026 của Ban Bí thư."
+      "title": "Phạm vi điều chỉnh và đối tượng áp dụng",
+      "content": "1. Phạm vi điều chỉnh:\n- Hướng dẫn này quy định về thể thức và kỹ thuật trình bày văn bản của Đảng bao gồm văn bản giấy và văn bản điện tử.\n- Văn bản chứa bí mật nhà nước thực hiện theo Hướng dẫn này và các quy định của pháp luật về bảo vệ bí mật nhà nước.\n- Văn bản chuyên ngành, văn bản in thành sách và các ấn phẩm khác không thuộc phạm vi điều chỉnh của Hướng dẫn này.\n2. Đối tượng áp dụng:\n- Các cấp uỷ, tổ chức đảng, cơ quan tham mưu, giúp việc của cấp uỷ, ban cán sự đảng, đảng đoàn từ Trung ương đến chi bộ cơ sở."
     },
     {
       "articleNumber": "2",
-      "title": "Chuyển tiếp và lịch sử thay thế các văn bản thể thức Đảng",
-      "content": "Lịch sử quy định về thể thức và kỹ thuật trình bày văn bản của Đảng qua các thời kỳ:\n1. Giai đoạn trước 2018: Thực hiện theo Hướng dẫn số 17-HD/VPTW ngày 05/10/2015 của Văn phòng Trung ương Đảng.\n2. Giai đoạn 2018 - tháng 5/2026: Thực hiện theo Hướng dẫn số 36-HD/VPTW ngày 03/04/2018 của Văn phòng Trung ương Đảng và Quy định số 66-QĐ/TW ngày 06/02/2017 của Ban Bí thư.\n3. Giai đoạn hiện hành (từ năm 2026): Thực hiện theo Quy định số 399-QĐ/TW ngày 09/01/2026 của Ban Bí thư (thay thế Quy định 66-QĐ/TW) và Hướng dẫn số 05-HD/VPTW ngày 27/05/2026 của Văn phòng Trung ương Đảng (thay thế Hướng dẫn 36-HD/VPTW)."
+      "title": "Các thành phần thể thức bắt buộc của văn bản Đảng",
+      "content": "Văn bản của Đảng gồm các thành phần thể thức bắt buộc sau:\n1. Tiêu đề: ĐẢNG CỘNG SẢN VIỆT NAM (trình bày ở đầu trang, góc phải, phía dưới có đường kẻ ngang nét liền dài bằng độ dài tiêu đề).\n2. Tên cơ quan ban hành văn bản (đặt ở góc trên bên trái, xác định rõ cấp uỷ hoặc cơ quan ban hành).\n3. Số và ký hiệu văn bản (số thứ tự ghi bằng chữ số Ả Rập, ký hiệu viết tắt tên loại và cơ quan ban hành).\n4. Địa danh và ngày, tháng, năm ban hành văn bản.\n5. Tên loại văn bản và trích yếu nội dung văn bản (đối với công văn không ghi tên loại).\n6. Nội dung văn bản.\n7. Quyền hạn, chức vụ, họ tên và chữ ký của người có thẩm quyền.\n8. Con dấu của cơ quan ban hành (hoặc chữ ký số cơ quan đối với văn bản điện tử).\n9. Nơi nhận văn bản."
+    },
+    {
+      "articleNumber": "3",
+      "title": "Các thành phần thể thức bổ sung của văn bản",
+      "content": "Tùy theo tính chất văn bản, người ký có thể quyết định bổ sung các thành phần thể thức sau:\n1. Phụ lục văn bản kèm theo.\n2. Dấu chỉ mức độ mật (TUYỆT MẬT, TỐI MẬT, MẬT) và các chỉ dẫn theo quy định bảo vệ bí mật nhà nước.\n3. Dấu chỉ mức độ khẩn (HOẢ TỐC, THƯỢNG KHẨN, KHẨN).\n4. Các chỉ dẫn về phạm vi lưu hành: LƯU HÀNH NỘI BỘ, THU HỒI, KHÔNG PHỔ BIẾN...\n5. Ký hiệu người soạn thảo và số lượng bản phát hành.\n6. Địa chỉ cơ quan ban hành, số điện thoại, số fax, trang thông tin điện tử."
+    },
+    {
+      "articleNumber": "4",
+      "title": "Thẩm quyền và cách thức ghi quyền hạn ký văn bản Đảng (T/M, K/T, T/L, T/U)",
+      "content": "1. Ký thay mặt (T/M):\n- Tổng Bí thư ký T/M Ban Chấp hành Trung ương Đảng đối với các nghị quyết, quyết định, quy định của Ban Chấp hành Trung ương.\n- Thường trực Ban Bí thư ký T/M Ban Bí thư.\n- Bí thư cấp ủy ký T/M ban chấp hành, ban thường vụ cấp ủy các cấp.\n- Phó Bí thư ký T/M cấp ủy khi được Bí thư phân công hoặc thay mặt giải quyết công việc chung của cấp ủy.\n2. Ký thay (K/T):\n- Phó Bí thư ký thay (K/T) Bí thư khi ký văn bản thuộc lĩnh vực phụ trách hoặc được Bí thư giao giải quyết.\n- Phó Trưởng ban ký K/T Trưởng ban; Phó Chánh Văn phòng ký K/T Chánh Văn phòng các cơ quan tham mưu, giúp việc cấp ủy.\n3. Ký thừa lệnh (T/L):\n- Chánh Văn phòng cấp ủy ký T/L ban thường vụ cấp ủy các văn bản hướng dẫn nghiệp vụ công tác đảng, thông báo kết luận cuộc họp, truyền đạt ý kiến chỉ đạo theo thẩm quyền.\n- Cấp phó của người đứng đầu cơ quan ký T/L theo phân công bằng văn bản của người đứng đầu.\n4. Ký thừa ủy quyền (T/U):\n- Chỉ áp dụng khi người đứng đầu cơ quan ủy quyền bằng văn bản cho cấp phó hoặc người đứng đầu cơ quan cấp dưới ký một số văn bản cụ thể trong phạm vi được giao."
+    },
+    {
+      "articleNumber": "5",
+      "title": "Quy chuẩn quản lý và đóng dấu cơ quan Đảng trên văn bản",
+      "content": "1. Dấu đóng trên văn bản phải rõ ràng, ngay ngắn, đúng chiều, dùng mực dấu màu đỏ tươi theo quy định.\n2. Vị trí đóng dấu: Dấu trùm lên khoảng 1/3 chữ ký của người ký về phía bên trái.\n3. Đóng dấu giáp lai: Áp dụng với văn bản hoặc phụ lục có từ 02 trang trở lên (in 1 mặt) hoặc từ 03 trang trở lên (in 2 mặt), đóng vào mép phải trùm lên các tờ giấy (tối đa không quá 05 tờ/dấu).\n4. Đóng dấu treo: Đóng ở góc trên bên trái, trùm lên dòng tên cơ quan ban hành văn bản hoặc tên phụ lục.\n5. Nghiêm cấm: Đóng dấu khống chỉ (đóng dấu vào giấy trắng chưa có nội dung hoặc chữ ký); đóng dấu trước khi người có thẩm quyền ký."
+    },
+    {
+      "articleNumber": "6",
+      "title": "Quy chuẩn phông chữ, cỡ chữ (size), kiểu chữ và căn lề trang văn bản Đảng",
+      "content": "1. Phông chữ (font): Sử dụng phông chữ tiếng Việt chuẩn Unicode Times New Roman, bộ mã ký tự Unicode theo Tiêu chuẩn Việt Nam TCVN 6909:2001, màu đen đồng nhất.\n2. Cỡ chữ (size) và kiểu chữ từng thành phần thể thức văn bản Đảng (trên khổ giấy A4):\n- Tiêu đề 'ĐẢNG CỘNG SẢN VIỆT NAM': Cỡ chữ 12 đến 13, chữ in hoa, kiểu chữ đứng, đậm (Bold).\n- Tên cơ quan ban hành văn bản: Cỡ chữ 12 đến 13, chữ in hoa, kiểu chữ đứng, đậm.\n- Số và ký hiệu văn bản: Cỡ chữ 12 đến 13, chữ in thường hoặc hoa theo quy định, kiểu chữ đứng, nét thường.\n- Địa danh và ngày, tháng, năm ban hành: Cỡ chữ 13 đến 14, chữ in thường, kiểu chữ nghiêng (Italic).\n- Tên loại văn bản: Cỡ chữ 14 đến 15, chữ in hoa, kiểu chữ đứng, đậm.\n- Trích yếu nội dung văn bản: Đối với công văn cỡ chữ 11 đến 12 (đứng hoặc nghiêng); đối với văn bản có tên loại cỡ chữ 13 đến 14, kiểu chữ đứng, đậm.\n- Nội dung văn bản: Cỡ chữ 13 đến 14, chữ in thường, kiểu chữ đứng, giãn dòng tối thiểu 1.15 line, căn đều hai bên (justify).\n- Quyền hạn, chức vụ người ký (T/M, K/T, T/L, T/U, Bí thư, Phó Bí thư): Cỡ chữ 13 đến 14, chữ in hoa, kiểu chữ đứng, đậm.\n- Họ và tên người ký: Cỡ chữ 13 đến 14, chữ in thường, kiểu chữ đứng, đậm.\n- Nơi nhận: Từ 'Nơi nhận' cỡ chữ 11 đến 12, nghiêng đậm; danh sách nơi nhận cỡ chữ 10 đến 11, in thường, đứng.\n3. Quy chuẩn căn lề trang văn bản (khổ A4 210 x 297 mm):\n- Lề trên (top): 20 đến 25 mm.\n- Lề dưới (bottom): 20 đến 25 mm.\n- Lề trái (left): 30 đến 35 mm (để đóng quyển, kẹp hồ sơ).\n- Lề phải (right): 15 đến 20 mm."
     }
   ]
 }

@@ -5,58 +5,83 @@
   "issuer": "Bộ Nội vụ",
   "category": "van_thu_luu_tru",
   "issueDate": "2019-01-24",
-  "status": "Hết hiệu lực (từ 01/7/2025 theo TT 05/2025/TT-BNV)",
-  "description": "Thông tư số 02/2019/TT-BNV ngày 24/01/2019 của Bộ Nội vụ quy định tiêu chuẩn dữ liệu thông tin đầu vào và yêu cầu bảo quản tài liệu lưu trữ điện tử.",
+  "status": "Hết hiệu lực (từ 01/7/2025 theo Thông tư số 05/2025/TT-BNV)",
+  "description": "Thông tư số 02/2019/TT-BNV ngày 24/01/2019 của Bộ Nội vụ quy định tiêu chuẩn dữ liệu thông tin đầu vào và yêu cầu bảo quản tài liệu lưu trữ điện tử; hết hiệu lực từ ngày 01/07/2025 khi Luật Lưu trữ năm 2024 và Thông tư số 05/2025/TT-BNV có hiệu lực.",
   "articles": [
     {
+      "articleNumber": "0",
+      "title": "Hiệu lực văn bản và quy định thay thế hiện hành",
+      "content": "Thông tư số 02/2019/TT-BNV ngày 24/01/2019 của Bộ Nội vụ quy định tiêu chuẩn dữ liệu thông tin đầu vào và yêu cầu bảo quản tài liệu lưu trữ điện tử đã hết hiệu lực thi hành kể từ ngày 01/07/2025. Hiện nay, các tiêu chuẩn, quy chuẩn kỹ thuật và nghiệp vụ lưu trữ điện tử, số hóa tài liệu được thực hiện thống nhất theo Luật Lưu trữ năm 2024 (Luật số 33/2024/QH15) và Thông tư số 05/2025/TT-BNV của Bộ Nội vụ."
+    },
+    {
       "articleNumber": "1",
-      "title": "Phạm vi điều chỉnh",
-      "content": "Thông tư này quy định về tiêu chuẩn dữ liệu thông tin đầu vào, yêu cầu bảo quản tài liệu lưu trữ điện tử và dữ liệu đặc tả của tài liệu lưu trữ (sau đây gọi chung là cơ sở dữ liệu tài liệu lưu trữ) hình thành trong quá trình hoạt động của các cơ quan, tổ chức."
+      "title": "Điều 1: Phạm vi điều chỉnh",
+      "content": "Thông tư này quy định tiêu chuẩn dữ liệu thông tin đầu vào và yêu cầu bảo quản tài liệu lưu trữ điện tử, dữ liệu đặc tả của tài liệu lưu trữ (sau đây gọi là cơ sở dữ liệu tài liệu lưu trữ) hình thành trong quá trình hoạt động của cơ quan, tổ chức."
     },
     {
       "articleNumber": "2",
-      "title": "Đối tượng áp dụng",
-      "content": "Thông tư này áp dụng đối với cơ quan nhà nước, doanh nghiệp nhà nước theo quy định của Luật Doanh nghiệp. Khuyến khích các tổ chức chính trị, tổ chức chính trị - xã hội, tổ chức xã hội, tổ chức xã hội - nghề nghiệp áp dụng các quy định tại Thông tư này."
+      "title": "Điều 2: Đối tượng áp dụng",
+      "content": "1. Thông tư này áp dụng đối với cơ quan nhà nước, doanh nghiệp nhà nước theo quy định của Luật Doanh nghiệp năm 2014 (sau đây gọi chung là cơ quan, tổ chức).\n2. Khuyến khích các cơ quan, tổ chức không thuộc Khoản 1 Điều này và cá nhân áp dụng các quy định tại Thông tư này."
     },
     {
       "articleNumber": "3",
-      "title": "Giải thích từ ngữ",
-      "content": "Trong Thông tư này, các từ ngữ dưới đây được hiểu như sau:\n1. 'Dữ liệu thông tin đầu vào' là tập hợp các thông tin dưới dạng số phản ánh nội dung, cấu trúc và bối cảnh của tài liệu lưu trữ khi được tạo lập, số hóa hoặc thu thập vào hệ thống lưu trữ điện tử.\n2. 'Dữ liệu đặc tả của tài liệu lưu trữ' (Metadata) là những thông tin mô tả bối cảnh, nội dung, cấu trúc và sự phát triển của tài liệu lưu trữ theo thời gian để quản lý, tìm kiếm và sử dụng tài liệu.\n3. 'Cơ sở dữ liệu tài liệu lưu trữ' là tập hợp dữ liệu thông tin đầu vào và dữ liệu đặc tả của tài liệu lưu trữ được sắp xếp, tổ chức để truy cập, khai thác, quản lý và cập nhật thông qua phương tiện điện tử.\n4. 'Số hóa tài liệu' là quá trình chuyển đổi thông tin từ dạng vật lý (giấy, phim, ảnh, băng từ...) sang dạng tín hiệu số để máy tính có thể nhận biết, xử lý và lưu trữ."
+      "title": "Điều 3: Giải thích từ ngữ",
+      "content": "Trong Thông tư này, các từ ngữ dưới đây được hiểu như sau:\n1. Cơ sở dữ liệu tài liệu lưu trữ là tập hợp các dữ liệu bao gồm tài liệu lưu trữ điện tử và dữ liệu đặc tả của tài liệu lưu trữ được sắp xếp thông qua phương tiện điện tử để truy cập, khai thác, quản lý và cập nhật.\n2. Dữ liệu đặc tả (Metadata) là dữ liệu dùng để mô tả, giải thích, định vị hoặc hỗ trợ việc tra cứu, quản lý hoặc sử dụng tài liệu lưu trữ điện tử.\n3. Mã định danh cơ quan, tổ chức là chuỗi ký tự phân biệt duy nhất cơ quan, tổ chức này với cơ quan, tổ chức khác trong hệ thống thông tin quốc gia.\n4. Mã định danh phông lưu trữ là chuỗi ký tự phân biệt duy nhất phông lưu trữ này với phông lưu trữ khác trong cơ quan, tổ chức.\n5. Số lưu trữ là số đăng ký chính thức của tài liệu lưu trữ khi đưa vào bảo quản trong cơ sở dữ liệu tài liệu lưu trữ.\n6. Bảo quản tài liệu lưu trữ điện tử là quá trình thực hiện các biện pháp kỹ thuật, công nghệ nhằm duy trì sự toàn vẹn, xác thực, an toàn và khả năng truy cập của tài liệu lưu trữ điện tử trong môi trường mạng."
     },
     {
       "articleNumber": "4",
-      "title": "Nguyên tắc thiết kế cấu trúc dữ liệu thông tin đầu vào",
-      "content": "1. Bảo đảm tính thống nhất với tiêu chuẩn thông tin đầu vào của Hệ thống quản lý tài liệu điện tử tại các cơ quan, tổ chức.\n2. Phù hợp với các quy chuẩn kỹ thuật quốc gia về cấu trúc mã định danh và định dạng dữ liệu gói tin phục vụ kết nối các hệ thống quản lý văn bản và điều hành theo quy định của Bộ Thông tin và Truyền thông và Văn phòng Chính phủ.\n3. Bảo đảm khả năng trao đổi dữ liệu thông suốt, an toàn giữa Hệ thống quản lý tài liệu lưu trữ điện tử của Lưu trữ lịch sử và Lưu trữ cơ quan."
+      "title": "Điều 4: Nguyên tắc thiết kế cấu trúc dữ liệu thông tin đầu vào",
+      "content": "1. Bảo đảm thống nhất với tiêu chuẩn thông tin đầu vào của Hệ thống quản lý tài liệu điện tử của các cơ quan, tổ chức.\n2. Phù hợp với quy chuẩn kỹ thuật quốc gia về cấu trúc mã định danh và định dạng dữ liệu gói tin phục vụ kết nối các hệ thống quản lý văn bản và điều hành theo quy định của Bộ Thông tin và Truyền thông và Văn phòng Chính phủ.\n3. Bảo đảm việc trao đổi dữ liệu giữa Hệ thống quản lý tài liệu lưu trữ điện tử của Lưu trữ lịch sử với Hệ thống quản lý tài liệu điện tử của Lưu trữ cơ quan thông suốt, an toàn."
     },
     {
       "articleNumber": "5",
-      "title": "Yêu cầu biên mục nội dung dữ liệu đặc tả của tài liệu lưu trữ (Metadata)",
-      "content": "1. Việc biên mục nội dung dữ liệu đặc tả phải bảo đảm tính chính xác, cô đọng, rõ nghĩa và phản ánh trung thực nội dung tài liệu lưu trữ cần mô tả.\n2. Các trường thông tin dữ liệu đặc tả bắt buộc của văn bản lưu trữ điện tử bao gồm:\n- Mã định danh cơ quan ban hành; số và ký hiệu văn bản; ngày, tháng, năm ban hành.\n- Tên loại văn bản và trích yếu nội dung văn bản.\n- Người ký, chức vụ người ký, chứng thư số của người ký và chứng thư số của cơ quan ban hành.\n- Mức độ mật, mức độ khẩn (nếu có).\n- Số lượng trang, định dạng tệp tin, dung lượng tệp và mã băm kiểm tra tính toàn vẹn.\n- Tình trạng vật lý, tình trạng chữ ký số và đường dẫn lưu trữ trong hệ thống.\n3. Cơ quan, tổ chức có trách nhiệm cập nhật, bổ sung kịp thời khi nội dung dữ liệu đặc tả có sự thay đổi."
+      "title": "Điều 5: Yêu cầu biên mục nội dung dữ liệu đặc tả của tài liệu lưu trữ",
+      "content": "1. Biên mục nội dung dữ liệu đặc tả phải bảo đảm cô đọng, rõ nghĩa đối với nội dung tài liệu cần mô tả.\n2. Việc thực hiện biên mục phải tuân thủ đúng các trường thông tin và hướng dẫn quy định chi tiết tại Phụ lục I và Phụ lục II ban hành kèm theo Thông tư này.\n3. Dữ liệu đặc tả bắt buộc của văn bản lưu trữ điện tử bao gồm:\n- Mã định danh cơ quan ban hành; số và ký hiệu văn bản; ngày, tháng, năm ban hành.\n- Tên loại văn bản và trích yếu nội dung văn bản.\n- Người ký, chức vụ người ký, chứng thư số của người ký và chứng thư số của cơ quan ban hành.\n- Mức độ mật, mức độ khẩn (nếu có).\n- Số lượng trang, định dạng tệp tin, dung lượng tệp và mã băm kiểm tra tính toàn vẹn.\n- Tình trạng chữ ký số và đường dẫn lưu trữ trong hệ thống."
     },
     {
       "articleNumber": "6",
-      "title": "Tiêu chuẩn dữ liệu thông tin đầu vào của cơ sở dữ liệu tài liệu lưu trữ",
-      "content": "Tiêu chuẩn kỹ thuật định dạng tệp, độ phân giải và thông số kỹ thuật đối với tài liệu lưu trữ điện tử:\n1. Đối với tài liệu văn bản số hóa từ bản giấy:\n- Định dạng tệp tin: PDF (khuyến nghị chuẩn PDF/A-1a hoặc PDF/A-2a), phiên bản 1.4 trở lên.\n- Quét ảnh màu (Color), thang xám hoặc đen trắng tùy thuộc bản gốc; độ phân giải tối thiểu 200 dpi (khuyến nghị 300 dpi đối với tài liệu có nét chữ mờ, nhỏ); tỷ lệ số hóa 100% so với kích thước thực của bản gốc.\n- Văn bản sau khi số hóa phải gắn chữ ký số của cơ quan, tổ chức thực hiện số hóa theo đúng quy định.\n2. Đối với tài liệu ảnh:\n- Định dạng tệp tin: JPEG hoặc TIFF.\n- Độ phân giải tối thiểu: 200 dpi (khuyến nghị 300 dpi trở lên đối với ảnh nghệ thuật, ảnh tư liệu lịch sử quý hiếm).\n3. Đối với tài liệu phim ảnh, video:\n- Định dạng tệp tin: MPEG-4, .avi hoặc .wmv; tốc độ khung hình tối thiểu 25 fps, chuẩn nén H.264/AVC hoặc tương đương.\n4. Đối với tài liệu âm thanh:\n- Định dạng tệp tin: MP3 hoặc .wma; bit rate tối thiểu 128 kbps."
+      "title": "Điều 6: Tiêu chuẩn dữ liệu thông tin đầu vào của cơ sở dữ liệu tài liệu lưu trữ",
+      "content": "Tiêu chuẩn kỹ thuật định dạng tệp, độ phân giải, tỷ lệ và chữ ký số đối với tài liệu đưa vào cơ sở dữ liệu tài liệu lưu trữ:\n1. Đối với tài liệu lưu trữ điện tử số hóa từ tài liệu lưu trữ nền giấy:\n- Định dạng tệp tin: PDF (khuyến nghị chuẩn PDF/A-1a hoặc PDF/A-2a), phiên bản 1.4 trở lên.\n- Quét ảnh màu (Color), thang xám hoặc đen trắng tùy thuộc bản gốc; độ phân giải tối thiểu 200 dpi (khuyến nghị 300 dpi đối với tài liệu có nét chữ mờ, nhỏ); tỷ lệ số hóa 100% so với kích thước thực của bản gốc.\n- Văn bản sau khi số hóa phải gắn chữ ký số của cơ quan, tổ chức thực hiện số hóa theo đúng quy định.\n2. Đối với tài liệu ảnh:\n- Định dạng tệp tin: JPEG hoặc TIFF.\n- Độ phân giải tối thiểu: 200 dpi (khuyến nghị 300 dpi trở lên đối với ảnh nghệ thuật, ảnh tư liệu lịch sử quý hiếm).\n3. Đối với tài liệu phim ảnh, video:\n- Định dạng tệp tin: MPEG-4, .avi hoặc .wmv; tốc độ khung hình tối thiểu 25 fps, chuẩn nén H.264/AVC hoặc tương đương; bit rate tối thiểu 1500 kbps.\n4. Đối với tài liệu âm thanh:\n- Định dạng tệp tin: MP3 hoặc .wma; bit rate tối thiểu 128 kbps."
     },
     {
       "articleNumber": "7",
-      "title": "Yêu cầu bảo quản cơ sở dữ liệu tài liệu lưu trữ điện tử",
-      "content": "1. Cơ sở dữ liệu tài liệu lưu trữ điện tử phải được bảo quản bảo đảm các thuộc tính cơ bản:\n- Tính xác thực (Authenticity): Chứng minh tài liệu đúng là bản gốc được tạo lập và không bị giả mạo.\n- Tính toàn vẹn (Integrity): Tài liệu còn nguyên vẹn, đầy đủ nội dung, cấu trúc và không bị sửa đổi, thay đổi trái phép.\n- Tính khả dụng (Accessibility): Có thể định vị, tìm kiếm, truy xuất, hiển thị và đọc được nội dung trong suốt thời hạn bảo quản theo quy định.\n2. Thực hiện chế độ sao lưu dự phòng định kỳ (ít nhất 02 bản sao trên các phương tiện lưu trữ độc lập hoặc các địa điểm lưu trữ đám mây bảo mật chuyên dụng khác nhau).\n3. Đảm bảo an toàn vật lý đối với máy chủ, phương tiện lưu trữ và hệ thống mạng; thiết lập tường lửa, phần mềm quét mã độc và phân quyền truy cập nghiêm ngặt."
+      "title": "Điều 7: Nguyên tắc bảo quản cơ sở dữ liệu tài liệu lưu trữ",
+      "content": "1. Bảo đảm cơ sở dữ liệu tài liệu lưu trữ được bảo quản an toàn, xác thực, bảo mật trên các phương tiện lưu trữ.\n2. Bảo đảm khả năng truy cập, quản lý, tìm kiếm, cập nhật cơ sở dữ liệu tài liệu lưu trữ thông suốt trong suốt thời hạn bảo quản."
     },
     {
       "articleNumber": "8",
-      "title": "Kiểm tra cơ sở dữ liệu tài liệu lưu trữ",
-      "content": "1. Cơ quan, tổ chức có trách nhiệm định kỳ kiểm tra cơ sở dữ liệu tài liệu lưu trữ điện tử để phát hiện nguy cơ lỗi, mất mát hoặc hư hỏng dữ liệu.\n2. Nội dung kiểm tra bao gồm: Khả năng đọc, mở và hiển thị của các tệp tin; tính toàn vẹn của mã băm dữ liệu; tình trạng chứng thư số và chữ ký số; hoạt động của hệ thống sao lưu dự phòng.\n3. Khi phát hiện tệp tin bị lỗi hoặc có nguy cơ suy giảm chất lượng, phải kịp thời phục hồi từ bản sao dự phòng hoặc thực hiện chuyển đổi định dạng (migration) sang chuẩn mới phù hợp."
+      "title": "Điều 8: Yêu cầu bảo quản cơ sở dữ liệu tài liệu lưu trữ",
+      "content": "1. Không lưu cơ sở dữ liệu tài liệu lưu trữ có chứa thông tin thuộc phạm vi bí mật nhà nước trên các thiết bị kết nối với mạng Internet, mạng máy tính, mạng viễn thông công cộng.\n2. Không chuyển mục đích sử dụng các thiết bị đã lưu cơ sở dữ liệu tài liệu lưu trữ có chứa thông tin thuộc phạm vi bí mật nhà nước khi chưa loại bỏ triệt để cơ sở dữ liệu tài liệu lưu trữ.\n3. Cơ sở dữ liệu tài liệu lưu trữ phải được sao lưu ít nhất 02 bộ, mỗi bộ trên 01 phương tiện lưu trữ độc lập. Việc sao lưu phải bảo đảm đầy đủ, chính xác, kịp thời, an toàn.\n4. Bảo đảm thống nhất quy trình kiểm tra, sao lưu, phục hồi dữ liệu.\n5. Người được giao quản lý cơ sở dữ liệu tài liệu lưu trữ của cơ quan, tổ chức có trách nhiệm kiểm tra, bảo quản, sao lưu, phục hồi định kỳ theo quy định."
     },
     {
       "articleNumber": "9",
-      "title": "Trách nhiệm của cơ quan, tổ chức và người đứng đầu",
-      "content": "1. Người đứng đầu cơ quan, tổ chức chịu trách nhiệm chỉ đạo tổ chức triển khai thực hiện các quy định về tiêu chuẩn dữ liệu thông tin đầu vào và bảo quản tài liệu lưu trữ điện tử của cơ quan mình.\n2. Bộ phận văn thư, lưu trữ cơ quan có trách nhiệm tham mưu xây dựng quy chế quản trị, trực tiếp quản lý, kiểm tra, vận hành và bảo quản cơ sở dữ liệu tài liệu lưu trữ điện tử."
+      "title": "Điều 9: Kiểm tra cơ sở dữ liệu tài liệu lưu trữ",
+      "content": "1. Thời gian kiểm tra: Định kỳ hàng năm.\n2. Quy trình kiểm tra thực hiện theo quy định tại Phụ lục III ban hành kèm theo Thông tư này.\n3. Biên bản kiểm tra thực hiện theo mẫu quy định tại Phụ lục IV ban hành kèm theo Thông tư này."
     },
     {
       "articleNumber": "10",
-      "title": "Điều khoản thi hành",
-      "content": "1. Thông tư này có hiệu lực thi hành kể từ ngày 15 tháng 3 năm 2019.\n2. Các cơ quan, tổ chức khi đầu tư, nâng cấp Hệ thống quản lý tài liệu điện tử và Hệ thống quản lý tài liệu lưu trữ điện tử phải tuân thủ các quy định tại Thông tư này."
+      "title": "Điều 10: Sao lưu phần mềm và cơ sở dữ liệu tài liệu lưu trữ",
+      "content": "1. Thời gian và phương thức sao lưu:\na) Cơ sở dữ liệu tài liệu lưu trữ phải sao lưu hàng ngày theo phương thức sao lưu gia tăng (incremental backup); ngày đầu tiên hàng tháng phải sao lưu theo phương thức sao lưu đầy đủ (full backup).\nb) Chuyển đổi phương tiện lưu trữ: Cơ sở dữ liệu tài liệu lưu trữ, phần mềm phải chuyển đổi phương tiện lưu trữ 03 năm/01 lần theo phương thức sao lưu đầy đủ; Dữ liệu đặc tả của tài liệu lưu trữ được sao lưu và lưu trữ bằng định dạng tệp tin XML (eXtensible Markup Language).\n2. Quy trình sao lưu thực hiện theo quy định tại Phụ lục V ban hành kèm theo Thông tư này.\n3. Nhật ký sao lưu thực hiện theo mẫu quy định tại Phụ lục VI ban hành kèm theo Thông tư này.\n4. Biên bản sao lưu thực hiện theo mẫu quy định tại Phụ lục VII ban hành kèm theo Thông tư này."
+    },
+    {
+      "articleNumber": "11",
+      "title": "Điều 11: Phục hồi cơ sở dữ liệu tài liệu lưu trữ",
+      "content": "1. Quy trình và nội dung phục hồi cơ sở dữ liệu tài liệu lưu trữ được thực hiện theo quy định tại Phụ lục VIII ban hành kèm theo Thông tư này.\n2. Việc lập biên bản phục hồi cơ sở dữ liệu tài liệu lưu trữ thực hiện theo mẫu quy định tại Phụ lục IX ban hành kèm theo Thông tư này."
+    },
+    {
+      "articleNumber": "12",
+      "title": "Điều 12: Bảo đảm an toàn cơ sở dữ liệu tài liệu lưu trữ",
+      "content": "1. Cơ sở dữ liệu tài liệu lưu trữ được bảo đảm an toàn thông tin theo cấp độ được quy định tại Nghị định số 85/2016/NĐ-CP ngày 01 tháng 7 năm 2016 của Chính phủ về bảo đảm an toàn hệ thống thông tin theo cấp độ và Thông tư số 03/2017/TT-BTTTT ngày 24 tháng 4 năm 2017 của Bộ trưởng Bộ Thông tin và Truyền thông.\n2. Việc tiêu hủy thiết bị, phương tiện lưu trữ cơ sở dữ liệu tài liệu lưu trữ bảo đảm yêu cầu bảo mật thông tin theo cấp độ được quy định.\n3. Không được mang thiết bị, phương tiện lưu trữ cơ sở dữ liệu tài liệu lưu trữ ra khỏi Lưu trữ cơ quan, Lưu trữ lịch sử khi chưa được sự đồng ý của người có thẩm quyền."
+    },
+    {
+      "articleNumber": "13",
+      "title": "Điều 13: Hiệu lực thi hành",
+      "content": "Thông tư này có hiệu lực thi hành kể từ ngày 10 tháng 3 năm 2019."
+    },
+    {
+      "articleNumber": "14",
+      "title": "Điều 14: Tổ chức thực hiện",
+      "content": "1. Các Bộ trưởng, Thủ trưởng cơ quan ngang Bộ, Thủ trưởng cơ quan thuộc Chính phủ, Chủ tịch Ủy ban nhân dân các tỉnh, thành phố trực thuộc Trung ương và các cơ quan, tổ chức, cá nhân có liên quan chịu trách nhiệm thi hành Thông tư này.\n2. Trong quá trình thực hiện, nếu phát sinh vướng mắc, các cơ quan, tổ chức, cá nhân phản ánh kịp thời về Bộ Nội vụ để xem xét, hướng dẫn hoặc sửa đổi, bổ sung cho phù hợp."
     }
   ]
 }
