@@ -566,9 +566,22 @@ class DatabaseService {
     if (isOk) {
       try {
         await this.pool.query('DELETE FROM response_cache');
-        console.log('🧹 [Postgres] Đã xóa sạch bộ đệm response_cache.');
+        console.log('[Postgres] Đã xóa sạch bộ đệm response_cache.');
       } catch (err) {
         console.warn('[Postgres] Lỗi clearResponseCache:', err.message);
+      }
+    }
+  }
+
+  async deleteCachedResponse(cacheKey) {
+    if (!cacheKey) return;
+    this.localResponseCache.delete(cacheKey);
+    const isOk = await this.checkConnection();
+    if (isOk) {
+      try {
+        await this.pool.query('DELETE FROM response_cache WHERE cache_key = $1', [cacheKey]);
+      } catch (err) {
+        console.warn('[Postgres] Lỗi deleteCachedResponse:', err.message);
       }
     }
   }

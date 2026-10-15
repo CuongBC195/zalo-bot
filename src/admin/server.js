@@ -353,8 +353,21 @@ app.post('/api/zalo-users/:zaloId/toggle-block', requireRole('superadmin', 'admi
 // ============================================================
 app.get('/api/query-logs', async (req, res) => {
   const { search, limit } = req.query;
-  const logs = await db.getQueryLogs({ search, limit: parseInt(limit, 10) || 50 });
+  const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 200, 1), 500);
+  const logs = await db.getQueryLogs({ search, limit: parsedLimit });
   res.json({ ok: true, logs });
+});
+
+// ============================================================
+// QUẢN LÝ BỘ NHỚ ĐỆM CÂU TRẢ LỜI AI (RESPONSE CACHE)
+// ============================================================
+app.post('/api/cache/clear', requireRole('superadmin', 'admin'), async (req, res) => {
+  try {
+    await db.clearResponseCache();
+    res.json({ ok: true, message: 'Đã xóa toàn bộ bộ nhớ đệm câu trả lời AI.' });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 // ============================================================
@@ -484,6 +497,7 @@ app.post('/api/documents', requireRole('superadmin', 'admin'), async (req, res) 
 
 app.put('/api/documents/:id', requireRole('superadmin', 'admin'), async (req, res) => {
   const { id } = req.params;
+  const { documentCode, documentName, issuer, category, issueDate, status, description, articles } = req.body;
   const isDbConnected = await db.checkConnection();
 
   if (!isDbConnected) {
@@ -491,7 +505,16 @@ app.put('/api/documents/:id', requireRole('superadmin', 'admin'), async (req, re
   }
 
   try {
-    const updated = await db.updateDocument(id, req.body);
+    const updated = await db.updateDocument(id, {
+      documentCode,
+      documentName,
+      issuer,
+      category,
+      issueDate,
+      status,
+      description,
+      articles,
+    });
     await rag.reload();
     res.json({ ok: true, message: 'Cập nhật văn bản thành công', document: updated });
   } catch (err) {
@@ -592,6 +615,54 @@ app.post('/api/rag-test', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ============================================================
+// THỬ NGHIỆM ĐIỀU PHỐI PIPELINE 7 TẦNG & RAG X-RAY
+// ============================================================
+app.post('/api/pipeline-test', async (req, res) => {
+  const { query, skipCache } = req.body;
+  if (!query || !query.trim()) {
+    return res.status(400).json({ ok: false, error: 'Vui lòng nhập câu hỏi kiểm thử.' });
+  }
+
+  const startTime = Date.now();
+  try {
+    const pipeline = require('../pipeline');
+    const { expandAbbreviations, buildCacheKey } = require('../rag/abbreviations');
+
+    if (skipCache) {
+      const cacheKey = buildCacheKey(expandAbbreviations(query));
+      if (typeof db.deleteCachedResponse === 'function') {
+        await db.deleteCachedResponse(cacheKey);
+      }
+    }
+
+    const pRes = await pipeline.processMessage({
+      text: query,
+      senderName: req.user?.fullName || 'Quản trị viên',
+      skipCache: !!skipCache,
+    });
+
+    const passages = await rag.search(query, { topK: 6 });
+
+    res.json({
+      ok: true,
+      query,
+      answer: pRes.answer,
+      intent: pRes.intent,
+      retrievedDocs: pRes.retrievedDocs || [],
+      fromCache: !!pRes.fromCache,
+      latencyMs: Date.now() - startTime,
+      passages: passages || [],
+    });
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      error: err.message,
+      latencyMs: Date.now() - startTime,
+    });
   }
 });
 
@@ -711,11 +782,11 @@ app.use((req, res) => {
 if (require.main === module) {
   rag.init().then(() => {
     app.listen(PORT, () => {
-      console.log(`\n🌐 [Web Admin] Giao diện quản trị đang chạy tại: http://localhost:${PORT}`);
+      console.log(`\n[Web Admin] Giao diện quản trị đang chạy tại: http://localhost:${PORT}`);
       if (!process.env.ADMIN_PASSWORD) {
-        console.warn('⚠️  [Bảo mật] Chưa cấu hình ADMIN_PASSWORD trong .env! Vui lòng đặt mật khẩu bảo vệ tài khoản admin.');
+        console.warn('[Bảo mật] Chưa cấu hình ADMIN_PASSWORD trong .env! Vui lòng đặt mật khẩu bảo vệ tài khoản admin.');
       } else {
-        console.log(`👤 Tài khoản admin: ${process.env.ADMIN_USERNAME || 'admin'} (mật khẩu đã được mã hóa bcrypt)`);
+        console.log(`[Bảo mật] Tài khoản admin: ${process.env.ADMIN_USERNAME || 'admin'} (mật khẩu đã được mã hóa bcrypt)`);
       }
     });
   });

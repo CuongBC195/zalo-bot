@@ -119,7 +119,7 @@ class PipelineOrchestrator {
    * @param {object} param0
    * @returns {Promise<PipelineResult>} Kết quả câu trả lời kèm metadata
    */
-  async processMessage({ text = '', senderName = 'Đồng chí' }) {
+  async processMessage({ text = '', senderName = 'Đồng chí', skipCache = false }) {
     const rawQuery = (text || '').trim();
     if (!rawQuery) {
       return new PipelineResult('Vui lòng nhập câu hỏi hoặc nội dung quy định cần tra cứu.', 'empty', []);
@@ -192,10 +192,12 @@ class PipelineOrchestrator {
     // TẦNG CACHE READ (0 - 5ms, 0đ token)
     // =========================================================================
     const cacheKey = buildCacheKey(expandedLocal);
-    const cached = await this.db.getCachedResponse(cacheKey);
-    if (cached && cached.response_text) {
-      console.log(`[Pipeline] Cache hit cho key "${cacheKey}" (lượt truy cập thứ: ${cached.hit_count})`);
-      return new PipelineResult(cached.response_text, cached.intent || route.intent, cached.retrieved_doc_codes || [], true);
+    if (!skipCache) {
+      const cached = await this.db.getCachedResponse(cacheKey);
+      if (cached && cached.response_text) {
+        console.log(`[Pipeline] Cache hit cho key "${cacheKey}" (lượt truy cập thứ: ${cached.hit_count})`);
+        return new PipelineResult(cached.response_text, cached.intent || route.intent, cached.retrieved_doc_codes || [], true);
+      }
     }
 
     // =========================================================================
