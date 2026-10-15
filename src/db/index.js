@@ -115,9 +115,13 @@ class DatabaseService {
 
     try {
       const schemaPath = path.join(__dirname, 'schema.sql');
-      const sql = fs.readFileSync(schemaPath, 'utf8');
-      await this.pool.query(sql);
-      console.log('[Postgres] Da khoi tao schema bang (documents, articles, users, zalo_users, query_logs).');
+      if (fs.existsSync(schemaPath)) {
+        const sql = fs.readFileSync(schemaPath, 'utf8');
+        await this.pool.query(sql);
+        console.log('[Postgres] Da khoi tao schema bang (documents, articles, users, zalo_users, query_logs).');
+      } else {
+        console.warn('[Postgres] Khong tim thay tap tin schema.sql tai runtime, bo qua initSchema.');
+      }
 
       // Tu dong khoi tao tai khoan superadmin mac dinh neu bang users trong
       await this.seedAdminUser();

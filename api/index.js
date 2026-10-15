@@ -16,7 +16,21 @@ function ensureInit() {
   return initPromise;
 }
 
-module.exports = async (req, res) => {
-  await ensureInit();
-  return app(req, res);
+module.exports = (req, res) => {
+  return new Promise((resolve) => {
+    res.on('finish', resolve);
+    res.on('close', resolve);
+
+    ensureInit()
+      .then(() => {
+        app(req, res);
+      })
+      .catch((err) => {
+        console.error('[Serverless Error]:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ ok: false, error: err.message });
+        }
+        resolve();
+      });
+  });
 };

@@ -2,7 +2,8 @@
   "version": 2,
   "functions": {
     "api/index.js": {
-      "includeFiles": "src/admin/public/**,data/regulations/**"
+      "includeFiles": "src/admin/public/**,data/regulations/*.json,src/db/schema.sql",
+      "maxDuration": 60
     }
   },
   "rewrites": [

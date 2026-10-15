@@ -615,7 +615,12 @@ app.post('/api/seed-db', async (req, res) => {
 
 // Single Page App fallback (Express 5 compatible)
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  const indexPath = path.join(__dirname, 'public', 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(200).send('Zalo Dang Bot Serverless Gateway Active');
+  }
 });
 
 if (require.main === module) {
