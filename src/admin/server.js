@@ -595,6 +595,91 @@ app.post('/api/rag-test', async (req, res) => {
   }
 });
 
+// Endpoint kiểm tra sức khỏe và phân vai 3 Gemini Key trên Production
+app.get('/api/health-keys', async (req, res) => {
+  const keyManager = require('../gemini/key-manager');
+  const maskKey = (k) => (!k || k.length < 8 ? 'CHƯA_CẤU_HÌNH' : `${k.slice(0, 6)}...${k.slice(-4)}`);
+
+  const key1 = keyManager.getKeyForRole('rewrite');
+  const key2 = keyManager.getKeyForRole('generate');
+  const fallback = keyManager.fallbackKey || keyManager.getKey();
+
+  const status = {
+    ok: true,
+    timestamp: new Date().toISOString(),
+    architecture: 'Dual-Key Cross-Borrowing & 7-Tier Pipeline',
+    active_keys_count: keyManager.keyCount,
+    roles: {
+      tier1_rewrite: {
+        role: 'Tầng 1: Chuẩn hóa câu hỏi & Mở rộng từ khóa',
+        configured: Boolean(keyManager.rewriteKey),
+        key_preview: maskKey(keyManager.rewriteKey || key1),
+        status: keyManager.cooldowns.has(key1) ? 'COOLDOWN_429' : 'HEALTHY',
+      },
+      tier2_generate: {
+        role: 'Tầng 2: Tổng hợp câu trả lời hành chính',
+        configured: Boolean(keyManager.generateKey),
+        key_preview: maskKey(keyManager.generateKey || key2),
+        status: keyManager.cooldowns.has(key2) ? 'COOLDOWN_429' : 'HEALTHY',
+      },
+      fallback: {
+        role: 'Dự phòng chung (Fallback)',
+        configured: Boolean(fallback),
+        key_preview: maskKey(fallback),
+        status: keyManager.cooldowns.has(fallback) ? 'COOLDOWN_429' : 'HEALTHY',
+      },
+    },
+    database: {
+      connected: await db.checkConnection(),
+      total_articles_in_memory: rag.chunks ? rag.chunks.length : 0,
+    },
+  };
+
+  // Nếu có tham số ?ping=true, thực hiện kiểm tra độ trễ trực tiếp tới Google AI API
+  if (req.query.ping === 'true') {
+    const pingResults = {};
+    const testKeys = [
+      { name: 'tier1_rewrite', key: keyManager.rewriteKey || key1 },
+      { name: 'tier2_generate', key: keyManager.generateKey || key2 },
+      { name: 'fallback', key: fallback },
+    ];
+
+    for (const item of testKeys) {
+      if (!item.key) {
+        pingResults[item.name] = { ok: false, error: 'Chưa cấu hình key' };
+        continue;
+      }
+      const start = Date.now();
+      try {
+        const pingUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${item.key}`;
+        const pingRes = await fetch(pingUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: 'ping' }] }],
+            generationConfig: { maxOutputTokens: 2 },
+          }),
+          signal: AbortSignal.timeout(5000),
+        });
+        pingResults[item.name] = {
+          ok: pingRes.ok,
+          http_status: pingRes.status,
+          latency_ms: Date.now() - start,
+        };
+      } catch (err) {
+        pingResults[item.name] = {
+          ok: false,
+          error: err.message,
+          latency_ms: Date.now() - start,
+        };
+      }
+    }
+    status.live_ping = pingResults;
+  }
+
+  res.json(status);
+});
+
 app.post('/api/seed-db', async (req, res) => {
   try {
     const isDbConnected = await db.checkConnection();
