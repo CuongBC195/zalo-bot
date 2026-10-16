@@ -1,0 +1,77 @@
+<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#991B1B" />
+      <stop offset="60%" stop-color="#BE123C" />
+      <stop offset="100%" stop-color="#881337" />
+    </linearGradient>
+    <linearGradient id="goldLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFBEB" />
+      <stop offset="100%" stop-color="#FDE047" />
+    </linearGradient>
+    <linearGradient id="goldMid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FACC15" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+    <linearGradient id="goldDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#92400E" />
+    </linearGradient>
+    <filter id="goldGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#78350F" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <!-- NỀN SQUIRCLE APP ICON VIỀN KIM LOẠI VÀNG (Dùng khi hiển thị độc lập) -->
+  <rect x="1" y="1" width="38" height="38" rx="9" fill="url(#logoBgGrad)" stroke="#F59E0B" stroke-width="1.2" />
+
+  <!-- BIỂU TƯỢNG TRI THỨC ĐẢNG: SAO VÀNG 3D & CUỐN SÁCH AI RAG -->
+  <g filter="url(#goldGlowFilter)">
+    <!-- 1. CUỐN SÁCH TRI THỨC MỞ (OPEN BOOK) -->
+    <!-- Bìa sách ngoài đáy -->
+    <path d="M 20 34 C 15 32 8 32 4 33.5 C 4 31 4 23 4 23 C 8 21.5 15 21.5 20 23.5 C 25 21.5 32 21.5 36 23 C 36 23 36 31 36 33.5 C 32 32 25 32 20 34 Z" fill="#991B1B" stroke="url(#goldMid)" stroke-width="1.2" stroke-linejoin="round" />
+    
+    <!-- Trang sách mở (Inner Pages) -->
+    <path d="M 20 32.5 C 15 30.5 9 30.5 5.5 31.8 L 5.5 22.8 C 9 21.5 15 21.5 20 23.2 C 25 21.5 31 21.5 34.5 22.8 L 34.5 31.8 C 31 30.5 25 30.5 20 32.5 Z" fill="#881337" stroke="url(#goldLight)" stroke-width="1" stroke-linejoin="round" />
+    
+    <!-- Gáy sách trung tâm -->
+    <line x1="20" y1="23.2" x2="20" y2="33.8" stroke="url(#goldLight)" stroke-width="1.2" stroke-linecap="round" />
+
+    <!-- 2. MẠCH VI ĐIỆN TỬ SỐ HÓA TRI THỨC AI / RAG -->
+    <!-- Mạch trang trái -->
+    <path d="M 18 29.5 L 14.5 29.5 L 12.5 26.5 L 9 26.5" stroke="url(#goldLight)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="8" cy="26.5" r="1.1" fill="url(#goldLight)" />
+    <path d="M 15 27 L 17 25" stroke="url(#goldLight)" stroke-width="0.8" stroke-linecap="round" />
+    <circle cx="17.5" cy="24.2" r="0.9" fill="url(#goldLight)" />
+
+    <!-- Mạch trang phải -->
+    <path d="M 22 29.5 L 25.5 29.5 L 27.5 26.5 L 31 26.5" stroke="url(#goldLight)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="32" cy="26.5" r="1.1" fill="url(#goldLight)" />
+    <path d="M 25 27 L 23 25" stroke="url(#goldLight)" stroke-width="0.8" stroke-linecap="round" />
+    <circle cx="22.5" cy="24.2" r="0.9" fill="url(#goldLight)" />
+
+    <!-- 3. NGÔI SAO VÀNG NỔI KHỐI 3D (FACETED GOLD STAR) -->
+    <!-- Cánh đỉnh trên: Mặt sáng trái & mặt tối phải -->
+    <polygon points="20,13.5 17.9,10.6 20,5" fill="url(#goldLight)" />
+    <polygon points="20,13.5 20,5 22.1,10.6" fill="url(#goldDark)" />
+
+    <!-- Cánh phải trên: Mặt sáng trên & mặt tối dưới -->
+    <polygon points="20,13.5 22.1,10.6 28.1,10.9" fill="url(#goldLight)" />
+    <polygon points="20,13.5 28.1,10.9 23.4,14.6" fill="url(#goldMid)" />
+
+    <!-- Cánh phải dưới: Mặt sáng trên & mặt tối dưới -->
+    <polygon points="20,13.5 23.4,14.6 25.0,19.9" fill="url(#goldMid)" />
+    <polygon points="20,13.5 25.0,19.9 20.0,17.1" fill="url(#goldDark)" />
+
+    <!-- Cánh trái dưới: Mặt sáng & mặt tối -->
+    <polygon points="20,13.5 20.0,17.1 15.0,19.9" fill="url(#goldDark)" />
+    <polygon points="20,13.5 15.0,19.9 16.6,14.6" fill="url(#goldMid)" />
+
+    <!-- Cánh trái trên: Mặt sáng & mặt tối -->
+    <polygon points="20,13.5 16.6,14.6 11.9,10.9" fill="url(#goldMid)" />
+    <polygon points="20,13.5 11.9,10.9 17.9,10.6" fill="url(#goldLight)" />
+
+    <!-- Tia sáng tâm sao phát quang nhỏ -->
+    <circle cx="20" cy="13.5" r="1.3" fill="#FFFBEB" opacity="0.95" />
+  </g>
+</svg>

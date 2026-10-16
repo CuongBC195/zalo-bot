@@ -205,16 +205,25 @@ a {
 }
 
 .brand-icon-seal {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(190, 18, 60, 0.3));
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #991B1B 0%, #BE123C 60%, #881337 100%);
+  border: 1.2px solid rgba(251, 191, 36, 0.55);
+  box-shadow: 0 3px 10px rgba(190, 18, 60, 0.35), 0 0 8px rgba(245, 158, 11, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FBBF24;
   flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-icon-seal svg {
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
 }
 
 .brand-info {
@@ -2278,12 +2287,12 @@ td.col-hidden {
 }
 
 .login-badge-seal {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(190, 18, 60, 0.2));
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  color: #D97706;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #991B1B 0%, #BE123C 60%, #881337 100%);
+  border: 1.5px solid rgba(251, 191, 36, 0.55);
+  box-shadow: 0 4px 16px rgba(190, 18, 60, 0.35), 0 0 12px rgba(245, 158, 11, 0.25);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2291,8 +2300,9 @@ td.col-hidden {
 }
 
 .login-badge-seal svg {
-  width: 26px;
-  height: 26px;
+  width: 44px;
+  height: 44px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .login-header h2 {
