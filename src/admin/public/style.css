@@ -1219,8 +1219,52 @@ body.sidebar-collapsed .sidebar-actions {
 /* ============================================================
    BẢNG DỮ LIỆU LINH HOẠT & CỘT THAO TÁC DÍNH CỨNG (STICKY RIGHT)
    ============================================================ */
+.data-table thead th {
+  position: relative;
+}
+
+/* Thanh Kéo Độ Rộng Cột (Resizable Column Handle) */
+.col-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 25;
+  touch-action: none;
+}
+
+.col-resizer::after {
+  content: '';
+  position: absolute;
+  top: 20%;
+  bottom: 20%;
+  right: 2px;
+  width: 2px;
+  background-color: transparent;
+  border-radius: 1px;
+  transition: background-color 0.15s ease, height 0.15s ease;
+}
+
+.col-resizer:hover::after,
+.col-resizer.is-resizing::after {
+  top: 10%;
+  bottom: 10%;
+  background-color: var(--primary);
+  box-shadow: 0 0 5px rgba(15, 76, 129, 0.45);
+}
+
+body.is-col-resizing,
+body.is-col-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
 .data-table-7col {
   width: 100%;
+  min-width: 100%;
 }
 
 .data-table-7col th,
@@ -1236,16 +1280,25 @@ td.col-hidden {
   display: none !important;
 }
 
-/* Cột Thao Tác Dính Cứng Bên Phải (Sticky Right) */
+/* Cột Thao Tác Dính Cứng Bên Phải (Sticky Right):
+   Đảm bảo luôn đủ 140px, tuyệt đối không bị che hay ellipsis dấu ba chấm */
+.data-table-7col th.sticky-action-col,
+.data-table-7col td.sticky-action-col,
 .data-table th.sticky-action-col,
 .data-table td.sticky-action-col {
   position: sticky;
   right: 0;
   z-index: 10;
   background-color: #FFFFFF;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.05);
-  text-align: right;
-  white-space: nowrap;
+  box-shadow: -4px 0 10px rgba(15, 23, 42, 0.08);
+  text-align: center !important;
+  white-space: nowrap !important;
+  width: 140px !important;
+  min-width: 140px !important;
+  max-width: 140px !important;
+  padding: 8px 10px !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .data-table th.sticky-action-col {
@@ -1255,6 +1308,16 @@ td.col-hidden {
 
 .data-table tbody tr:hover td.sticky-action-col {
   background-color: #F8FAFC;
+}
+
+.sticky-action-col .table-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Tooltip 0.3s của các nút trong cột Sticky Action neo về bên phải để không bị cắt ở mép màn hình */

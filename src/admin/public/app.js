@@ -773,10 +773,128 @@
           count: false,
           desc: false,
         };
+
+        try {
+          localStorage.removeItem('doc_table_col_widths');
+        } catch (e) {}
+
+        const docTable = document.getElementById('documentsTable');
+        if (docTable) {
+          const defaultWidths = {
+            stt: '56px',
+            code: '140px',
+            name: '320px',
+            issuer: '180px',
+            date: '110px',
+            category: '155px',
+            count: '100px',
+            desc: '220px',
+            status: '125px',
+          };
+          docTable.querySelectorAll('thead th').forEach(th => {
+            const colId = th.getAttribute('data-col-id');
+            if (colId && defaultWidths[colId]) {
+              th.style.width = defaultWidths[colId];
+              th.style.minWidth = defaultWidths[colId];
+            } else if (!th.classList.contains('sticky-action-col')) {
+              th.style.width = '';
+              th.style.minWidth = '';
+            }
+          });
+        }
+
         renderDocumentsTable();
-        showToast('Đã khôi phục 7 cột hiển thị mặc định.', 'info');
+        showToast('Đã khôi phục 7 cột và kích thước hiển thị mặc định.', 'info');
       });
     }
+  }
+
+  // ============================================================
+  // CƠ CHẾ KÉO THẢ ĐỘ RỘNG CỘT LINH HOẠT (RESIZABLE COLUMNS)
+  // ============================================================
+  const docColMinWidths = {
+    stt: 50,
+    code: 110,
+    name: 200,
+    issuer: 130,
+    date: 90,
+    category: 120,
+    count: 80,
+    desc: 150,
+    status: 105,
+  };
+
+  function initDocTableResizable() {
+    const table = document.getElementById('documentsTable');
+    if (!table) return;
+    const thead = table.querySelector('thead');
+    if (!thead) return;
+    const ths = thead.querySelectorAll('th');
+    if (!ths || !ths.length) return;
+
+    let savedWidths = {};
+    try {
+      savedWidths = JSON.parse(localStorage.getItem('doc_table_col_widths')) || {};
+    } catch (e) {
+      savedWidths = {};
+    }
+
+    ths.forEach((th) => {
+      const colId = th.getAttribute('data-col-id') || '';
+      if (!colId) return;
+
+      // Áp dụng kích thước đã lưu nếu có (không áp dụng cho sticky-action-col)
+      if (savedWidths[colId] && !th.classList.contains('sticky-action-col')) {
+        th.style.width = `${savedWidths[colId]}px`;
+        th.style.minWidth = `${savedWidths[colId]}px`;
+      }
+
+      // Cột thao tác cố định ở mép phải không gắn tay kéo resize
+      if (th.classList.contains('sticky-action-col')) return;
+
+      let resizer = th.querySelector('.col-resizer');
+      if (!resizer) {
+        resizer = document.createElement('span');
+        resizer.className = 'col-resizer';
+        resizer.setAttribute('title', 'Kéo sang trái hoặc phải để chỉnh độ rộng cột');
+        th.appendChild(resizer);
+      }
+
+      resizer.onmousedown = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const startX = e.pageX;
+        const startWidth = th.offsetWidth;
+        const minW = docColMinWidths[colId] || parseInt(window.getComputedStyle(th).minWidth, 10) || 60;
+
+        document.body.classList.add('is-col-resizing');
+        resizer.classList.add('is-resizing');
+
+        function onMouseMove(moveEvent) {
+          const delta = moveEvent.pageX - startX;
+          const newWidth = Math.max(minW, startWidth + delta);
+          th.style.width = `${newWidth}px`;
+          th.style.minWidth = `${newWidth}px`;
+        }
+
+        function onMouseUp() {
+          document.body.classList.remove('is-col-resizing');
+          resizer.classList.remove('is-resizing');
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+
+          try {
+            const currentWidths = JSON.parse(localStorage.getItem('doc_table_col_widths')) || {};
+            currentWidths[colId] = th.offsetWidth;
+            localStorage.setItem('doc_table_col_widths', JSON.stringify(currentWidths));
+          } catch (e) {}
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      };
+    });
   }
 
   async function loadDocuments() {
@@ -948,6 +1066,7 @@
     }
 
     applyColumnVisibility();
+    initDocTableResizable();
   }
 
   // Render các nút phân trang
@@ -2897,6 +3016,7 @@
     loadStats();
     loadDocuments();
     applyColumnVisibility();
+    initDocTableResizable();
   }
 
   // Khởi động ứng dụng
