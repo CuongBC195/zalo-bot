@@ -442,7 +442,7 @@ app.get('/api/documents/:id', async (req, res) => {
   res.json({ ok: true, document: doc });
 });
 
-app.post('/api/documents', requireRole('superadmin', 'admin'), async (req, res) => {
+app.post('/api/documents', requireRole('superadmin', 'admin', 'user'), async (req, res) => {
   const { documentCode, documentName, issuer, category, issueDate, status, description, articles } = req.body;
 
   if (!documentCode || !documentName || !articles?.length) {
@@ -495,7 +495,7 @@ app.post('/api/documents', requireRole('superadmin', 'admin'), async (req, res) 
   }
 });
 
-app.put('/api/documents/:id', requireRole('superadmin', 'admin'), async (req, res) => {
+app.put('/api/documents/:id', requireRole('superadmin', 'admin', 'user'), async (req, res) => {
   const { id } = req.params;
   const { documentCode, documentName, issuer, category, issueDate, status, description, articles } = req.body;
   const isDbConnected = await db.checkConnection();

@@ -428,12 +428,30 @@
   // ============================================================
   const btnClearAiCache = document.getElementById('btnClearAiCache');
   const btnSeedDb = document.getElementById('btnSeedDb');
+  const btnToggleSidebar = document.getElementById('btnToggleSidebar');
+
+  if (btnToggleSidebar) {
+    btnToggleSidebar.addEventListener('click', () => {
+      document.body.classList.toggle('sidebar-collapsed');
+    });
+  }
 
   async function checkDbStatus() {
+    const badge = document.getElementById('dbStatusBadge');
+    const text = document.getElementById('dbStatusText');
+    if (!badge || !text) return;
     try {
-      await apiRequest('/api/stats');
+      const res = await apiRequest('/api/stats');
+      if (res && res.isDbConnected) {
+        badge.className = 'db-status-badge status-online';
+        text.textContent = 'PostgreSQL: Đã kết nối';
+      } else {
+        badge.className = 'db-status-badge status-offline';
+        text.textContent = 'Local Fallback (Bộ Nhớ RAM)';
+      }
     } catch (e) {
-      // Slient check
+      badge.className = 'db-status-badge status-offline';
+      text.textContent = 'Mất kết nối máy chủ';
     }
   }
 
@@ -593,7 +611,7 @@
     if (total === 0) {
       documentsTableBody.innerHTML = `
         <tr>
-          <td colspan="9">
+          <td colspan="7">
             <div class="table-empty">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                 <circle cx="11" cy="11" r="8"></circle>
@@ -628,7 +646,7 @@
         <tr>
           <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${stt}</td>
           <td>
-            <span class="code-badge">${escapeHtml(doc.document_code)}</span>
+            <span class="code-badge font-mono">${escapeHtml(doc.document_code)}</span>
           </td>
           <td>
             <div class="doc-title-cell">
@@ -636,11 +654,13 @@
               ${subnote ? `<span class="doc-subnote" title="${subnote}">${subnote}</span>` : ''}
             </div>
           </td>
-          <td>${escapeHtml(doc.issuer || '--')}</td>
-          <td style="text-align: center;">${formatDate(doc.issue_date)}</td>
-          <td>${getCategoryLabel(doc.category)}</td>
-          <td style="text-align: center;">
-            <span class="scale-badge">${doc.articles_count || 0} điều</span>
+          <td>
+            <div style="font-weight: 600; color: var(--text-main); font-size: 13px;">${escapeHtml(doc.issuer || '--')}</div>
+            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Ngày BH: ${formatDate(doc.issue_date)}</div>
+          </td>
+          <td>
+            <div>${getCategoryLabel(doc.category)}</div>
+            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">${doc.articles_count || 0} điều khoản</div>
           </td>
           <td style="text-align: center;">
             ${isExpired 
@@ -649,10 +669,10 @@
           </td>
           <td style="text-align: right;">
             <div class="table-actions">
-              <button type="button" class="action-icon-btn btn-icon-view" data-tooltip="Xem chi tiết toàn văn & điều khoản" data-action="view" data-doc-id="${doc.id}">
+              <button type="button" class="action-icon-btn btn-icon-view" data-tooltip="Xem chi tiết toàn văn &amp; điều khoản" data-action="view" data-doc-id="${doc.id}">
                 ${ICONS.view}
               </button>
-              <button type="button" class="action-icon-btn btn-icon-edit" data-tooltip="Chỉnh sửa văn bản & điều khoản" data-action="edit" data-doc-id="${doc.id}">
+              <button type="button" class="action-icon-btn btn-icon-edit" data-tooltip="Chỉnh sửa văn bản &amp; điều khoản" data-action="edit" data-doc-id="${doc.id}">
                 ${ICONS.edit}
               </button>
               <button type="button" class="action-icon-btn btn-icon-delete" data-tooltip="Xóa văn bản khỏi cơ sở dữ liệu" data-action="delete" data-doc-id="${doc.id}" data-doc-code="${escapeHtml(doc.document_code)}">
@@ -799,7 +819,7 @@
   }
 
   // ============================================================
-  // MÀN HÌNH 2: SOẠN THẢO & BÓC TÁCH VĂN BẢN (STUDIO 2 TAB)
+  // MÀN HÌNH 2: SOẠN THẢO & BÓC TÁCH VĂN BẢN (LUỒNG LIỀN MẠCH)
   // ============================================================
   const editorStatusText = document.getElementById('editorStatusText');
   const btnCancelEditDoc = document.getElementById('btnCancelEditDoc');
@@ -812,36 +832,62 @@
   const docDate = document.getElementById('docDate');
   const docStatus = document.getElementById('docStatus');
   const docDescription = document.getElementById('docDescription');
+
+  // Khối 2: Ngăn Bóc Tách Tự Động Thông Minh (Collapsible Panel)
+  const parserCollapsiblePanel = document.getElementById('parserCollapsiblePanel');
+  const btnToggleParserDrawer = document.getElementById('btnToggleParserDrawer');
+  const btnCloseParserPanel = document.getElementById('btnCloseParserPanel');
+  const parserPanelHeader = document.getElementById('parserPanelHeader');
   const rawTextContent = document.getElementById('rawTextContent');
   const btnAutoParse = document.getElementById('btnAutoParse');
   const parserPreviewCount = document.getElementById('parserPreviewCount');
   const parserPreviewList = document.getElementById('parserPreviewList');
-  const btnApplyParsedToEditor = document.getElementById('btnApplyParsedToEditor');
+  const btnApplyOverwrite = document.getElementById('btnApplyOverwrite');
+  const btnApplyAppend = document.getElementById('btnApplyAppend');
   let lastParsedArticles = [];
-  
+
+  // Khối 3: Danh Sách Điều Khoản & Nút Lưu
   const parsedCount = document.getElementById('parsedCount');
   const editorArticleFilter = document.getElementById('editorArticleFilter');
   const btnAddSingleArticle = document.getElementById('btnAddSingleArticle');
   const btnSubmitDoc = document.getElementById('btnSubmitDoc');
   const btnSubmitDocText = document.getElementById('btnSubmitDocText');
+  const btnSubmitDocBottom = document.getElementById('btnSubmitDocBottom');
   const articlesListContainer = document.getElementById('articlesListContainer');
 
-  // Xử lý chuyển đổi Tab trong Studio Soạn Thảo
-  const studioTabBtns = document.querySelectorAll('.studio-tab-btn');
-  studioTabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetTab = btn.getAttribute('data-studio-tab');
-      studioTabBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.studio-tab-content').forEach(c => {
-        if (c.id === targetTab) {
-          c.classList.add('active');
-        } else {
-          c.classList.remove('active');
-        }
-      });
+  // Logic đóng/mở Ngăn Bóc Tách Collapsible
+  function toggleParserPanel() {
+    if (parserCollapsiblePanel) {
+      parserCollapsiblePanel.classList.toggle('collapsed');
+      if (!parserCollapsiblePanel.classList.contains('collapsed')) {
+        setTimeout(() => rawTextContent && rawTextContent.focus(), 150);
+      }
+    }
+  }
+
+  if (btnToggleParserDrawer) {
+    btnToggleParserDrawer.addEventListener('click', toggleParserPanel);
+  }
+
+  if (btnCloseParserPanel) {
+    btnCloseParserPanel.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (parserCollapsiblePanel) parserCollapsiblePanel.classList.add('collapsed');
     });
-  });
+  }
+
+  if (parserPanelHeader) {
+    parserPanelHeader.addEventListener('click', (e) => {
+      if (e.target.closest('#btnCloseParserPanel')) return;
+      toggleParserPanel();
+    });
+  }
+
+  if (btnSubmitDocBottom) {
+    btnSubmitDocBottom.addEventListener('click', () => {
+      if (btnSubmitDoc) btnSubmitDoc.click();
+    });
+  }
 
   function resetEditorForm() {
     state.editingDocId = null;
@@ -860,15 +906,13 @@
     rawTextContent.value = '';
     editorArticleFilter.value = '';
 
-    if (btnApplyParsedToEditor) btnApplyParsedToEditor.disabled = true;
+    if (btnApplyOverwrite) btnApplyOverwrite.disabled = true;
+    if (btnApplyAppend) btnApplyAppend.disabled = true;
     if (parserPreviewCount) parserPreviewCount.textContent = '0 điều khoản';
     if (parserPreviewList) {
       parserPreviewList.innerHTML = `
-        <div class="table-empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-          </svg>
-          <p>Dán văn bản vào cột bên trái và nhấn nút "Bắt Đầu Bóc Tách" để xem trước cấu trúc điều khoản tại đây.</p>
+        <div class="table-empty" style="padding: 24px 12px;">
+          <p style="font-size: 12px;">Dán văn bản vào bên trái và bấm "Bắt Đầu Bóc Tách" để xem trước danh sách điều khoản tại đây.</p>
         </div>
       `;
     }
@@ -929,9 +973,8 @@
         btnCancelEditDoc.classList.remove('hidden');
         btnSubmitDocText.textContent = 'Lưu Thay Đổi Văn Bản';
 
-        // Đảm bảo mở Tab 1 Soạn thảo
-        const docEditorTabBtn = document.querySelector('.studio-tab-btn[data-studio-tab="tab-doc-editor"]');
-        if (docEditorTabBtn) docEditorTabBtn.click();
+        // Đóng panel parser nếu đang mở để tập trung biên tập
+        if (parserCollapsiblePanel) parserCollapsiblePanel.classList.add('collapsed');
 
         renderEditorArticlesList();
         switchView('view-editor');
@@ -985,10 +1028,9 @@
             });
             parserPreviewList.innerHTML = previewHtml;
           }
-          if (btnApplyParsedToEditor) {
-            btnApplyParsedToEditor.disabled = false;
-          }
-          showToast(`Đã bóc tách thành công ${lastParsedArticles.length} điều khoản! Đồng chí có thể bấm "Chuyển Sang Trình Soạn Thảo".`, 'success');
+          if (btnApplyOverwrite) btnApplyOverwrite.disabled = false;
+          if (btnApplyAppend) btnApplyAppend.disabled = false;
+          showToast(`Đã bóc tách thành công ${lastParsedArticles.length} điều khoản! Hãy chọn "Ghi Đè" hoặc "Nối Thêm" vào danh sách bên dưới.`, 'success');
         } else {
           showToast('Không tìm thấy cấu trúc điều khoản chuẩn nào trong văn bản.', 'warning');
         }
@@ -1006,9 +1048,30 @@
     });
   }
 
-  // Nạp kết quả bóc tách sang Tab Soạn thảo
-  if (btnApplyParsedToEditor) {
-    btnApplyParsedToEditor.addEventListener('click', () => {
+  // 1. Ghi đè toàn bộ điều khoản xuống danh sách biên tập
+  if (btnApplyOverwrite) {
+    btnApplyOverwrite.addEventListener('click', () => {
+      if (!lastParsedArticles.length) {
+        showToast('Chưa có điều khoản nào được bóc tách.', 'warning');
+        return;
+      }
+      state.editingArticles = [...lastParsedArticles];
+      renderEditorArticlesList();
+      const count = lastParsedArticles.length;
+      lastParsedArticles = [];
+      btnApplyOverwrite.disabled = true;
+      btnApplyAppend.disabled = true;
+      rawTextContent.value = '';
+      if (parserCollapsiblePanel) parserCollapsiblePanel.classList.add('collapsed');
+      const articlesCanvasCard = document.getElementById('articlesCanvasCard');
+      if (articlesCanvasCard) articlesCanvasCard.scrollIntoView({ behavior: 'smooth' });
+      showToast(`Đã ghi đè ${count} điều khoản xuống danh sách biên tập!`, 'success');
+    });
+  }
+
+  // 2. Nối thêm điều khoản vào danh sách hiện tại
+  if (btnApplyAppend) {
+    btnApplyAppend.addEventListener('click', () => {
       if (!lastParsedArticles.length) {
         showToast('Chưa có điều khoản nào được bóc tách.', 'warning');
         return;
@@ -1017,24 +1080,13 @@
       renderEditorArticlesList();
       const count = lastParsedArticles.length;
       lastParsedArticles = [];
-      btnApplyParsedToEditor.disabled = true;
+      btnApplyOverwrite.disabled = true;
+      btnApplyAppend.disabled = true;
       rawTextContent.value = '';
-      if (parserPreviewList) {
-        parserPreviewList.innerHTML = `
-          <div class="table-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-            </svg>
-            <p>Dán văn bản vào cột bên trái và nhấn nút "Bắt Đầu Bóc Tách" để xem trước cấu trúc điều khoản tại đây.</p>
-          </div>
-        `;
-      }
-      if (parserPreviewCount) {
-        parserPreviewCount.textContent = '0 điều khoản';
-      }
-      const tabEditorBtn = document.querySelector('.studio-tab-btn[data-studio-tab="tab-doc-editor"]');
-      if (tabEditorBtn) tabEditorBtn.click();
-      showToast(`Đã chuyển thành công ${count} điều khoản sang Trình Soạn Thảo!`, 'success');
+      if (parserCollapsiblePanel) parserCollapsiblePanel.classList.add('collapsed');
+      const articlesCanvasCard = document.getElementById('articlesCanvasCard');
+      if (articlesCanvasCard) articlesCanvasCard.scrollIntoView({ behavior: 'smooth' });
+      showToast(`Đã nối thêm ${count} điều khoản vào danh sách biên tập!`, 'success');
     });
   }
 
@@ -1232,6 +1284,7 @@
   const playgroundQuery = document.getElementById('playgroundQuery');
   const chkSkipCache = document.getElementById('chkSkipCache');
   const btnRunQueryTest = document.getElementById('btnRunQueryTest');
+  const btnResetChat = document.getElementById('btnResetChat');
   const chatUserBubble = document.getElementById('chatUserBubble');
   const chatUserText = document.getElementById('chatUserText');
   const chatBotBubble = document.getElementById('chatBotBubble');
@@ -1244,6 +1297,30 @@
   const btnCopyPlaygroundAnswer = document.getElementById('btnCopyPlaygroundAnswer');
   const passagesCountBadge = document.getElementById('passagesCountBadge');
   const passagesContainer = document.getElementById('passagesContainer');
+
+  if (btnResetChat) {
+    btnResetChat.addEventListener('click', () => {
+      if (playgroundQuery) playgroundQuery.value = '';
+      if (chatUserBubble) chatUserBubble.style.display = 'none';
+      if (chatMetaBar) chatMetaBar.style.display = 'none';
+      if (botAnswerContent) {
+        botAnswerContent.innerHTML = 'Xin chào đồng chí! Tôi là Trợ Lý AI hỗ trợ thể thức văn bản Đảng. Đồng chí hãy chọn câu hỏi gợi ý bên trên hoặc nhập nội dung nghiệp vụ vào ô bên dưới để bắt đầu kiểm thử.';
+      }
+      if (passagesContainer) {
+        passagesContainer.innerHTML = `
+          <div class="table-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <p>Sau khi chạy kiểm thử câu hỏi, các đoạn trích điều khoản được RAG truy xuất sẽ hiển thị chi tiết tại đây kèm theo số hiệu, độ tương đồng ngữ nghĩa và tình trạng hiệu lực.</p>
+          </div>
+        `;
+      }
+      if (passagesCountBadge) passagesCountBadge.textContent = '0 điều khoản';
+      showToast('Đã làm mới khung trò chuyện thử nghiệm.', 'info');
+    });
+  }
 
   async function runPlaygroundTest(queryText) {
     const q = (queryText || playgroundQuery.value).trim();
