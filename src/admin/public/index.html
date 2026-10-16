@@ -459,6 +459,14 @@
             </div>
 
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <!-- Nút Quay lại Danh sách -->
+              <button type="button" id="btnBackToDocsFromEditor" class="btn btn-secondary" data-tooltip="Quay lại màn hình Kho Văn Bản Quy Định">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                <span>Kho Văn Bản</span>
+              </button>
+
               <!-- Nút Nhập file .JSON -->
               <button type="button" id="btnImportJsonFile" class="btn btn-secondary" data-tooltip="Nhập toàn bộ thông tin &amp; điều khoản từ file .json">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
@@ -777,38 +785,6 @@ Hướng dẫn này quy định về thể thức...
               </div>
 
               <div class="rag-xray-stream" id="passagesContainer">
-                <div class="table-empty">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
-                  <p>Chưa có dữ liệu trích xuất RAG cho câu hỏi hiện tại.</p>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </section>d); font-weight: 500;" id="telemetryDocs">0 văn bản viện dẫn</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- CỘT PHẢI: COGNITIVE RAG INSPECTOR -->
-            <div class="rag-inspector-card">
-              <div class="rag-inspector-header">
-                <div class="rag-inspector-title">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
-                  <span>Soi Chiếu Đoạn Trích Pháp Lý (X-Ray)</span>
-                </div>
-                <span class="scale-badge" id="passagesCountBadge">0 điều khoản</span>
-              </div>
-
-              <!-- Danh sách đoạn trích RAG -->
-              <div class="passages-stream" id="passagesContainer">
                 <div class="table-empty">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                     <circle cx="11" cy="11" r="8"></circle>

@@ -399,6 +399,7 @@
       if (navAdminSectionTitle) navAdminSectionTitle.style.display = 'block';
     }
 
+    switchView('view-documents');
     loadInitialData();
   }
 
@@ -1207,6 +1208,12 @@
   // ============================================================
   const editorStatusText = document.getElementById('editorStatusText');
   const btnCancelEditDoc = document.getElementById('btnCancelEditDoc');
+  const btnBackToDocsFromEditor = document.getElementById('btnBackToDocsFromEditor');
+  if (btnBackToDocsFromEditor) {
+    btnBackToDocsFromEditor.addEventListener('click', () => {
+      switchView('view-documents');
+    });
+  }
   const editorDocForm = document.getElementById('editorDocForm');
   const editingDocIdInput = document.getElementById('editingDocId');
   const docCode = document.getElementById('docCode');

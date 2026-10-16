@@ -589,11 +589,11 @@ body.sidebar-collapsed .sidebar-actions {
 }
 
 .view-section {
-  display: none;
+  display: none !important;
 }
 
 .view-section.active {
-  display: block;
+  display: block !important;
 }
 
 /* ============================================================
