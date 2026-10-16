@@ -1353,6 +1353,33 @@ Hướng dẫn này quy định về thể thức...
     </div>
   </div>
 
+  <!-- Modal Xác Nhận Hệ Thống Chuẩn GovTech (#confirmModal) -->
+  <div id="confirmModal" class="modal-overlay">
+    <div class="modal-container confirm-modal-container">
+      <div class="confirm-modal-body">
+        <div class="confirm-icon-box confirm-icon-danger" id="confirmModalIconBox">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="confirmModalIcon">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <div class="confirm-content-group">
+          <h3 class="confirm-modal-title" id="confirmModalTitle">Xác nhận thao tác</h3>
+          <div class="confirm-modal-message" id="confirmModalMessage">Đồng chí có chắc chắn muốn thực hiện thao tác này?</div>
+        </div>
+      </div>
+      <div class="confirm-modal-footer">
+        <button type="button" class="btn btn-secondary" id="btnConfirmCancel">
+          <span id="btnConfirmCancelText">Hủy bỏ</span>
+        </button>
+        <button type="button" class="btn btn-danger" id="btnConfirmSubmit">
+          <span id="btnConfirmSubmitText">Xác nhận</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST CONTAINER CỐ ĐỊNH GÓC PHẢI -->
   <div id="toastContainer" class="toast-container"></div>
 

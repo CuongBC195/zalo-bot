@@ -2264,3 +2264,138 @@ td.col-hidden {
 .text-right { text-align: right; }
 .text-left { text-align: left; }
 .font-mono { font-family: var(--font-mono); }
+
+/* ============================================================
+   CUSTOM CONFIRMATION MODAL CHUẨN GOVTECH
+   ============================================================ */
+.confirm-modal-container {
+  max-width: 460px !important;
+  width: 92% !important;
+  padding: 0 !important;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.2), 0 10px 10px -5px rgba(15, 23, 42, 0.1);
+  border: 1px solid var(--border-color);
+  animation: confirmScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes confirmScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.confirm-modal-body {
+  padding: 24px 24px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: #FFFFFF;
+}
+
+.confirm-icon-box {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.confirm-icon-box svg {
+  width: 22px !important;
+  height: 22px !important;
+  max-width: 22px;
+  max-height: 22px;
+}
+
+.confirm-icon-danger {
+  background-color: #FEE2E2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+}
+
+.confirm-icon-warning {
+  background-color: #FEF3C7;
+  color: #D97706;
+  border: 1px solid #FDE68A;
+}
+
+.confirm-icon-info {
+  background-color: #E0F2FE;
+  color: #0284C7;
+  border: 1px solid #BAE6FD;
+}
+
+.confirm-content-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.confirm-modal-title {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F172A;
+  line-height: 1.35;
+}
+
+.confirm-modal-message {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #475569;
+  word-break: break-word;
+}
+
+.confirm-modal-message b,
+.confirm-modal-message strong {
+  color: #0F172A;
+  font-weight: 700;
+}
+
+.confirm-modal-footer {
+  padding: 12px 20px 16px;
+  background-color: #F8FAFC;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.confirm-modal-footer .btn {
+  height: 38px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+.btn-danger {
+  background-color: #DC2626;
+  color: #FFFFFF;
+  border: 1px solid #DC2626;
+}
+
+.btn-danger:hover {
+  background-color: #B91C1C;
+  border-color: #B91C1C;
+}
+
+.btn-warning {
+  background-color: #D97706;
+  color: #FFFFFF;
+  border: 1px solid #D97706;
+}
+
+.btn-warning:hover {
+  background-color: #B45309;
+  border-color: #B45309;
+}

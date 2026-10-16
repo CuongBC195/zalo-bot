@@ -137,6 +137,96 @@
   }
 
   // ============================================================
+  // CUSTOM CONFIRMATION MODAL UTILITY (ENTERPRISE GOVTECH)
+  // ============================================================
+  const confirmModal = document.getElementById('confirmModal');
+  const confirmModalTitle = document.getElementById('confirmModalTitle');
+  const confirmModalMessage = document.getElementById('confirmModalMessage');
+  const confirmModalIconBox = document.getElementById('confirmModalIconBox');
+  const btnConfirmSubmit = document.getElementById('btnConfirmSubmit');
+  const btnConfirmSubmitText = document.getElementById('btnConfirmSubmitText');
+  const btnConfirmCancel = document.getElementById('btnConfirmCancel');
+  const btnConfirmCancelText = document.getElementById('btnConfirmCancelText');
+
+  function showConfirmDialog({
+    title = 'Xác nhận thao tác',
+    message = 'Đồng chí có chắc chắn muốn thực hiện thao tác này?',
+    type = 'danger', // 'danger' | 'warning' | 'info'
+    confirmText = 'Xác nhận',
+    cancelText = 'Hủy bỏ',
+  } = {}) {
+    return new Promise((resolve) => {
+      if (!confirmModal) {
+        return resolve(window.confirm(message.replace(/<[^>]+>/g, '')));
+      }
+
+      confirmModalTitle.textContent = title;
+      confirmModalMessage.innerHTML = message;
+      btnConfirmSubmitText.textContent = confirmText;
+      btnConfirmCancelText.textContent = cancelText;
+
+      // Cập nhật kiểu dáng và icon theo type
+      confirmModalIconBox.className = `confirm-icon-box confirm-icon-${type}`;
+      btnConfirmSubmit.className = `btn btn-${type === 'info' ? 'primary' : type}`;
+
+      let iconHtml = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      `;
+
+      if (type === 'danger') {
+        iconHtml = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        `;
+      } else if (type === 'warning') {
+        iconHtml = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        `;
+      }
+
+      confirmModalIconBox.innerHTML = iconHtml;
+
+      function cleanup(result) {
+        confirmModal.classList.remove('active');
+        btnConfirmSubmit.removeEventListener('click', onConfirm);
+        btnConfirmCancel.removeEventListener('click', onCancel);
+        document.removeEventListener('keydown', onKeyDown);
+        confirmModal.removeEventListener('click', onOverlayClick);
+        resolve(result);
+      }
+
+      function onConfirm() { cleanup(true); }
+      function onCancel() { cleanup(false); }
+      function onOverlayClick(e) {
+        if (e.target === confirmModal) cleanup(false);
+      }
+      function onKeyDown(e) {
+        if (e.key === 'Escape') cleanup(false);
+      }
+
+      btnConfirmSubmit.addEventListener('click', onConfirm);
+      btnConfirmCancel.addEventListener('click', onCancel);
+      confirmModal.addEventListener('click', onOverlayClick);
+      document.addEventListener('keydown', onKeyDown);
+
+      confirmModal.classList.add('active');
+      btnConfirmSubmit.focus();
+    });
+  }
+
+  // ============================================================
   // UTILITY HELPERS
   // ============================================================
   function escapeHtml(text) {
@@ -364,7 +454,14 @@
   });
 
   btnLogout.addEventListener('click', async () => {
-    if (!confirm('Đồng chí có chắc chắn muốn đăng xuất khỏi hệ thống?')) return;
+    const ok = await showConfirmDialog({
+      title: 'Đăng Xuất Hệ Thống',
+      message: 'Đồng chí có chắc chắn muốn đăng xuất khỏi phiên làm việc hiện tại trên Web Admin?',
+      type: 'warning',
+      confirmText: 'Đăng xuất',
+      cancelText: 'Ở lại',
+    });
+    if (!ok) return;
     try {
       await apiRequest('/api/auth/logout', { method: 'POST' });
     } catch (e) {}
@@ -518,9 +615,15 @@
 
   if (btnSeedDb) {
     btnSeedDb.addEventListener('click', async () => {
-      if (!confirm('Đồng chí có chắc chắn muốn nạp lại 462 điều khoản chuẩn từ kho dữ liệu vào cơ sở dữ liệu PostgreSQL?')) {
-        return;
-      }
+      const ok = await showConfirmDialog({
+        title: 'Đồng Bộ Kho Dữ Liệu Mẫu',
+        message: 'Đồng chí có chắc chắn muốn nạp lại <b>462 điều khoản chuẩn</b> từ thư mục regulations vào cơ sở dữ liệu PostgreSQL? Thao tác này sẽ đồng bộ lại toàn bộ dữ liệu mẫu.',
+        type: 'warning',
+        confirmText: 'Đồng bộ ngay',
+        cancelText: 'Hủy bỏ',
+      });
+      if (!ok) return;
+
       const originalHtml = btnSeedDb.innerHTML;
       try {
         btnSeedDb.disabled = true;
@@ -961,9 +1064,14 @@
   });
 
   async function deleteDocument(docId, docCode) {
-    if (!confirm(`Đồng chí có chắc chắn muốn xóa văn bản [${docCode}] khỏi cơ sở dữ liệu? Toàn bộ các điều khoản liên quan sẽ bị gỡ bỏ.`)) {
-      return;
-    }
+    const ok = await showConfirmDialog({
+      title: 'Xóa Văn Bản Quy Định',
+      message: `Đồng chí có chắc chắn muốn xóa văn bản <b>[${escapeHtml(docCode)}]</b> khỏi cơ sở dữ liệu? Toàn bộ các điều khoản liên quan sẽ bị gỡ bỏ vĩnh viễn.`,
+      type: 'danger',
+      confirmText: 'Đồng ý xóa',
+      cancelText: 'Hủy bỏ',
+    });
+    if (!ok) return;
 
     try {
       const res = await apiRequest(`/api/documents/${docId}`, { method: 'DELETE' });
@@ -1437,7 +1545,7 @@
     }
   });
 
-  articlesListContainer.addEventListener('click', (e) => {
+  articlesListContainer.addEventListener('click', async (e) => {
     const btn = e.target.closest('button');
     if (!btn) return;
     const action = btn.getAttribute('data-action');
@@ -1462,7 +1570,15 @@
       });
       renderEditorArticlesList();
     } else if (action === 'delete-article') {
-      if (confirm(`Đồng chí có chắc muốn xóa Điều [${state.editingArticles[idx].articleNumber || (idx + 1)}] khỏi danh sách?`)) {
+      const artNum = state.editingArticles[idx].articleNumber || (idx + 1);
+      const ok = await showConfirmDialog({
+        title: 'Xóa Điều Khoản',
+        message: `Đồng chí có chắc muốn xóa <b>Điều ${escapeHtml(artNum)}</b> khỏi danh sách biên tập của văn bản này?`,
+        type: 'danger',
+        confirmText: 'Xóa điều',
+        cancelText: 'Giữ lại',
+      });
+      if (ok) {
         state.editingArticles.splice(idx, 1);
         renderEditorArticlesList();
       }
@@ -2141,11 +2257,16 @@
     } else if (action === 'toggle-block') {
       const isCurrentlyBlocked = btn.getAttribute('data-blocked') === 'true';
       const targetBlockState = !isCurrentlyBlocked;
-      const confirmText = targetBlockState 
-        ? `Đồng chí có chắc chắn muốn CHẶN người dùng Zalo ID [${zaloId}]? Người này sẽ không thể nhận câu trả lời từ AI Bot.`
-        : `Mở khóa quyền hỏi đáp cho người dùng Zalo ID [${zaloId}]?`;
-
-      if (!confirm(confirmText)) return;
+      const ok = await showConfirmDialog({
+        title: targetBlockState ? 'Chặn Người Dùng Zalo' : 'Mở Khóa Người Dùng Zalo',
+        message: targetBlockState 
+          ? `Đồng chí có chắc chắn muốn <b>CHẶN</b> người dùng Zalo ID <b>[${escapeHtml(zaloId)}]</b>? Người này sẽ không thể nhận câu trả lời từ AI Bot.`
+          : `Đồng chí có chắc muốn <b>MỞ KHÓA</b> quyền hỏi đáp cho người dùng Zalo ID <b>[${escapeHtml(zaloId)}]</b>?`,
+        type: targetBlockState ? 'danger' : 'info',
+        confirmText: targetBlockState ? 'Xác nhận chặn' : 'Xác nhận mở khóa',
+        cancelText: 'Hủy bỏ',
+      });
+      if (!ok) return;
 
       try {
         const res = await apiRequest(`/api/zalo-users/${zaloId}/toggle-block`, {
@@ -2323,11 +2444,16 @@
     } else if (action === 'toggle-user-active') {
       const isCurrentlyActive = btn.getAttribute('data-active') === 'true';
       const targetState = !isCurrentlyActive;
-      const confirmText = targetState 
-        ? `Đồng chí có chắc chắn muốn MỞ KHÓA tài khoản này?` 
-        : `Đồng chí có chắc chắn muốn KHÓA tài khoản cán bộ này? Người dùng sẽ không thể đăng nhập.`;
-
-      if (!confirm(confirmText)) return;
+      const ok = await showConfirmDialog({
+        title: targetState ? 'Mở Khóa Tài Khoản Cán Bộ' : 'Khóa Tài Khoản Cán Bộ',
+        message: targetState 
+          ? `Đồng chí có chắc chắn muốn <b>MỞ KHÓA</b> tài khoản cán bộ này để người dùng có thể đăng nhập bình thường?` 
+          : `Đồng chí có chắc chắn muốn <b>KHÓA</b> tài khoản cán bộ này? Người dùng sẽ không thể đăng nhập.`,
+        type: targetState ? 'info' : 'warning',
+        confirmText: targetState ? 'Mở khóa ngay' : 'Khóa tài khoản',
+        cancelText: 'Hủy bỏ',
+      });
+      if (!ok) return;
 
       try {
         const res = await apiRequest(`/api/users/${userId}`, {
@@ -2340,7 +2466,15 @@
         showToast('Lỗi khi cập nhật trạng thái: ' + err.message, 'error');
       }
     } else if (action === 'delete-user') {
-      if (!confirm('Đồng chí có chắc chắn muốn XÓA vĩnh viễn tài khoản cán bộ này?')) return;
+      const ok = await showConfirmDialog({
+        title: 'Xóa Tài Khoản Cán Bộ',
+        message: 'Đồng chí có chắc chắn muốn <b>XÓA VĨNH VIỄN</b> tài khoản cán bộ này khỏi hệ thống quản trị? Thao tác này không thể hoàn tác.',
+        type: 'danger',
+        confirmText: 'Đồng ý xóa',
+        cancelText: 'Hủy bỏ',
+      });
+      if (!ok) return;
+
       try {
         const res = await apiRequest(`/api/users/${userId}`, { method: 'DELETE' });
         showToast(res.message || 'Đã xóa tài khoản cán bộ.', 'success');
