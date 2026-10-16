@@ -1217,10 +1217,9 @@ body.sidebar-collapsed .sidebar-actions {
 }
 
 /* ============================================================
-   BẢNG 7 CỘT KHO VĂN BẢN (TABLE-LAYOUT FIXED CHO LAPTOP 14 INCH)
+   BẢNG DỮ LIỆU LINH HOẠT & CỘT THAO TÁC DÍNH CỨNG (STICKY RIGHT)
    ============================================================ */
 .data-table-7col {
-  table-layout: fixed;
   width: 100%;
 }
 
@@ -1229,6 +1228,119 @@ body.sidebar-collapsed .sidebar-actions {
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 10px 12px;
+}
+
+/* Ẩn / Hiện cột theo tùy biến người dùng */
+th.col-hidden,
+td.col-hidden {
+  display: none !important;
+}
+
+/* Cột Thao Tác Dính Cứng Bên Phải (Sticky Right) */
+.data-table th.sticky-action-col,
+.data-table td.sticky-action-col {
+  position: sticky;
+  right: 0;
+  z-index: 10;
+  background-color: #FFFFFF;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.05);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.data-table th.sticky-action-col {
+  background-color: #F8FAFC;
+  z-index: 15;
+}
+
+.data-table tbody tr:hover td.sticky-action-col {
+  background-color: #F8FAFC;
+}
+
+/* Tooltip 0.3s của các nút trong cột Sticky Action neo về bên phải để không bị cắt ở mép màn hình */
+.sticky-action-col .action-icon-btn[data-tooltip]::after {
+  left: auto;
+  right: 0;
+  transform: translateY(4px);
+}
+
+.sticky-action-col .action-icon-btn[data-tooltip]:hover::after {
+  transform: translateY(0);
+}
+
+/* Dropdown Menu Tùy Chỉnh Cột */
+.column-toggle-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.column-toggle-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 100;
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  min-width: 250px;
+  padding: 8px 0;
+}
+
+.column-toggle-header {
+  padding: 6px 14px 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.column-toggle-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  font-size: 13px;
+  color: var(--text-main);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+.column-toggle-item:hover {
+  background-color: #F1F5F9;
+}
+
+.column-toggle-item input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.column-toggle-footer {
+  padding: 8px 14px 4px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-link-xs {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.btn-link-xs:hover {
+  color: var(--primary-dark);
 }
 
 /* ============================================================

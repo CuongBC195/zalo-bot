@@ -179,9 +179,15 @@
 
         <div class="topbar-right">
           <!-- Đèn báo trạng thái kết nối PostgreSQL -->
-          <div class="db-status-badge" id="dbStatusBadge" data-tooltip="Trạng thái kết nối cơ sở dữ liệu">
+          <div class="db-status-badge" id="dbStatusBadge" data-tooltip="Trạng thái kết nối cơ sở dữ liệu PostgreSQL">
             <span class="db-status-dot"></span>
             <span id="dbStatusText">PostgreSQL: Đang kết nối</span>
+          </div>
+
+          <!-- Đèn báo trạng thái kết nối Zalo Webhook -->
+          <div class="db-status-badge" id="webhookStatusBadge" data-tooltip="Trạng thái kết nối Zalo Official Account &amp; Webhook (Click để xem chi tiết)" style="cursor: pointer;">
+            <span class="db-status-dot"></span>
+            <span id="webhookStatusText">Zalo: Đang kiểm tra</span>
           </div>
 
           <button id="btnClearAiCache" class="btn-topbar-tool" data-tooltip="Xóa sạch bộ nhớ đệm câu trả lời để AI nạp quy định mới">
@@ -336,6 +342,48 @@
             </div>
 
             <div class="filter-group-right">
+              <!-- Nút Tùy Chỉnh Cột Hiển Thị -->
+              <div class="column-toggle-wrapper">
+                <button type="button" id="btnColumnToggle" class="btn btn-secondary" style="height: 38px; font-size: 13px;" data-tooltip="Tùy chọn ẩn / hiện các cột trong bảng">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"></path>
+                  </svg>
+                  <span id="btnColumnToggleText">Cột hiển thị (7/10)</span>
+                </button>
+                <div class="column-toggle-menu hidden" id="columnToggleMenu">
+                  <div class="column-toggle-header">
+                    <span>Chọn cột hiển thị:</span>
+                  </div>
+                  <label class="column-toggle-item">
+                    <input type="checkbox" data-col="col-issuer" checked>
+                    <span>Cơ quan ban hành</span>
+                  </label>
+                  <label class="column-toggle-item">
+                    <input type="checkbox" data-col="col-category" checked>
+                    <span>Chuyên mục nghiệp vụ</span>
+                  </label>
+                  <label class="column-toggle-item">
+                    <input type="checkbox" data-col="col-status" checked>
+                    <span>Trạng thái hiệu lực</span>
+                  </label>
+                  <label class="column-toggle-item">
+                    <input type="checkbox" data-col="col-date">
+                    <span>Ngày ban hành (Cột riêng)</span>
+                  </label>
+                  <label class="column-toggle-item">
+                    <input type="checkbox" data-col="col-count">
+                    <span>Quy mô điều khoản (Cột riêng)</span>
+                  </label>
+                  <label class="column-toggle-item">
+                    <input type="checkbox" data-col="col-desc">
+                    <span>Ghi chú thay thế / Mô tả (Cột riêng)</span>
+                  </label>
+                  <div class="column-toggle-footer">
+                    <button type="button" id="btnResetColumns" class="btn-link-xs">Khôi phục mặc định (7 cột)</button>
+                  </div>
+                </div>
+              </div>
+
               <button id="btnGoToAddDoc" class="btn btn-primary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -346,19 +394,22 @@
             </div>
           </div>
 
-          <!-- Bảng Dữ Liệu Văn Bản (7 Cột Tinh Gọn - Fixed Layout Không Tràn Ngang) -->
+          <!-- Bảng Dữ Liệu Văn Bản (7 Cột Mặc Định + Tùy Biến + Sticky Right Action Column) -->
           <div class="table-card">
             <div class="table-responsive">
               <table class="data-table data-table-7col" id="documentsTable">
                 <thead>
                   <tr>
-                    <th style="width: 44px; text-align: center;">STT</th>
-                    <th style="width: 125px;">Số / Ký Hiệu</th>
-                    <th style="width: auto;">Tên Văn Bản &amp; Ghi Chú Hiệu Lực</th>
-                    <th style="width: 175px;">Cơ Quan &amp; Ngày BH</th>
-                    <th style="width: 145px;">Chuyên Mục &amp; Quy Mô</th>
-                    <th style="width: 112px; text-align: center;">Hiệu Lực</th>
-                    <th style="width: 108px; text-align: right;">Thao Tác</th>
+                    <th class="col-stt" style="width: 46px; text-align: center;">STT</th>
+                    <th class="col-code" style="width: 130px;">Số / Ký Hiệu</th>
+                    <th class="col-name" style="min-width: 240px; width: auto;">Tên Văn Bản &amp; Trích Yếu</th>
+                    <th class="col-issuer" style="width: 170px;">Cơ Quan Ban Hành</th>
+                    <th class="col-date col-hidden" style="width: 110px; text-align: center;">Ngày BH</th>
+                    <th class="col-category" style="width: 145px;">Chuyên Mục</th>
+                    <th class="col-count col-hidden" style="width: 100px; text-align: center;">Quy Mô</th>
+                    <th class="col-desc col-hidden" style="width: 220px;">Ghi Chú Thay Thế</th>
+                    <th class="col-status" style="width: 115px; text-align: center;">Hiệu Lực</th>
+                    <th class="col-actions sticky-action-col" style="width: 116px; text-align: right;">Thao Tác</th>
                   </tr>
                 </thead>
                 <tbody id="documentsTableBody">
@@ -367,16 +418,31 @@
               </table>
             </div>
 
-            <!-- Thanh Phân Trang Văn Bản -->
+            <!-- Thanh Phân Trang Văn Bản Đầy Đủ -->
             <div class="pagination-bar" id="docPaginationBar">
               <div class="pagination-left">
                 <span id="docPaginationInfo">Hiển thị 0 - 0 trên tổng số 0 văn bản</span>
                 <select id="docPageSizeSelect" class="page-size-select">
+                  <option value="10">10 bản ghi / trang</option>
+                  <option value="20">20 bản ghi / trang</option>
+                  <option value="50">50 bản ghi / trang</option>
+                </select>
+              </div>
+              <div class="pagination-right" id="docPaginationButtons">
+                <!-- Nút phân trang render qua app.js -->
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- ============================================================
              MÀN HÌNH 2: SOẠN THẢO & BÓC TÁCH VĂN BẢN (#view-editor)
              Luồng liền mạch duy nhất (Zero Tab) - Khung bóc tách Collapsible
              ============================================================ -->
         <section id="view-editor" class="view-section">
+
+          <!-- Hidden Input cho tính năng Nhập file .JSON -->
+          <input type="file" id="jsonFileInput" accept=".json" style="display: none;">
 
           <!-- Thanh Sticky Header Bar trên đỉnh -->
           <div class="editor-sticky-bar">
@@ -392,14 +458,36 @@
               </button>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <!-- Nút Nhập file .JSON -->
+              <button type="button" id="btnImportJsonFile" class="btn btn-secondary" data-tooltip="Nhập toàn bộ thông tin &amp; điều khoản từ file .json">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Nhập file .JSON</span>
+              </button>
+
+              <!-- Nút Xuất file .JSON -->
+              <button type="button" id="btnExportJsonFile" class="btn btn-secondary" data-tooltip="Tải văn bản đang soạn về máy dưới dạng file .json">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span>Xuất file .JSON</span>
+              </button>
+
+              <!-- Nút Mở / Đóng Công Cụ Bóc Tách -->
               <button type="button" id="btnToggleParserDrawer" class="btn btn-secondary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                 </svg>
-                <span>Nhập Văn Bản Từ Word/PDF (Bóc Tách Tự Động)</span>
+                <span>Bóc Tách Tự Động</span>
               </button>
 
+              <!-- Nút Lưu Văn Bản -->
               <button type="button" id="btnSubmitDoc" class="btn btn-primary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                   <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -991,6 +1079,14 @@ Hướng dẫn này quy định về thể thức...
           <span id="modalDocStatusBadge"></span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" id="btnModalExportJson" class="btn btn-secondary" style="height: 30px; font-size: 12px; padding: 0 10px;" data-tooltip="Tải văn bản này về máy dưới dạng file .json">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>Tải file .JSON</span>
+          </button>
           <button type="button" id="btnModalEditDoc" class="btn btn-secondary" style="height: 30px; font-size: 12px; padding: 0 10px;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
               <path d="M12 20h9"></path>

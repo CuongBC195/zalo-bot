@@ -23,6 +23,14 @@
     docSort: 'date_desc',
     docCurrentPage: 1,
     docPageSize: 10,
+    docColumns: {
+      issuer: true,
+      category: true,
+      status: true,
+      date: false,
+      count: false,
+      desc: false,
+    },
     
     // Editor State
     editingDocId: null,
@@ -59,6 +67,14 @@
     // Modal View Detail State
     currentModalDoc: null,
   };
+
+  // Khôi phục cấu hình cột từ localStorage nếu có
+  try {
+    const savedCols = localStorage.getItem('doc_table_columns');
+    if (savedCols) {
+      state.docColumns = Object.assign(state.docColumns, JSON.parse(savedCols));
+    }
+  } catch (e) {}
 
   // ============================================================
   // SVG ICONS LIBRARY (100% PURE VECTOR - ZERO EMOJI)
@@ -455,6 +471,40 @@
     }
   }
 
+  // Giám sát kết nối Zalo Webhook
+  const webhookStatusBadge = document.getElementById('webhookStatusBadge');
+  const webhookStatusText = document.getElementById('webhookStatusText');
+
+  async function checkWebhookStatus() {
+    if (!webhookStatusBadge || !webhookStatusText) return;
+    try {
+      const res = await apiRequest('/api/webhook/status');
+      if (res && res.ok && res.info) {
+        webhookStatusBadge.className = 'db-status-badge status-online';
+        webhookStatusText.textContent = 'Zalo Webhook: Hoạt động';
+        webhookStatusBadge.setAttribute('data-webhook-url', res.info.url || 'Đã liên kết');
+      } else {
+        webhookStatusBadge.className = 'db-status-badge status-offline';
+        webhookStatusText.textContent = 'Zalo: Polling / Chưa cấu hình';
+        webhookStatusBadge.setAttribute('data-webhook-url', '');
+      }
+    } catch (e) {
+      webhookStatusBadge.className = 'db-status-badge status-offline';
+      webhookStatusText.textContent = 'Zalo: Ngoại tuyến';
+    }
+  }
+
+  if (webhookStatusBadge) {
+    webhookStatusBadge.addEventListener('click', () => {
+      const url = webhookStatusBadge.getAttribute('data-webhook-url');
+      if (url) {
+        showToast(`Địa chỉ Webhook Zalo OA hiện tại: ${url}`, 'info');
+      } else {
+        showToast('Zalo Bot đang chạy ở chế độ Polling hoặc chưa kết nối Webhook.', 'warning');
+      }
+    });
+  }
+
   if (btnClearAiCache) {
     btnClearAiCache.addEventListener('click', async () => {
       try {
@@ -538,6 +588,94 @@
   const docPageSizeSelect = document.getElementById('docPageSizeSelect');
   const docPaginationButtons = document.getElementById('docPaginationButtons');
 
+  // Quản lý Tùy Biến Cột Hiển Thị
+  const btnColumnToggle = document.getElementById('btnColumnToggle');
+  const btnColumnToggleText = document.getElementById('btnColumnToggleText');
+  const columnToggleMenu = document.getElementById('columnToggleMenu');
+  const btnResetColumns = document.getElementById('btnResetColumns');
+
+  function applyColumnVisibility() {
+    const cols = state.docColumns || {};
+    let activeOptional = 0;
+    Object.values(cols).forEach(v => { if (v) activeOptional++; });
+    const totalActive = 4 + activeOptional; // 4 cột cố định: STT, Số hiệu, Tên, Thao tác
+
+    if (btnColumnToggleText) {
+      btnColumnToggleText.textContent = `Cột hiển thị (${totalActive}/10)`;
+    }
+
+    // Đồng bộ trạng thái checkbox trong dropdown menu
+    if (columnToggleMenu) {
+      columnToggleMenu.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+        const colKey = chk.getAttribute('data-col').replace('col-', '');
+        if (cols[colKey] !== undefined) {
+          chk.checked = !!cols[colKey];
+        }
+      });
+    }
+
+    // Ẩn / Hiện các cột th và td tương ứng
+    const colMap = {
+      issuer: '.col-issuer',
+      category: '.col-category',
+      status: '.col-status',
+      date: '.col-date',
+      count: '.col-count',
+      desc: '.col-desc',
+    };
+
+    Object.entries(colMap).forEach(([key, selector]) => {
+      const isVisible = !!cols[key];
+      document.querySelectorAll(`#documentsTable ${selector}`).forEach(el => {
+        if (isVisible) {
+          el.classList.remove('col-hidden');
+        } else {
+          el.classList.add('col-hidden');
+        }
+      });
+    });
+
+    try {
+      localStorage.setItem('doc_table_columns', JSON.stringify(cols));
+    } catch (e) {}
+  }
+
+  if (btnColumnToggle && columnToggleMenu) {
+    btnColumnToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      columnToggleMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!columnToggleMenu.contains(e.target) && !btnColumnToggle.contains(e.target)) {
+        columnToggleMenu.classList.add('hidden');
+      }
+    });
+
+    columnToggleMenu.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+      chk.addEventListener('change', () => {
+        const colKey = chk.getAttribute('data-col').replace('col-', '');
+        state.docColumns[colKey] = chk.checked;
+        renderDocumentsTable();
+      });
+    });
+
+    if (btnResetColumns) {
+      btnResetColumns.addEventListener('click', () => {
+        state.docColumns = {
+          issuer: true,
+          category: true,
+          status: true,
+          date: false,
+          count: false,
+          desc: false,
+        };
+        renderDocumentsTable();
+        showToast('Đã khôi phục 7 cột hiển thị mặc định.', 'info');
+      });
+    }
+  }
+
   async function loadDocuments() {
     try {
       const res = await apiRequest('/api/documents');
@@ -609,32 +747,38 @@
     const pageItems = list.slice(startIdx, endIdx);
 
     if (total === 0) {
-      documentsTableBody.innerHTML = `
-        <tr>
-          <td colspan="7">
-            <div class="table-empty">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-              <p>Không tìm thấy văn bản quy định nào phù hợp với bộ lọc.</p>
-            </div>
-          </td>
-        </tr>
-      `;
-      docPaginationInfo.textContent = 'Hiển thị 0 - 0 trên tổng số 0 văn bản';
-      docPaginationButtons.innerHTML = '';
+      if (documentsTableBody) {
+        documentsTableBody.innerHTML = `
+          <tr>
+            <td colspan="10">
+              <div class="table-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <p>Không tìm thấy văn bản quy định nào phù hợp với bộ lọc.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+      if (docPaginationInfo) docPaginationInfo.textContent = 'Hiển thị 0 - 0 trên tổng số 0 văn bản';
+      if (docPaginationButtons) docPaginationButtons.innerHTML = '';
+      applyColumnVisibility();
       return;
     }
 
-    docPaginationInfo.textContent = `Hiển thị ${startIdx + 1} - ${endIdx} trên tổng số ${total} văn bản`;
+    if (docPaginationInfo) {
+      docPaginationInfo.textContent = `Hiển thị ${startIdx + 1} - ${endIdx} trên tổng số ${total} văn bản`;
+    }
 
+    const cols = state.docColumns || {};
     let html = '';
     pageItems.forEach((doc, idx) => {
       const stt = startIdx + idx + 1;
       const isExpired = (doc.status || '').toLowerCase().includes('hết hiệu lực');
       
-      // Subnote: hiển thị nếu có description hoặc phần giải thích ngoặc trong status
+      // Subnote
       let subnote = '';
       if (doc.description) {
         subnote = escapeHtml(doc.description);
@@ -644,30 +788,35 @@
 
       html += `
         <tr>
-          <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${stt}</td>
-          <td>
+          <td class="col-stt" style="text-align: center; color: var(--text-muted); font-weight: 600;">${stt}</td>
+          <td class="col-code">
             <span class="code-badge font-mono">${escapeHtml(doc.document_code)}</span>
           </td>
-          <td>
+          <td class="col-name">
             <div class="doc-title-cell">
               <span class="doc-name-link" data-doc-id="${doc.id}">${escapeHtml(doc.document_name)}</span>
-              ${subnote ? `<span class="doc-subnote" title="${subnote}">${subnote}</span>` : ''}
+              ${!cols.desc && subnote ? `<span class="doc-subnote" title="${subnote}">${subnote}</span>` : ''}
             </div>
           </td>
-          <td>
+          <td class="col-issuer">
             <div style="font-weight: 600; color: var(--text-main); font-size: 13px;">${escapeHtml(doc.issuer || '--')}</div>
-            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Ngày BH: ${formatDate(doc.issue_date)}</div>
+            ${!cols.date ? `<div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Ngày BH: ${formatDate(doc.issue_date)}</div>` : ''}
           </td>
-          <td>
+          <td class="col-date" style="text-align: center;">${formatDate(doc.issue_date)}</td>
+          <td class="col-category">
             <div>${getCategoryLabel(doc.category)}</div>
-            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">${doc.articles_count || 0} điều khoản</div>
+            ${!cols.count ? `<div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">${doc.articles_count || 0} điều khoản</div>` : ''}
           </td>
-          <td style="text-align: center;">
+          <td class="col-count" style="text-align: center;">
+            <span class="scale-badge">${doc.articles_count || 0} điều</span>
+          </td>
+          <td class="col-desc">${subnote || '--'}</td>
+          <td class="col-status" style="text-align: center;">
             ${isExpired 
               ? `<span class="status-badge badge-expired">Hết hiệu lực</span>` 
               : `<span class="status-badge badge-active">Còn hiệu lực</span>`}
           </td>
-          <td style="text-align: right;">
+          <td class="col-actions sticky-action-col">
             <div class="table-actions">
               <button type="button" class="action-icon-btn btn-icon-view" data-tooltip="Xem chi tiết toàn văn &amp; điều khoản" data-action="view" data-doc-id="${doc.id}">
                 ${ICONS.view}
@@ -684,15 +833,23 @@
       `;
     });
 
-    documentsTableBody.innerHTML = html;
-    renderPaginationButtons(docPaginationButtons, state.docCurrentPage, totalPages, (p) => {
-      state.docCurrentPage = p;
-      renderDocumentsTable();
-    });
+    if (documentsTableBody) {
+      documentsTableBody.innerHTML = html;
+    }
+
+    if (docPaginationButtons) {
+      renderPaginationButtons(docPaginationButtons, state.docCurrentPage, totalPages, (p) => {
+        state.docCurrentPage = p;
+        renderDocumentsTable();
+      });
+    }
+
+    applyColumnVisibility();
   }
 
   // Render các nút phân trang
   function renderPaginationButtons(container, currentPage, totalPages, onPageClick) {
+    if (!container) return;
     if (totalPages <= 1) {
       container.innerHTML = '';
       return;
@@ -1090,6 +1247,105 @@
     });
   }
 
+  // --- TÍNH NĂNG NHẬP / XUẤT FILE .JSON (1 CHẠM) ---
+  const btnImportJsonFile = document.getElementById('btnImportJsonFile');
+  const jsonFileInput = document.getElementById('jsonFileInput');
+  const btnExportJsonFile = document.getElementById('btnExportJsonFile');
+
+  function downloadJsonFile(filename, jsonData) {
+    const jsonString = JSON.stringify(jsonData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  if (btnImportJsonFile && jsonFileInput) {
+    btnImportJsonFile.addEventListener('click', () => {
+      jsonFileInput.value = '';
+      jsonFileInput.click();
+    });
+
+    jsonFileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+
+          // Map các trường metadata bìa văn bản
+          docCode.value = data.documentCode || data.document_code || data.code || '';
+          docName.value = data.documentName || data.document_name || data.name || data.title || '';
+          docIssuer.value = data.issuer || 'Văn phòng Trung ương Đảng';
+          docCategory.value = data.category || 'quy_dinh_dang';
+
+          const rawDate = data.issueDate || data.issue_date || data.date;
+          if (rawDate) {
+            try {
+              docDate.value = new Date(rawDate).toISOString().split('T')[0];
+            } catch (err) {
+              docDate.value = rawDate;
+            }
+          }
+
+          docStatus.value = (data.status || '').toLowerCase().includes('hết hiệu lực') ? 'Hết hiệu lực' : 'Còn hiệu lực';
+          docDescription.value = data.description || '';
+
+          // Map danh sách điều khoản
+          const rawArticles = data.articles || [];
+          state.editingArticles = rawArticles.map((a, i) => ({
+            articleNumber: a.articleNumber || a.article_number || String(i + 1),
+            title: a.title || `Điều ${a.articleNumber || a.article_number || (i + 1)}`,
+            content: a.content || '',
+          }));
+
+          renderEditorArticlesList();
+          showToast(`Đã nạp văn bản [${docCode.value || file.name}] với ${state.editingArticles.length} điều khoản từ file JSON thành công!`, 'success');
+        } catch (parseErr) {
+          showToast('Không thể đọc file JSON: ' + parseErr.message, 'error');
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  if (btnExportJsonFile) {
+    btnExportJsonFile.addEventListener('click', () => {
+      const code = docCode.value.trim();
+      const name = docName.value.trim();
+      if (!code && !name) {
+        showToast('Vui lòng nhập số hiệu hoặc tên văn bản trước khi xuất file JSON.', 'warning');
+        return;
+      }
+
+      const exportData = {
+        documentCode: code || 'VAN-BAN-MOI',
+        documentName: name,
+        issuer: docIssuer.value.trim() || 'Văn phòng Trung ương Đảng',
+        category: docCategory.value || 'quy_dinh_dang',
+        issueDate: docDate.value || new Date().toISOString().split('T')[0],
+        status: docStatus.value || 'Còn hiệu lực',
+        description: docDescription.value.trim() || null,
+        articles: state.editingArticles.map((a, i) => ({
+          articleNumber: a.articleNumber || String(i + 1),
+          title: a.title || `Điều ${a.articleNumber || (i + 1)}`,
+          content: a.content || '',
+        })),
+      };
+
+      const cleanFileName = (code || 'van_ban').replace(/[/\\?%*:|"<>]/g, '_') + '.json';
+      downloadJsonFile(cleanFileName, exportData);
+      showToast(`Đã xuất file [${cleanFileName}] thành công!`, 'success');
+    });
+  }
+
   // Thêm 1 điều thủ công
   btnAddSingleArticle.addEventListener('click', () => {
     const nextNum = state.editingArticles.length + 1;
@@ -1472,6 +1728,9 @@
               <button type="button" class="action-icon-btn btn-icon-view" data-tooltip="Xem toàn văn văn bản này" data-doc-code="${escapeHtml(docCode)}">
                 ${ICONS.view}
               </button>
+              <button type="button" class="action-icon-btn btn-icon-edit" data-tooltip="Chỉnh sửa văn bản này trong Studio" data-doc-code="${escapeHtml(docCode)}">
+                ${ICONS.edit}
+              </button>
             </div>
           </div>
           <div class="passage-text">${escapeHtml(p.content || p.fullText || '')}</div>
@@ -1488,6 +1747,19 @@
         const found = state.allDocuments.find(d => d.document_code === dCode);
         if (found) {
           openDetailModal(found.id);
+        } else {
+          showToast(`Không tìm thấy văn bản ID cho mã [${dCode}]`, 'warning');
+        }
+      });
+    });
+
+    // Chỉnh sửa văn bản từ passage
+    passagesContainer.querySelectorAll('.btn-icon-edit').forEach(b => {
+      b.addEventListener('click', () => {
+        const dCode = b.getAttribute('data-doc-code');
+        const found = state.allDocuments.find(d => d.document_code === dCode);
+        if (found) {
+          loadDocToEditor(found.id);
         } else {
           showToast(`Không tìm thấy văn bản ID cho mã [${dCode}]`, 'warning');
         }
@@ -2208,6 +2480,34 @@
   btnCloseDetailModal.addEventListener('click', closeDetailModal);
   btnCloseDetailModalFooter.addEventListener('click', closeDetailModal);
 
+  const btnModalExportJson = document.getElementById('btnModalExportJson');
+  if (btnModalExportJson) {
+    btnModalExportJson.addEventListener('click', () => {
+      if (!state.currentModalDoc) {
+        showToast('Không có dữ liệu văn bản để tải.', 'warning');
+        return;
+      }
+      const doc = state.currentModalDoc;
+      const exportData = {
+        documentCode: doc.document_code,
+        documentName: doc.document_name,
+        issuer: doc.issuer,
+        category: doc.category,
+        issueDate: doc.issue_date,
+        status: doc.status,
+        description: doc.description,
+        articles: (doc.articles || []).map(a => ({
+          articleNumber: a.article_number,
+          title: a.title,
+          content: a.content,
+        })),
+      };
+      const cleanFileName = (doc.document_code || 'van_ban').replace(/[/\\?%*:|"<>]/g, '_') + '.json';
+      downloadJsonFile(cleanFileName, exportData);
+      showToast(`Đã tải file [${cleanFileName}] thành công!`, 'success');
+    });
+  }
+
   btnModalEditDoc.addEventListener('click', () => {
     if (state.currentModalDoc) {
       const docId = state.currentModalDoc.id;
@@ -2459,8 +2759,10 @@
   // ============================================================
   function loadInitialData() {
     checkDbStatus();
+    checkWebhookStatus();
     loadStats();
     loadDocuments();
+    applyColumnVisibility();
   }
 
   // Khởi động ứng dụng
