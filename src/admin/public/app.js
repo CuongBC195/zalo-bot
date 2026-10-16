@@ -2941,21 +2941,70 @@
   const btnOpenProfile = document.getElementById('btnOpenProfile');
   const btnCloseProfileModal = document.getElementById('btnCloseProfileModal');
   const btnCloseProfileModalFooter = document.getElementById('btnCloseProfileModalFooter');
+
+  // Sub-Tabs elements
+  const btnTabProfileInfo = document.getElementById('btnTabProfileInfo');
+  const btnTabProfilePassword = document.getElementById('btnTabProfilePassword');
+  const tabProfileInfo = document.getElementById('tabProfileInfo');
+  const tabProfilePassword = document.getElementById('tabProfilePassword');
+
+  // Profile Header Card elements
+  const profileAvatarBig = document.getElementById('profileAvatarBig');
+  const profileDisplayName = document.getElementById('profileDisplayName');
+  const profileTagUsername = document.getElementById('profileTagUsername');
+  const profileTagRole = document.getElementById('profileTagRole');
+
+  // Form Profile Info elements
   const profileInfoForm = document.getElementById('profileInfoForm');
+  const profileUsernameDisplay = document.getElementById('profileUsernameDisplay');
   const profileFullName = document.getElementById('profileFullName');
   const profileEmail = document.getElementById('profileEmail');
+
+  // Form Password elements
   const profilePasswordForm = document.getElementById('profilePasswordForm');
   const pwdCurrent = document.getElementById('pwdCurrent');
   const pwdNew = document.getElementById('pwdNew');
   const pwdConfirm = document.getElementById('pwdConfirm');
 
+  // Chuyển đổi giữa 2 Sub-Tabs
+  if (btnTabProfileInfo && btnTabProfilePassword) {
+    btnTabProfileInfo.addEventListener('click', () => {
+      btnTabProfileInfo.classList.add('active');
+      btnTabProfilePassword.classList.remove('active');
+      tabProfileInfo.classList.remove('hidden');
+      tabProfilePassword.classList.add('hidden');
+    });
+
+    btnTabProfilePassword.addEventListener('click', () => {
+      btnTabProfilePassword.classList.add('active');
+      btnTabProfileInfo.classList.remove('active');
+      tabProfilePassword.classList.remove('hidden');
+      tabProfileInfo.classList.add('hidden');
+    });
+  }
+
   btnOpenProfile.addEventListener('click', () => {
     if (state.currentUser) {
-      profileFullName.value = state.currentUser.fullName || '';
-      profileEmail.value = state.currentUser.email || '';
+      const u = state.currentUser;
+      const dName = u.fullName || u.username || 'Cán bộ';
+      const roleText = u.role === 'superadmin' ? 'Quản trị tối cao' : (u.role === 'admin' ? 'Quản trị viên' : 'Cán bộ');
+
+      if (profileUsernameDisplay) profileUsernameDisplay.value = u.username || '';
+      if (profileTagUsername) profileTagUsername.textContent = '@' + (u.username || 'admin');
+      if (profileDisplayName) profileDisplayName.textContent = dName;
+      if (profileTagRole) profileTagRole.textContent = roleText;
+      if (profileAvatarBig) profileAvatarBig.textContent = (dName).slice(0, 2).toUpperCase();
+
+      profileFullName.value = u.fullName || '';
+      profileEmail.value = u.email || '';
+
       pwdCurrent.value = '';
       pwdNew.value = '';
       pwdConfirm.value = '';
+
+      // Mặc định kích hoạt tab 1
+      if (btnTabProfileInfo) btnTabProfileInfo.click();
+
       profileModal.classList.add('active');
     }
   });
@@ -2972,6 +3021,18 @@
     const fullName = profileFullName.value.trim();
     const email = profileEmail.value.trim();
 
+    if (!fullName) {
+      showToast('Vui lòng nhập họ và tên cán bộ.', 'warning');
+      profileFullName.focus();
+      return;
+    }
+
+    if (email && (!email.includes('@') || !email.includes('.'))) {
+      showToast('Định dạng email công tác không hợp lệ.', 'warning');
+      profileEmail.focus();
+      return;
+    }
+
     try {
       const res = await apiRequest('/api/auth/profile', {
         method: 'PUT',
@@ -2980,8 +3041,17 @@
       if (res.ok && res.user) {
         state.currentUser.fullName = res.user.full_name;
         state.currentUser.email = res.user.email;
-        currentUserName.textContent = res.user.full_name || state.currentUser.username;
-        showToast('Cập nhật thông tin cán bộ thành công!', 'success');
+
+        // Cập nhật ngay lập tức giao diện
+        const updatedName = res.user.full_name || state.currentUser.username;
+        const initials = updatedName.slice(0, 2).toUpperCase();
+
+        currentUserName.textContent = updatedName;
+        userAvatarBadge.textContent = initials;
+        if (profileDisplayName) profileDisplayName.textContent = updatedName;
+        if (profileAvatarBig) profileAvatarBig.textContent = initials;
+
+        showToast('Đã lưu thông tin cán bộ thành công!', 'success');
       }
     } catch (err) {
       showToast('Lỗi cập nhật thông tin: ' + err.message, 'error');
@@ -2994,8 +3064,27 @@
     const newPassword = pwdNew.value;
     const confirmPassword = pwdConfirm.value;
 
+    if (!currentPassword) {
+      showToast('Vui lòng nhập mật khẩu hiện tại.', 'warning');
+      pwdCurrent.focus();
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      showToast('Mật khẩu mới phải có tối thiểu 6 ký tự.', 'warning');
+      pwdNew.focus();
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       showToast('Mật khẩu mới và mật khẩu xác nhận không khớp.', 'warning');
+      pwdConfirm.focus();
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      showToast('Mật khẩu mới không được trùng với mật khẩu hiện tại.', 'warning');
+      pwdNew.focus();
       return;
     }
 

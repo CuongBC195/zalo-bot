@@ -116,7 +116,7 @@
             <line x1="16" y1="17" x2="8" y2="17"></line>
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
-          <span>Nhật Ký & Người Dùng Zalo</span>
+          <span>Nhật Ký & Người Dùng</span>
         </button>
 
         <div class="nav-section-title" id="navAdminSectionTitle">Hệ Thống & Cán Bộ</div>
@@ -1274,14 +1274,14 @@ Hướng dẫn này quy định về thể thức...
 
   <!-- Modal 4: Cài Đặt Tài Khoản & Mật Khẩu Cá Nhân (#profileModal - Rộng 520px) -->
   <div id="profileModal" class="modal-overlay">
-    <div class="modal-container" style="max-width: 520px;">
+    <div class="modal-container profile-modal-container">
       <div class="modal-header">
         <div class="modal-title-group">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" style="width: 18px; height: 18px; color: var(--primary);">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
-          <h2 class="modal-title">Cài Đặt Tài Khoản & Mật Khẩu</h2>
+          <h2 class="modal-title">Cài Đặt Tài Khoản &amp; Mật Khẩu</h2>
         </div>
         <button type="button" class="btn-close-modal" id="btnCloseProfileModal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1291,35 +1291,98 @@ Hướng dẫn này quy định về thể thức...
         </button>
       </div>
 
-      <div class="modal-body">
-        <form id="profileInfoForm" style="margin-bottom: 20px; padding-bottom: 18px; border-bottom: 1px dashed var(--border-color);">
-          <h4 style="font-size: 13.5px; font-weight: 700; margin-bottom: 12px; color: var(--text-main);">1. Cập Nhật Thông Tin Cá Nhân</h4>
-          <div class="form-group">
-            <label class="form-label" for="profileFullName">Họ và tên cán bộ</label>
-            <input type="text" id="profileFullName" class="form-control" required>
+      <!-- Sub-Tabs Bar: Hồ Sơ vs Đổi Mật Khẩu -->
+      <div class="profile-subtabs-bar">
+        <button type="button" class="profile-tab-btn active" id="btnTabProfileInfo" data-tab="tabProfileInfo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span>Hồ Sơ Cán Bộ</span>
+        </button>
+        <button type="button" class="profile-tab-btn" id="btnTabProfilePassword" data-tab="tabProfilePassword">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>Đổi Mật Khẩu</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: Cập Nhật Hồ Sơ Cán Bộ -->
+      <div class="profile-tab-content" id="tabProfileInfo">
+        <div class="profile-user-summary-card">
+          <div class="profile-avatar-large" id="profileAvatarBig">CB</div>
+          <div class="profile-user-meta">
+            <span class="profile-user-meta-name" id="profileDisplayName">Cán bộ quản trị</span>
+            <div class="profile-user-meta-tags">
+              <span class="profile-tag-badge profile-tag-username" id="profileTagUsername">@admin</span>
+              <span class="profile-tag-badge profile-tag-role" id="profileTagRole">Quản trị viên</span>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="profileEmail">Email công tác</label>
-            <input type="email" id="profileEmail" class="form-control">
+        </div>
+
+        <form id="profileInfoForm">
+          <div class="profile-form-group">
+            <label class="profile-form-label" for="profileUsernameDisplay">Tên đăng nhập (Hệ thống cấp)</label>
+            <input type="text" id="profileUsernameDisplay" class="profile-form-control font-mono" readonly disabled>
           </div>
-          <button type="submit" class="btn btn-secondary" style="width: 100%;">Lưu Thông Tin</button>
+
+          <div class="profile-form-group">
+            <label class="profile-form-label" for="profileFullName">Họ và tên cán bộ <span class="req" style="color: var(--danger);">*</span></label>
+            <input type="text" id="profileFullName" class="profile-form-control" placeholder="Nhập họ và tên đầy đủ của cán bộ" required>
+          </div>
+
+          <div class="profile-form-group">
+            <label class="profile-form-label" for="profileEmail">Email công tác</label>
+            <input type="email" id="profileEmail" class="profile-form-control" placeholder="Ví dụ: canbo@dang.vn">
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="btnSubmitProfileInfo" style="width: 100%; height: 42px; font-weight: 600;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span>Lưu Thay Đổi Thông Tin</span>
+          </button>
         </form>
+      </div>
+
+      <!-- Tab 2: Đổi Mật Khẩu Bảo Mật -->
+      <div class="profile-tab-content hidden" id="tabProfilePassword">
+        <div class="profile-security-notice">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          <div class="profile-security-notice-text">
+            Mật khẩu mới yêu cầu <b>tối thiểu 6 ký tự</b>. Nên kết hợp chữ cái và số để đảm bảo an toàn cho tài khoản công tác.
+          </div>
+        </div>
 
         <form id="profilePasswordForm">
-          <h4 style="font-size: 13.5px; font-weight: 700; margin-bottom: 12px; color: var(--text-main);">2. Đổi Mật Khẩu Đăng Nhập</h4>
-          <div class="form-group">
-            <label class="form-label" for="pwdCurrent">Mật khẩu hiện tại <span class="req">*</span></label>
-            <input type="password" id="pwdCurrent" class="form-control" required autocomplete="current-password">
+          <div class="profile-form-group">
+            <label class="profile-form-label" for="pwdCurrent">Mật khẩu hiện tại <span class="req" style="color: var(--danger);">*</span></label>
+            <input type="password" id="pwdCurrent" class="profile-form-control" placeholder="Nhập mật khẩu đang sử dụng" required autocomplete="current-password">
           </div>
-          <div class="form-group">
-            <label class="form-label" for="pwdNew">Mật khẩu mới <span class="req">*</span></label>
-            <input type="password" id="pwdNew" class="form-control" required minlength="6" placeholder="Tối thiểu 6 ký tự" autocomplete="new-password">
+
+          <div class="profile-form-group">
+            <label class="profile-form-label" for="pwdNew">Mật khẩu mới <span class="req" style="color: var(--danger);">*</span></label>
+            <input type="password" id="pwdNew" class="profile-form-control" placeholder="Tối thiểu 6 ký tự" required minlength="6" autocomplete="new-password">
           </div>
-          <div class="form-group">
-            <label class="form-label" for="pwdConfirm">Xác nhận mật khẩu mới <span class="req">*</span></label>
-            <input type="password" id="pwdConfirm" class="form-control" required minlength="6" autocomplete="new-password">
+
+          <div class="profile-form-group">
+            <label class="profile-form-label" for="pwdConfirm">Xác nhận mật khẩu mới <span class="req" style="color: var(--danger);">*</span></label>
+            <input type="password" id="pwdConfirm" class="profile-form-control" placeholder="Nhập lại chính xác mật khẩu mới" required minlength="6" autocomplete="new-password">
           </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%;">Xác Nhận Đổi Mật Khẩu</button>
+
+          <button type="submit" class="btn btn-primary" id="btnSubmitProfilePassword" style="width: 100%; height: 42px; font-weight: 600;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>Xác Nhận Đổi Mật Khẩu</span>
+          </button>
         </form>
       </div>
 
