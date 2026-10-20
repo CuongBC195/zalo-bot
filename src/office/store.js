@@ -6,6 +6,10 @@
 
 const crypto = require('crypto');
 const db = require('../db');
+const { columnFiltersSql, matchesColumnFilters } = require('./column-filters');
+
+/** Số dòng tối đa một lần xuất Excel (giữ phản hồi dưới giới hạn 4.5MB của Vercel) */
+const EXPORT_MAX_ROWS = 5000;
 
 const UPSERT_COLUMNS = [
   'direction', 'source_id', 'so_ky_hieu', 'so_dang_ky', 'trich_yeu', 'so_van_ban', 'the_loai', 'do_khan',
@@ -162,7 +166,7 @@ async function saveImport({ parsed, fileName, user, dryRun = false }) {
  * Lấy tập ứng viên theo bộ lọc thô (hướng, khoảng ngày, ID, tiền tố từ khóa).
  * Bộ lọc chính xác và chấm điểm được thực hiện ở search.js.
  */
-async function fetchCandidates({ direction = null, dateFrom = null, dateTo = null, sourceId = null, keywordPrefixes = [], limit = 3000 } = {}) {
+async function fetchCandidates({ direction = null, dateFrom = null, dateTo = null, sourceId = null, keywordPrefixes = [], columnFilters = null, limit = 3000 } = {}) {
   if (await isPg()) {
     const where = [];
     const params = [];
@@ -174,6 +178,7 @@ async function fetchCandidates({ direction = null, dateFrom = null, dateTo = nul
       params.push(keywordPrefixes.map((p) => `%${p.replace(/[%_\\]/g, '')}%`));
       where.push(`search_norm LIKE ANY($${params.length}::text[])`);
     }
+    where.push(...columnFiltersSql(columnFilters, params));
     params.push(Math.min(Math.max(limit, 1), 10000));
     const sql = `SELECT ${SELECT_COLUMNS} FROM office_documents
       ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
@@ -187,7 +192,8 @@ async function fetchCandidates({ direction = null, dateFrom = null, dateTo = nul
       && (!dateFrom || (d.ngay_van_ban && d.ngay_van_ban >= dateFrom))
       && (!dateTo || (d.ngay_van_ban && d.ngay_van_ban <= dateTo))
       && (!sourceId || d.source_id === String(sourceId))
-      && (!keywordPrefixes.length || keywordPrefixes.some((p) => d.search_norm.includes(p))))
+      && (!keywordPrefixes.length || keywordPrefixes.some((p) => d.search_norm.includes(p)))
+      && matchesColumnFilters(d, columnFilters))
     .sort((a, b) => String(b.ngay_van_ban || '').localeCompare(String(a.ngay_van_ban || '')) || b.id - a.id)
     .slice(0, limit)
     .map(localToRow);
@@ -218,10 +224,10 @@ const SORT_SQL = {
  * Danh sách dạng bảng (không có ô tìm tự do): lọc + sắp xếp + phân trang ở SQL.
  * @returns {{ total: number, items: object[] }}
  */
-async function listDocuments({ direction = null, theLoai = null, dateFrom = null, dateTo = null, sort = 'ngay', order = 'desc', limit = 20, offset = 0 } = {}) {
+async function listDocuments({ direction = null, theLoai = null, dateFrom = null, dateTo = null, columnFilters = null, sort = 'ngay', order = 'desc', limit = 20, offset = 0, maxLimit = 100 } = {}) {
   const sortKey = SORT_SQL[sort] ? sort : 'ngay';
   const dir = order === 'asc' ? 'ASC' : 'DESC';
-  const size = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+  const size = Math.min(Math.max(parseInt(limit, 10) || 20, 1), Math.min(maxLimit, EXPORT_MAX_ROWS));
   const skip = Math.max(parseInt(offset, 10) || 0, 0);
 
   if (await isPg()) {
@@ -231,6 +237,7 @@ async function listDocuments({ direction = null, theLoai = null, dateFrom = null
     if (theLoai) { params.push(theLoai); where.push(`the_loai = $${params.length}`); }
     if (dateFrom) { params.push(dateFrom); where.push(`${EFFECTIVE_DATE_SQL} >= $${params.length}`); }
     if (dateTo) { params.push(dateTo); where.push(`${EFFECTIVE_DATE_SQL} <= $${params.length}`); }
+    where.push(...columnFiltersSql(columnFilters, params));
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const countRes = await db.pool.query(`SELECT COUNT(*)::int AS total FROM office_documents ${whereSql}`, params);
     params.push(size, skip);
@@ -258,7 +265,8 @@ async function listDocuments({ direction = null, theLoai = null, dateFrom = null
     .filter((d) => (!direction || d.direction === direction)
       && (!theLoai || d.the_loai === theLoai)
       && (!dateFrom || (eff(d) && eff(d) >= dateFrom))
-      && (!dateTo || (eff(d) && eff(d) <= dateTo)))
+      && (!dateTo || (eff(d) && eff(d) <= dateTo))
+      && matchesColumnFilters(d, columnFilters))
     .sort((a, b) => { const ka = key(a); const kb = key(b); return (ka < kb ? -1 : ka > kb ? 1 : 0) * sign || b.id - a.id; });
   return { total: list.length, items: list.slice(skip, skip + size).map(localToRow) };
 }
@@ -275,6 +283,27 @@ async function getTypeOptions() {
   const m = new Map();
   for (const d of local.docs) if (d.the_loai) m.set(d.the_loai, (m.get(d.the_loai) || 0) + 1);
   return [...m.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+}
+
+/** Giá trị cho các ô chọn của bộ lọc cột: Sổ văn bản, Độ khẩn, Trạng thái phát hành */
+const OPTION_COLUMNS = { books: 'so_van_ban', urgencies: 'do_khan', statuses: 'trang_thai_phat_hanh' };
+
+async function getFilterOptions() {
+  const out = { books: [], urgencies: [], statuses: [] };
+  if (await isPg()) {
+    const parts = Object.entries(OPTION_COLUMNS).map(([kind, col]) =>
+      `SELECT '${kind}' AS kind, ${col} AS name, COUNT(*)::int AS count FROM office_documents
+       WHERE ${col} IS NOT NULL AND ${col} <> '' GROUP BY ${col}`);
+    const res = await db.pool.query(`${parts.join(' UNION ALL ')} ORDER BY kind, count DESC, name`);
+    for (const r of res.rows) out[r.kind].push({ name: r.name, count: r.count });
+    return out;
+  }
+  for (const [kind, col] of Object.entries(OPTION_COLUMNS)) {
+    const m = new Map();
+    for (const d of local.docs) if (d[col]) m.set(d[col], (m.get(d[col]) || 0) + 1);
+    out[kind] = [...m.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+  }
+  return out;
 }
 
 async function getImports({ limit = 30 } = {}) {
@@ -533,6 +562,8 @@ module.exports = {
   getDocumentsByIds,
   listDocuments,
   getTypeOptions,
+  getFilterOptions,
+  EXPORT_MAX_ROWS,
   getImports,
   getOverview,
   canLookupOffice,

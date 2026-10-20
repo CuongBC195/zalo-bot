@@ -14,6 +14,8 @@ const { parseRegisterWorkbook, ImportError, MAX_FILE_BYTES } = require('../offic
 const { parseQuery } = require('../office/query-parser');
 const { rankCandidates, buildCandidateQuery, paginateRanked, SORTABLE } = require('../office/search');
 const aiRewriter = require('../office/ai-rewriter');
+const XLSX = require('xlsx');
+const { readColumnFilters } = require('../office/column-filters');
 
 const router = express.Router();
 const adminOnly = requireRole('superadmin', 'admin');
@@ -43,7 +45,7 @@ function readFilters(q) {
   const page = Math.max(parseInt(q.page, 10) || 1, 1);
   const pageSize = Math.min(Math.max(parseInt(q.pageSize, 10) || 20, 5), 100);
   const text = typeof q.q === 'string' ? q.q.trim().slice(0, 300) : '';
-  return { direction, theLoai, dateFrom, dateTo, sort, order, page, pageSize, text };
+  return { direction, theLoai, dateFrom, dateTo, sort, order, page, pageSize, text, columns: readColumnFilters(q) };
 }
 
 // ------------------------------------------------------------
@@ -52,63 +54,168 @@ function readFilters(q) {
 
 router.get('/office-docs/overview', async (req, res) => {
   try {
-    const [overview, types] = await Promise.all([store.getOverview(), store.getTypeOptions()]);
-    res.json({ ok: true, overview, types, unitName: config.office.unitName });
+    const [overview, types, options] = await Promise.all([store.getOverview(), store.getTypeOptions(), store.getFilterOptions()]);
+    res.json({ ok: true, overview, types, options, unitName: config.office.unitName });
   } catch (err) {
     console.error('[Office API] overview:', err.message);
     res.status(500).json({ ok: false, error: 'Không tải được tổng quan sổ công văn.' });
   }
 });
 
-router.get('/office-docs', async (req, res) => {
-  const f = readFilters(req.query);
-  try {
-    // Không có ô tìm tự do: lọc + phân trang ở SQL
-    if (!f.text) {
-      const sort = f.sort && f.sort !== 'relevance' ? f.sort : 'ngay';
-      const { total, items } = await store.listDocuments({
-        direction: f.direction, theLoai: f.theLoai, dateFrom: f.dateFrom, dateTo: f.dateTo,
-        sort, order: f.order, limit: f.pageSize, offset: (f.page - 1) * f.pageSize,
-      });
-      return res.json({
-        ok: true, mode: 'table', total, page: f.page, pageSize: f.pageSize,
-        pages: Math.max(1, Math.ceil(total / f.pageSize)), items: items.map((d) => sanitizeDoc(d, req.user)),
-      });
-    }
-
-    // Có ô tìm tự do: dùng cùng bộ phân tích như Zalo, bộ lọc trên giao diện được ưu tiên
-    let parsed = parseQuery(f.text);
-    const applyUiFilters = (p) => {
-      if (f.direction) p.filters.direction = f.direction;
-      if (f.theLoai) p.filters.theLoai = f.theLoai;
-      if (f.dateFrom) p.filters.dateFrom = f.dateFrom;
-      if (f.dateTo) p.filters.dateTo = f.dateTo;
-      return p;
+/**
+ * Lõi tra cứu dùng chung cho bảng và Xuất Excel.
+ *  - Không có ô tìm tự do: lọc + phân trang ở SQL.
+ *  - Có ô tìm tự do: cùng bộ phân tích như Zalo, bộ lọc trên giao diện được ưu tiên.
+ * @param {object} f kết quả readFilters()
+ * @param {{ all?: boolean }} opts all=true: lấy toàn bộ (tối đa EXPORT_MAX_ROWS), bỏ phân trang
+ */
+async function queryDocuments(f, { all = false } = {}) {
+  const limit = all ? store.EXPORT_MAX_ROWS : f.pageSize;
+  if (!f.text) {
+    const sort = f.sort && f.sort !== 'relevance' ? f.sort : 'ngay';
+    const { total, items } = await store.listDocuments({
+      direction: f.direction, theLoai: f.theLoai, dateFrom: f.dateFrom, dateTo: f.dateTo, columnFilters: f.columns,
+      sort, order: f.order, limit, offset: all ? 0 : (f.page - 1) * f.pageSize, maxLimit: limit,
+    });
+    return {
+      mode: 'table', total, page: all ? 1 : f.page, pageSize: limit,
+      pages: Math.max(1, Math.ceil(total / limit)), items,
     };
-    applyUiFilters(parsed);
-    let ranked = rankCandidates(await store.fetchCandidates(buildCandidateQuery(parsed)), parsed);
-    let aiUsed = false;
-    if (!ranked.matches.length && config.office.aiRewrite) {
-      const ai = await aiRewriter.rewriteQuery(f.text);
-      if (ai && ai.inScope !== false) {
-        applyUiFilters(ai);
-        const retry = rankCandidates(await store.fetchCandidates(buildCandidateQuery(ai)), ai);
-        if (retry.matches.length || (retry.related.length && !ranked.related.length)) {
-          parsed = ai; ranked = retry; aiUsed = true;
-        }
+  }
+
+  let parsed = parseQuery(f.text);
+  const applyUiFilters = (p) => {
+    if (f.direction) p.filters.direction = f.direction;
+    if (f.theLoai) p.filters.theLoai = f.theLoai;
+    if (f.dateFrom) p.filters.dateFrom = f.dateFrom;
+    if (f.dateTo) p.filters.dateTo = f.dateTo;
+    return p;
+  };
+  const candidates = (p) => store.fetchCandidates({ ...buildCandidateQuery(p), columnFilters: f.columns });
+  applyUiFilters(parsed);
+  let ranked = rankCandidates(await candidates(parsed), parsed);
+  let aiUsed = false;
+  if (!ranked.matches.length && config.office.aiRewrite) {
+    const ai = await aiRewriter.rewriteQuery(f.text);
+    if (ai && ai.inScope !== false) {
+      applyUiFilters(ai);
+      const retry = rankCandidates(await candidates(ai), ai);
+      if (retry.matches.length || (retry.related.length && !ranked.related.length)) {
+        parsed = ai; ranked = retry; aiUsed = true;
       }
     }
-    const usedRelated = !ranked.matches.length;
-    const list = usedRelated ? ranked.related.slice(0, 50) : ranked.matches;
-    const pageData = paginateRanked(list, { sort: f.sort || 'relevance', order: f.order, page: f.page, pageSize: f.pageSize });
-    res.json({
-      ok: true, mode: 'search', usedRelated, aiUsed,
-      parsed: { intent: parsed.intent, filters: parsed.filters, keywords: parsed.keywords },
-      ...pageData, items: pageData.items.map((d) => sanitizeDoc(d, req.user)),
-    });
+  }
+  const usedRelated = !ranked.matches.length;
+  const list = usedRelated ? ranked.related.slice(0, 50) : ranked.matches;
+  const pageData = paginateRanked(list, {
+    sort: f.sort || 'relevance', order: f.order, page: all ? 1 : f.page, pageSize: all ? list.length || 1 : f.pageSize, maxPageSize: limit,
+  });
+  return {
+    mode: 'search', usedRelated, aiUsed,
+    parsed: { intent: parsed.intent, filters: parsed.filters, keywords: parsed.keywords },
+    ...pageData,
+  };
+}
+
+router.get('/office-docs', async (req, res) => {
+  try {
+    const result = await queryDocuments(readFilters(req.query));
+    res.json({ ok: true, ...result, items: result.items.map((d) => sanitizeDoc(d, req.user)) });
   } catch (err) {
     console.error('[Office API] search:', err.message);
     res.status(500).json({ ok: false, error: 'Không tra cứu được sổ công văn.' });
+  }
+});
+
+// ------------------------------------------------------------
+// Xuất Excel kết quả đang lọc (mọi vai trò). Chỉ thông tin sổ, không có Ý kiến chuyển/chỉ đạo.
+// ------------------------------------------------------------
+
+const EXPORT_COLUMNS = [
+  ['STT', 6, (d, i) => i + 1],
+  ['Sổ', 8, (d) => (d.direction === 'den' ? 'Đến' : 'Đi')],
+  ['Số, ký hiệu', 18, (d) => d.so_ky_hieu],
+  ['Ngày văn bản', 13, (d) => vnDate(d.ngay_van_ban)],
+  ['Ngày đến', 13, (d) => vnDate(d.thoi_gian_nhan)],
+  ['Thể loại', 14, (d) => d.the_loai],
+  ['Trích yếu nội dung', 70, (d) => d.trich_yeu],
+  ['Người ký', 22, (d) => d.nguoi_ky],
+  ['Người gửi / trình', 22, (d) => d.nguoi_gui || d.nguoi_trinh],
+  ['Độ khẩn', 10, (d) => d.do_khan],
+  ['Hạn xử lý', 13, (d) => vnDate(d.han_xu_ly)],
+  ['Trạng thái phát hành', 18, (d) => d.trang_thai_phat_hanh],
+  ['Sổ văn bản', 28, (d) => d.so_van_ban],
+  ['Số trang', 9, (d) => d.so_trang],
+  ['Số bản', 8, (d) => d.so_ban],
+  ['Mã văn bản', 13, (d) => d.source_id],
+];
+
+function vnDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : '';
+}
+
+function describeFilters(f) {
+  const c = f.columns || {};
+  const range = (a, b) => `${a ? vnDate(a) : '...'} - ${b ? vnDate(b) : '...'}`;
+  const parts = [];
+  if (f.text) parts.push(`Tìm: "${f.text}"`);
+  if (f.theLoai) parts.push(`Thể loại: ${f.theLoai}`);
+  if (c.soKyHieu) parts.push(`Số, ký hiệu: ${c.soKyHieu}`);
+  if (c.sourceId) parts.push(`Mã VB: ${c.sourceId}`);
+  if (c.trichYeu) parts.push(`Trích yếu: ${c.trichYeu}`);
+  if (c.nguoiKy) parts.push(`Người ký: ${c.nguoiKy}`);
+  if (c.nguoiGui) parts.push(`Người gửi/trình: ${c.nguoiGui}`);
+  if (c.soVanBan) parts.push(`Sổ: ${c.soVanBan}`);
+  if (c.doKhan) parts.push(`Độ khẩn: ${c.doKhan}`);
+  if (c.trangThai) parts.push(`Trạng thái: ${c.trangThai}`);
+  if (c.docDateFrom || c.docDateTo) parts.push(`Ngày VB: ${range(c.docDateFrom, c.docDateTo)}`);
+  if (c.receivedFrom || c.receivedTo) parts.push(`Ngày đến: ${range(c.receivedFrom, c.receivedTo)}`);
+  if (c.deadlineFrom || c.deadlineTo) parts.push(`Hạn xử lý: ${range(c.deadlineFrom, c.deadlineTo)}`);
+  return parts.join('; ');
+}
+
+function buildExportWorkbook(items, f) {
+  const now = new Date(Date.now() + 7 * 3600 * 1000).toISOString(); // giờ Việt Nam
+  const stamp = `${now.slice(8, 10)}/${now.slice(5, 7)}/${now.slice(0, 4)} ${now.slice(11, 16)}`;
+  const book = f.direction === 'den' ? 'SỔ VĂN BẢN ĐẾN' : f.direction === 'di' ? 'SỔ VĂN BẢN ĐI' : 'SỔ VĂN BẢN ĐẾN / ĐI';
+  const rows = [
+    [`${book} - ${config.office.unitName.toUpperCase()}`],
+    [`Xuất lúc ${stamp}. ${items.length} văn bản.${describeFilters(f) ? ` Bộ lọc: ${describeFilters(f)}` : ''}`],
+    [`Cần bản gốc, liên hệ Văn thư ${config.office.unitName} và cung cấp Mã văn bản.`],
+    [],
+    EXPORT_COLUMNS.map(([h]) => h),
+    ...items.map((d, i) => EXPORT_COLUMNS.map(([, , get]) => {
+      const v = get(d, i);
+      return v === null || v === undefined ? '' : v;
+    })),
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = EXPORT_COLUMNS.map(([, wch]) => ({ wch }));
+  ws['!merges'] = [0, 1, 2].map((r) => ({ s: { r, c: 0 }, e: { r, c: EXPORT_COLUMNS.length - 1 } }));
+  ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 4, c: 0 }, e: { r: 4 + items.length, c: EXPORT_COLUMNS.length - 1 } }) };
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'So cong van');
+  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx', compression: true });
+}
+
+router.get('/office-docs/export', async (req, res) => {
+  try {
+    const f = readFilters(req.query);
+    const result = await queryDocuments(f, { all: true });
+    const buffer = buildExportWorkbook(result.items, f);
+    const d = new Date(Date.now() + 7 * 3600 * 1000).toISOString();
+    const fileName = `so-cong-van-${d.slice(0, 10).replace(/-/g, '')}-${d.slice(11, 16).replace(':', '')}.xlsx`;
+    console.log(`[Office API] export: user=${req.user.username} rows=${result.items.length} total=${result.total}`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('X-Export-Rows', String(result.items.length));
+    res.setHeader('X-Export-Total', String(result.total));
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(buffer);
+  } catch (err) {
+    console.error('[Office API] export:', err.message);
+    res.status(500).json({ ok: false, error: 'Không xuất được file Excel.' });
   }
 });
 
@@ -248,5 +355,10 @@ router.post('/zalo-users/:zaloId/office-permission', adminOnly, async (req, res)
     res.status(500).json({ ok: false, error: 'Không cập nhật được quyền.' });
   }
 });
+
+// Dùng cho kiểm thử
+router._queryDocuments = queryDocuments;
+router._readFilters = readFilters;
+router._buildExportWorkbook = buildExportWorkbook;
 
 module.exports = router;

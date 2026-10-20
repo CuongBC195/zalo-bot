@@ -19,11 +19,22 @@
   const MAX_UPLOAD_BYTES = 3 * 1024 * 1024; // Vercel giới hạn body 4.5MB, base64 tăng ~33%
   const DIRECTION_LABEL = { den: 'Đến', di: 'Đi' };
 
+  /** Các khóa bộ lọc gửi lên API (trùng tên tham số query) */
+  const FILTER_KEYS = [
+    'q', 'direction', 'theLoai', 'soKyHieu', 'sourceId', 'trichYeu', 'nguoiKy', 'nguoiGui',
+    'soVanBan', 'doKhan', 'trangThai', 'docDateFrom', 'docDateTo', 'receivedFrom', 'receivedTo',
+    'deadlineFrom', 'deadlineTo',
+  ];
+  /** Các khóa có trên hàng lọc dưới tiêu đề cột (nút X xóa nhóm này) */
+  const COLUMN_ROW_KEYS = ['soKyHieu', 'docDateFrom', 'docDateTo', 'direction', 'theLoai', 'trichYeu', 'nguoiKy', 'sourceId'];
+  const FILTER_ROW_PREF = 'office.filterRow';
+  const emptyFilters = () => Object.fromEntries(FILTER_KEYS.map((k) => [k, '']));
+
   const state = {
     user: null,
     features: null,
     unitName: 'Văn phòng Đảng ủy xã Thạnh Phú',
-    filters: { direction: '', theLoai: '', dateFrom: '', dateTo: '', q: '' },
+    filters: emptyFilters(),
     sort: null,
     order: 'desc',
     page: 1,
@@ -36,6 +47,7 @@
     importPreviewOk: false,
     zaloUsers: [],
     chatBusy: false,
+    exporting: false,
   };
 
   const isAdmin = () => !!state.user && (state.user.role === 'admin' || state.user.role === 'superadmin');
@@ -162,38 +174,39 @@
           ? `Dữ liệu chốt ngày ${fmtDate(ov.reportDate)}`
           : (ov.lastImportAt ? `Cập nhật ${fmtDateTime(ov.lastImportAt)}` : 'Chưa nhập dữ liệu');
       });
-      renderTypeOptions(res.types || []);
+      renderSelectOptions(res.types || [], res.options || {});
     } catch (e) {
       showToast('Không tải được tổng quan sổ công văn: ' + e.message, 'error');
     }
   }
 
-  function renderTypeOptions(types) {
-    const sel = $('officeTypeFilter');
-    const current = state.filters.theLoai;
-    const opts = ['<option value="">Tất cả thể loại</option>'];
-    types.forEach((t) => {
-      const value = typeof t === 'string' ? t : t.name;
-      if (!value) return;
-      const count = typeof t === 'object' && t.count != null ? ` (${fmtNumber(t.count)})` : '';
-      opts.push(`<option value="${esc(value)}">${esc(value)}${count}</option>`);
+  /** Đổ giá trị thật trong sổ vào mọi ô chọn có data-options (hàng lọc + khung nâng cao) */
+  function renderSelectOptions(types, options) {
+    const lists = { types, books: options.books || [], urgencies: options.urgencies || [], statuses: options.statuses || [] };
+    document.querySelectorAll('select[data-options]').forEach((sel) => {
+      const list = lists[sel.dataset.options] || [];
+      const key = sel.dataset.filter;
+      const allLabel = sel.dataset.allLabel || (sel.options[0] ? sel.options[0].textContent : 'Tất cả');
+      sel.dataset.allLabel = allLabel;
+      const compact = sel.classList.contains('col-filter');
+      sel.innerHTML = [`<option value="">${esc(allLabel)}</option>`, ...list.map((t) => {
+        const name = typeof t === 'string' ? t : t.name;
+        const count = !compact && t && t.count != null ? ` (${fmtNumber(t.count)})` : '';
+        return `<option value="${esc(name)}">${esc(name)}${count}</option>`;
+      })].join('');
+      sel.value = state.filters[key] || '';
+      if (sel.value !== (state.filters[key] || '')) state.filters[key] = '';
     });
-    sel.innerHTML = opts.join('');
-    sel.value = current;
-    if (sel.value !== current) state.filters.theLoai = '';
   }
 
-  function buildQuery() {
+  function buildQuery({ paged = true } = {}) {
     const p = new URLSearchParams();
-    const f = state.filters;
-    if (f.q) p.set('q', f.q);
-    if (f.direction) p.set('direction', f.direction);
-    if (f.theLoai) p.set('theLoai', f.theLoai);
-    if (f.dateFrom) p.set('dateFrom', f.dateFrom);
-    if (f.dateTo) p.set('dateTo', f.dateTo);
+    FILTER_KEYS.forEach((k) => { if (state.filters[k]) p.set(k, state.filters[k]); });
     if (state.sort) { p.set('sort', state.sort); p.set('order', state.order); }
-    p.set('page', state.page);
-    p.set('pageSize', state.pageSize);
+    if (paged) {
+      p.set('page', state.page);
+      p.set('pageSize', state.pageSize);
+    }
     return p.toString();
   }
 
@@ -328,44 +341,146 @@
     });
   }
 
-  function setDirection(direction) {
-    state.filters.direction = direction;
-    state.page = 1;
+  /** Ghi trạng thái bộ lọc ra mọi nơi nhập (trừ phần tử đang gõ để không mất con trỏ) */
+  function syncFilterInputs(except) {
+    const f = state.filters;
+    document.querySelectorAll('#view-office [data-filter]').forEach((el) => {
+      if (el === except) return;
+      const key = el.dataset.filter;
+      el.value = key === 'docDate'
+        ? (f.docDateFrom && f.docDateFrom === f.docDateTo ? f.docDateFrom : '')
+        : (f[key] || '');
+      el.classList.toggle('has-value', !!el.value);
+    });
+    if (except) except.classList.toggle('has-value', !!except.value);
+    if (except !== $('officeSearchInput')) $('officeSearchInput').value = f.q;
+
     document.querySelectorAll('#officeDirectionTabs .segmented-btn').forEach((b) => {
-      const on = b.dataset.direction === direction;
+      const on = b.dataset.direction === f.direction;
       b.classList.toggle('active', on);
       b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
     ['officeStatDen', 'officeStatDi'].forEach((id) => {
       const el = $(id);
-      el.classList.toggle('active', el.dataset.direction === direction);
-      el.setAttribute('aria-pressed', el.dataset.direction === direction ? 'true' : 'false');
+      el.classList.toggle('active', el.dataset.direction === f.direction);
+      el.setAttribute('aria-pressed', el.dataset.direction === f.direction ? 'true' : 'false');
     });
+
+    const advCount = FILTER_KEYS.filter((k) => k !== 'q' && k !== 'direction' && f[k]).length;
+    const badge = $('officeAdvCount');
+    badge.textContent = advCount;
+    badge.classList.toggle('hidden', !advCount);
+    const colCount = COLUMN_ROW_KEYS.filter((k) => f[k]).length;
+    $('btnOfficeClearColumns').classList.toggle('is-active', colCount > 0);
+    $('btnOfficeFilterToggle').classList.toggle('has-filters', colCount > 0);
+  }
+
+  function applyFilters({ except } = {}) {
+    state.page = 1;
+    syncFilterInputs(except);
     loadTable();
   }
 
+  function setDirection(direction) {
+    state.filters.direction = direction;
+    applyFilters();
+  }
+
   function resetFilters() {
-    state.filters = { direction: '', theLoai: '', dateFrom: '', dateTo: '', q: '' };
+    state.filters = emptyFilters();
     state.sort = null;
     state.order = 'desc';
-    state.page = 1;
-    $('officeSearchInput').value = '';
-    $('officeTypeFilter').value = '';
-    $('officeDateFrom').value = '';
-    $('officeDateTo').value = '';
-    setDirection('');
+    applyFilters();
+  }
+
+  function setAdvancedOpen(open) {
+    const panel = $('officeAdvancedPanel');
+    panel.hidden = !open;
+    $('btnOfficeAdvanced').setAttribute('aria-expanded', open ? 'true' : 'false');
+    $('btnOfficeAdvanced').classList.toggle('active', open);
+    if (open) {
+      syncFilterInputs();
+      const first = panel.querySelector('[data-filter]');
+      if (first) first.focus();
+    }
+  }
+
+  function setFilterRowVisible(visible, persist = true) {
+    $('officeFilterRow').classList.toggle('hidden', !visible);
+    $('btnOfficeFilterToggle').setAttribute('aria-pressed', visible ? 'true' : 'false');
+    $('btnOfficeFilterToggle').classList.toggle('active', visible);
+    if (persist) { try { localStorage.setItem(FILTER_ROW_PREF, visible ? '1' : '0'); } catch (e) { /* chế độ riêng tư */ } }
+  }
+
+  /** Cập nhật state từ một ô trên hàng lọc cột */
+  function readColumnInput(el) {
+    const key = el.dataset.filter;
+    const value = el.value.trim();
+    if (key === 'docDate') {
+      state.filters.docDateFrom = value;
+      state.filters.docDateTo = value;
+    } else {
+      state.filters[key] = value;
+    }
+  }
+
+  function contentDispositionName(header) {
+    const m = /filename="?([^";]+)"?/i.exec(header || '');
+    return m ? m[1] : 'so-cong-van.xlsx';
+  }
+
+  async function exportExcel(btn) {
+    if (state.exporting) return;
+    state.exporting = true;
+    const label = btn.querySelector('span');
+    const original = label ? label.textContent : '';
+    btn.disabled = true;
+    btn.classList.add('is-busy');
+    if (label) label.textContent = 'Đang xuất...';
+    try {
+      const res = await fetch('/api/office-docs/export?' + buildQuery({ paged: false }), { credentials: 'same-origin' });
+      if (!res.ok) {
+        let msg = `Xuất thất bại (HTTP ${res.status})`;
+        try { msg = (await res.json()).error || msg; } catch (e) { /* không phải JSON */ }
+        throw new Error(res.status === 401 ? 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.' : msg);
+      }
+      const rows = parseInt(res.headers.get('X-Export-Rows'), 10) || 0;
+      const total = parseInt(res.headers.get('X-Export-Total'), 10) || rows;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = contentDispositionName(res.headers.get('Content-Disposition'));
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (!rows) showToast('Danh sách đang lọc trống, file chỉ có tiêu đề.', 'warning');
+      else if (total > rows) showToast(`Đã xuất ${fmtNumber(rows)}/${fmtNumber(total)} văn bản (giới hạn mỗi lần). Hãy lọc hẹp hơn để xuất phần còn lại.`, 'warning');
+      else showToast(`Đã xuất ${fmtNumber(rows)} văn bản ra Excel.`, 'success');
+    } catch (e) {
+      showToast(e.message, 'error');
+    } finally {
+      state.exporting = false;
+      btn.disabled = false;
+      btn.classList.remove('is-busy');
+      if (label) label.textContent = original;
+    }
   }
 
   function bindTableEvents() {
-    const onSearch = debounce(() => {
+    // Ô tìm tự do: chỉ chạy khi Enter / bấm kính lúp (tránh gọi AI theo từng lần gõ)
+    $('officeSearchForm').addEventListener('submit', (e) => {
+      e.preventDefault();
       state.filters.q = $('officeSearchInput').value.trim();
-      state.page = 1;
       state.sort = null;
-      loadTable();
-    }, 450);
-    $('officeSearchInput').addEventListener('input', onSearch);
-    $('officeSearchInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); state.filters.q = e.target.value.trim(); state.page = 1; loadTable(); }
+      applyFilters({ except: $('officeSearchInput') });
+    });
+    $('officeSearchInput').addEventListener('input', (e) => {
+      if (!e.target.value.trim() && state.filters.q) {
+        state.filters.q = '';
+        applyFilters({ except: e.target });
+      }
     });
 
     $('officeDirectionTabs').addEventListener('click', (e) => {
@@ -380,10 +495,52 @@
       el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
     });
 
-    $('officeTypeFilter').addEventListener('change', (e) => { state.filters.theLoai = e.target.value; state.page = 1; loadTable(); });
-    $('officeDateFrom').addEventListener('change', (e) => { state.filters.dateFrom = e.target.value; state.page = 1; loadTable(); });
-    $('officeDateTo').addEventListener('change', (e) => { state.filters.dateTo = e.target.value; state.page = 1; loadTable(); });
+    // Hàng lọc theo cột: ô chữ áp dụng sau 400ms ngừng gõ, ô chọn/ngày áp dụng ngay
+    const filterRow = $('officeFilterRow');
+    const onColumnText = debounce((el) => applyFilters({ except: el }), 400);
+    filterRow.addEventListener('input', (e) => {
+      const el = e.target.closest('input[type="text"].col-filter');
+      if (el) { readColumnInput(el); onColumnText(el); }
+    });
+    filterRow.addEventListener('change', (e) => {
+      const el = e.target.closest('select.col-filter, input[type="date"].col-filter');
+      if (el) { readColumnInput(el); applyFilters({ except: el }); }
+    });
+    filterRow.addEventListener('keydown', (e) => {
+      const el = e.target.closest('input[type="text"].col-filter');
+      if (el && e.key === 'Enter') { e.preventDefault(); readColumnInput(el); applyFilters({ except: el }); }
+    });
+    $('btnOfficeClearColumns').addEventListener('click', () => {
+      COLUMN_ROW_KEYS.forEach((k) => { state.filters[k] = ''; });
+      applyFilters();
+    });
+    $('btnOfficeFilterToggle').addEventListener('click', () => {
+      setFilterRowVisible($('officeFilterRow').classList.contains('hidden'));
+    });
+    let rowPref = '1';
+    try { rowPref = localStorage.getItem(FILTER_ROW_PREF) || '1'; } catch (e) { /* chế độ riêng tư */ }
+    setFilterRowVisible(rowPref !== '0', false);
+
+    // Khung tìm kiếm nâng cao: áp dụng khi bấm Tìm kiếm / Enter
+    $('btnOfficeAdvanced').addEventListener('click', () => setAdvancedOpen($('officeAdvancedPanel').hidden));
+    $('btnOfficeAdvCollapse').addEventListener('click', () => setAdvancedOpen(false));
+    $('btnOfficeAdvHide').addEventListener('click', () => setAdvancedOpen(false));
+    $('officeAdvancedForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      e.currentTarget.querySelectorAll('[data-filter]').forEach((el) => { state.filters[el.dataset.filter] = el.value.trim(); });
+      const f = state.filters;
+      const swapped = [['docDateFrom', 'docDateTo'], ['receivedFrom', 'receivedTo'], ['deadlineFrom', 'deadlineTo']]
+        .some(([a, b]) => f[a] && f[b] && f[a] > f[b]);
+      if (swapped) { showToast('Ngày "từ" đang lớn hơn ngày "đến". Vui lòng kiểm tra lại.', 'warning'); return; }
+      applyFilters();
+    });
+    $('officeAdvancedPanel').addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { setAdvancedOpen(false); $('btnOfficeAdvanced').focus(); }
+    });
     $('btnOfficeReset').addEventListener('click', resetFilters);
+    $('btnOfficeExport').addEventListener('click', (e) => exportExcel(e.currentTarget));
+    $('btnOfficeAdvExport').addEventListener('click', (e) => exportExcel(e.currentTarget));
+
     $('officePageSize').addEventListener('change', (e) => { state.pageSize = parseInt(e.target.value, 10) || 20; state.page = 1; loadTable(); });
 
     $('officePaginationButtons').addEventListener('click', (e) => {

@@ -384,34 +384,140 @@
                 <button type="button" class="segmented-btn" data-direction="di" role="tab" aria-selected="false">Văn bản đi</button>
               </div>
 
-              <div class="search-input-wrap office-search-wrap">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <input type="search" id="officeSearchInput" class="search-input" placeholder="Hỏi tự nhiên: 866-CV/TU, quyết định tháng 10, công văn về nhà đất..." aria-label="Tìm trong sổ công văn" autocomplete="off">
+              <form class="office-search-group" id="officeSearchForm" role="search">
+                <div class="search-input-wrap office-search-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <input type="search" id="officeSearchInput" class="search-input" placeholder="Số ký hiệu, trích yếu, mã văn bản, người ký... hoặc hỏi tự nhiên" aria-label="Tìm trong sổ công văn" autocomplete="off">
+                </div>
+                <button type="submit" class="btn-search-submit" id="btnOfficeSearch" aria-label="Tìm kiếm">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </button>
+              </form>
+
+              <div class="office-toolbar-actions">
+                <button type="button" class="btn btn-advanced" id="btnOfficeAdvanced" aria-expanded="false" aria-controls="officeAdvancedPanel">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                  </svg>
+                  <span>Tìm kiếm nâng cao</span>
+                  <span class="adv-count hidden" id="officeAdvCount" aria-label="Số bộ lọc đang dùng"></span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-export" id="btnOfficeExport" title="Xuất Excel đúng danh sách đang lọc (tối đa 5.000 dòng)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  <span>Xuất Excel</span>
+                </button>
               </div>
             </div>
 
-            <div class="office-toolbar-row">
-              <select id="officeTypeFilter" class="filter-select" aria-label="Thể loại">
-                <option value="">Tất cả thể loại</option>
-              </select>
-              <label class="office-date-field">
-                <span>Từ</span>
-                <input type="date" id="officeDateFrom" class="filter-select office-date" aria-label="Từ ngày">
-              </label>
-              <label class="office-date-field">
-                <span>Đến</span>
-                <input type="date" id="officeDateTo" class="filter-select office-date" aria-label="Đến ngày">
-              </label>
-              <button type="button" id="btnOfficeReset" class="btn btn-secondary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                  <polyline points="1 4 1 10 7 10"></polyline>
-                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-                </svg>
-                <span>Đặt lại</span>
-              </button>
+            <div class="office-advanced" id="officeAdvancedPanel" hidden>
+              <div class="adv-head">
+                <span class="adv-title">Thông tin tìm kiếm</span>
+                <button type="button" class="adv-collapse" id="btnOfficeAdvCollapse" aria-label="Thu gọn tìm kiếm nâng cao">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                </button>
+              </div>
+              <form class="adv-grid" id="officeAdvancedForm" autocomplete="off">
+                <label class="adv-field">
+                  <span class="adv-label">Số, ký hiệu</span>
+                  <input type="text" class="form-control" data-filter="soKyHieu" maxlength="100" placeholder="VD: 866-CV/TU">
+                </label>
+                <div class="adv-field">
+                  <span class="adv-label">Ngày văn bản</span>
+                  <div class="adv-range">
+                    <input type="date" class="form-control" data-filter="docDateFrom" aria-label="Ngày văn bản từ ngày">
+                    <span class="adv-range-sep">đến</span>
+                    <input type="date" class="form-control" data-filter="docDateTo" aria-label="Ngày văn bản đến ngày">
+                  </div>
+                </div>
+                <label class="adv-field">
+                  <span class="adv-label">Thể loại</span>
+                  <select class="form-control" data-filter="theLoai" data-options="types"><option value="">---- Tất cả ----</option></select>
+                </label>
+
+                <label class="adv-field">
+                  <span class="adv-label">Mã văn bản</span>
+                  <input type="text" class="form-control" data-filter="sourceId" maxlength="50" placeholder="Cột ID trong sổ">
+                </label>
+                <div class="adv-field">
+                  <span class="adv-label">Ngày đến</span>
+                  <div class="adv-range">
+                    <input type="date" class="form-control" data-filter="receivedFrom" aria-label="Ngày đến từ ngày">
+                    <span class="adv-range-sep">đến</span>
+                    <input type="date" class="form-control" data-filter="receivedTo" aria-label="Ngày đến đến ngày">
+                  </div>
+                </div>
+                <label class="adv-field">
+                  <span class="adv-label">Độ khẩn</span>
+                  <select class="form-control" data-filter="doKhan" data-options="urgencies"><option value="">---- Tất cả ----</option></select>
+                </label>
+
+                <label class="adv-field">
+                  <span class="adv-label">Sổ văn bản</span>
+                  <select class="form-control" data-filter="soVanBan" data-options="books"><option value="">---- Tất cả ----</option></select>
+                </label>
+                <div class="adv-field">
+                  <span class="adv-label">Hạn xử lý</span>
+                  <div class="adv-range">
+                    <input type="date" class="form-control" data-filter="deadlineFrom" aria-label="Hạn xử lý từ ngày">
+                    <span class="adv-range-sep">đến</span>
+                    <input type="date" class="form-control" data-filter="deadlineTo" aria-label="Hạn xử lý đến ngày">
+                  </div>
+                </div>
+                <label class="adv-field">
+                  <span class="adv-label">Trạng thái</span>
+                  <select class="form-control" data-filter="trangThai" data-options="statuses"><option value="">---- Tất cả ----</option></select>
+                </label>
+
+                <label class="adv-field">
+                  <span class="adv-label">Người ký</span>
+                  <input type="text" class="form-control" data-filter="nguoiKy" maxlength="100" placeholder="Họ tên người ký">
+                </label>
+                <label class="adv-field">
+                  <span class="adv-label">Người gửi / trình</span>
+                  <input type="text" class="form-control" data-filter="nguoiGui" maxlength="100" placeholder="Văn thư gửi, người trình ký">
+                </label>
+                <label class="adv-field">
+                  <span class="adv-label">Loại sổ</span>
+                  <select class="form-control" data-filter="direction">
+                    <option value="">---- Tất cả ----</option>
+                    <option value="den">Văn bản đến</option>
+                    <option value="di">Văn bản đi</option>
+                  </select>
+                </label>
+
+                <label class="adv-field adv-span-3">
+                  <span class="adv-label">Trích yếu nội dung</span>
+                  <input type="text" class="form-control" data-filter="trichYeu" maxlength="100" placeholder="Gõ có dấu hoặc không dấu, nhiều từ không cần liền nhau">
+                </label>
+
+                <div class="adv-actions adv-span-3">
+                  <button type="button" class="btn btn-secondary" id="btnOfficeAdvExport">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>Xuất Excel</span>
+                  </button>
+                  <button type="button" class="btn btn-secondary" id="btnOfficeReset">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                    <span>Đặt lại</span>
+                  </button>
+                  <button type="button" class="btn btn-secondary" id="btnOfficeAdvHide">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                    <span>Ẩn tìm kiếm nâng cao</span>
+                  </button>
+                  <button type="submit" class="btn btn-primary" id="btnOfficeAdvSubmit">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <span>Tìm kiếm</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
 
@@ -424,13 +530,38 @@
                   <tr>
                     <th class="col-stt" style="width: 56px; text-align: center;">STT</th>
                     <th class="sortable" data-sort="so_ky_hieu" style="width: 150px;">Số / Ký hiệu</th>
-                    <th class="sortable" data-sort="ngay" style="width: 118px;">Ngày</th>
-                    <th style="width: 92px;">Sổ</th>
-                    <th class="sortable" data-sort="the_loai" style="width: 130px;">Thể loại</th>
+                    <th class="sortable" data-sort="ngay" style="width: 132px;">Ngày</th>
+                    <th style="width: 96px;">Sổ</th>
+                    <th class="sortable" data-sort="the_loai" style="width: 136px;">Thể loại</th>
                     <th class="sortable" data-sort="trich_yeu">Trích yếu</th>
                     <th class="sortable" data-sort="nguoi_ky" style="width: 160px;">Người ký</th>
-                    <th class="sortable" data-sort="source_id" style="width: 110px;">Mã VB</th>
-                    <th class="sticky-action-col" style="width: 84px; text-align: center;">Xem</th>
+                    <th class="sortable" data-sort="source_id" style="width: 116px;">Mã VB</th>
+                    <th class="sticky-action-col" style="text-align: center;">
+                      <button type="button" class="th-filter-toggle" id="btnOfficeFilterToggle" aria-pressed="true" aria-controls="officeFilterRow" title="Ẩn / hiện hàng lọc theo cột">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                      </button>
+                    </th>
+                  </tr>
+                  <tr class="col-filter-row" id="officeFilterRow">
+                    <th></th>
+                    <th><input type="text" class="col-filter" data-filter="soKyHieu" maxlength="100" placeholder="Lọc số..." aria-label="Lọc theo số, ký hiệu"></th>
+                    <th><input type="date" class="col-filter" data-filter="docDate" aria-label="Lọc theo ngày văn bản"></th>
+                    <th>
+                      <select class="col-filter" data-filter="direction" aria-label="Lọc theo sổ">
+                        <option value="">Tất cả</option>
+                        <option value="den">Đến</option>
+                        <option value="di">Đi</option>
+                      </select>
+                    </th>
+                    <th><select class="col-filter" data-filter="theLoai" data-options="types" aria-label="Lọc theo thể loại"><option value="">Tất cả</option></select></th>
+                    <th><input type="text" class="col-filter" data-filter="trichYeu" maxlength="100" placeholder="Lọc trích yếu..." aria-label="Lọc theo trích yếu"></th>
+                    <th><input type="text" class="col-filter" data-filter="nguoiKy" maxlength="100" placeholder="Lọc người ký..." aria-label="Lọc theo người ký"></th>
+                    <th><input type="text" class="col-filter" data-filter="sourceId" maxlength="50" placeholder="Mã..." aria-label="Lọc theo mã văn bản"></th>
+                    <th class="sticky-action-col">
+                      <button type="button" class="col-filter-clear" id="btnOfficeClearColumns" aria-label="Xóa lọc theo cột" title="Xóa lọc theo cột">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                      </button>
+                    </th>
                   </tr>
                 </thead>
                 <tbody id="officeTableBody">

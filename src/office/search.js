@@ -232,7 +232,7 @@ const SORTABLE = {
  * Lọc + sắp xếp + phân trang trên tập đã xếp hạng (dùng khi có ô tìm tự do).
  * sort = 'relevance' giữ thứ tự điểm.
  */
-function paginateRanked(docs, { sort = 'relevance', order = 'desc', page = 1, pageSize = 20 } = {}) {
+function paginateRanked(docs, { sort = 'relevance', order = 'desc', page = 1, pageSize = 20, maxPageSize = 100 } = {}) {
   let list = docs;
   if (sort !== 'relevance' && SORTABLE[sort]) {
     const key = SORTABLE[sort];
@@ -246,7 +246,7 @@ function paginateRanked(docs, { sort = 'relevance', order = 'desc', page = 1, pa
       return (ka < kb ? -1 : ka > kb ? 1 : 0) * dir || (b.id - a.id);
     });
   }
-  const size = Math.min(Math.max(parseInt(pageSize, 10) || 20, 5), 100);
+  const size = Math.min(Math.max(parseInt(pageSize, 10) || 20, 1), maxPageSize);
   const total = list.length;
   const pages = Math.max(1, Math.ceil(total / size));
   const current = Math.min(Math.max(parseInt(page, 10) || 1, 1), pages);

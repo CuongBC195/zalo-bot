@@ -206,6 +206,57 @@ async function main() {
     assert.strictEqual(r.counts.byDirection.di, 3);
   });
 
+  console.log('[Office] Lọc theo cột + Xuất Excel');
+  const { readColumnFilters } = require('../src/office/column-filters');
+  const routes = require('../src/admin/office-routes');
+  const XLSX = require('xlsx');
+  const list = (query) => store.listDocuments({ columnFilters: readColumnFilters(query), limit: 100 });
+  await test('đọc bộ lọc cột: bỏ khóa lạ, ngày sai, cắt chuỗi dài', () => {
+    const cf = readColumnFilters({ trichYeu: '  nhà đất ', docDateFrom: '2026-13', hack: 'x', nguoiKy: 'a'.repeat(500) });
+    assert.deepStrictEqual(Object.keys(cf).sort(), ['nguoiKy', 'trichYeu']);
+    assert.strictEqual(cf.trichYeu, 'nhà đất');
+    assert.strictEqual(cf.nguoiKy.length, 100);
+  });
+  await test('chứa chuỗi không phân biệt hoa thường và dấu (kể cả đ)', async () => {
+    assert.deepStrictEqual((await list({ trichYeu: 'NHA DAT' })).items.map((d) => d.so_ky_hieu), ['866-CV/TU']);
+    assert.deepStrictEqual((await list({ soKyHieu: 'qd/tu' })).items.map((d) => d.so_ky_hieu), ['1229-QĐ/TU']);
+    assert.strictEqual((await list({ nguoiKy: 'tran thi binh' })).total, 1);
+    assert.strictEqual((await list({ trichYeu: '%' })).total, 0, 'ký tự % phải được hiểu là chữ, không phải ký tự đại diện');
+  });
+  await test('người gửi / trình khớp một trong hai cột', async () => {
+    const r = await list({ nguoiGui: 'dang thi giang' });
+    assert.ok(r.total >= 1 && r.items.every((d) => /Giang/.test(d.nguoi_trinh || '')));
+  });
+  await test('chọn đúng giá trị + khoảng ngày theo từng cột', async () => {
+    assert.deepStrictEqual((await list({ doKhan: 'Khẩn' })).items.map((d) => d.so_ky_hieu), ['866-CV/TU']);
+    assert.deepStrictEqual((await list({ deadlineFrom: '2026-10-30', deadlineTo: '2026-10-30' })).items.map((d) => d.so_ky_hieu), ['1229-QĐ/TU']);
+    const r = await list({ receivedFrom: '2026-10-01' });
+    assert.ok(r.total === 3 && r.items.every((d) => d.direction === 'den'));
+    assert.strictEqual((await list({ trangThai: 'Đã phát hành', docDateFrom: '2026-01-01' })).items.every((d) => d.direction === 'di'), true);
+  });
+  await test('tìm tự do + lọc cột cùng lúc', async () => {
+    const f = routes._readFilters({ q: 'văn bản tháng 10', doKhan: 'Khẩn' });
+    const r = await routes._queryDocuments(f);
+    assert.strictEqual(r.mode, 'search');
+    assert.ok(r.items.length >= 1 && r.items.every((d) => d.do_khan === 'Khẩn'));
+  });
+  await test('danh sách giá trị cho ô chọn', async () => {
+    const o = await store.getFilterOptions();
+    assert.ok(o.books.some((b) => b.name === 'Sổ Văn bản đến Văn phòng 2026'));
+    assert.ok(o.statuses.some((s) => s.name === 'Đã phát hành'));
+  });
+  await test('xuất Excel đúng tập đang lọc, không có ý kiến chuyển/chỉ đạo', async () => {
+    const f = routes._readFilters({ direction: 'den' });
+    const r = await routes._queryDocuments(f, { all: true });
+    const wb = XLSX.read(routes._buildExportWorkbook(r.items, f), { type: 'buffer' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+    assert.ok(/SỔ VĂN BẢN ĐẾN - VĂN PHÒNG ĐẢNG ỦY XÃ THẠNH PHÚ/.test(rows[0][0]));
+    assert.strictEqual(rows[4][15], 'Mã văn bản');
+    assert.strictEqual(rows.length - 5, 4);
+    const text = JSON.stringify(rows);
+    assert.ok(!/Ý kiến|VP n\/c tham mưu/.test(text), 'file xuất không được chứa ý kiến chuyển/chỉ đạo');
+  });
+
   console.log('[Office] Lớp AI (kiểm tra đầu ra, không gọi mạng)');
   await test('chặn giá trị ngoài danh sách trắng', () => {
     const v = validateAiOutput({ pham_vi: true, huong: 'xoa', the_loai: 'DROP TABLE', so_ky_hieu: "1'; --", tu_ngay: '2026-13-40', so: -5, tu_khoa: 'tham nhũng' });
