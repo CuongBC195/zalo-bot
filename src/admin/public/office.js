@@ -147,6 +147,45 @@
     return `<tr><td colspan="${span}" class="table-empty"><p>${esc(text)}</p></td></tr>`;
   }
 
+  // ---- Khung xương (skeleton) khi đang tải ----
+  const SKEL_W = [72, 48, 88, 60, 80, 54, 92, 66];
+  /** w: số = phần trăm, chuỗi = kích thước CSS */
+  const skel = (w, cls = '') => `<span class="skel ${cls}" style="width: ${typeof w === 'number' ? `${w}%` : w}"></span>`;
+
+  /** Hàng khung xương theo đúng cột của bảng (giữ class col-* để cột đang ẩn vẫn ẩn) */
+  function skeletonRows(table, count = 8) {
+    const heads = [...table.querySelectorAll('thead tr:first-child > th')];
+    let html = '';
+    for (let r = 0; r < count; r++) {
+      html += `<tr class="skel-row" aria-hidden="true" style="--skel-i: ${r}">${heads.map((th, c) => {
+        const cls = [...th.classList].filter((k) => k.startsWith('col-') || k === 'sticky-action-col').join(' ');
+        if (th.classList.contains('sticky-action-col')) return `<td class="${cls}"><span class="skel skel-pill"></span></td>`;
+        const w = SKEL_W[(r * 3 + c) % SKEL_W.length];
+        // Cột co giãn (không đặt độ rộng) thường là nội dung dài: vẽ 2 dòng
+        const wide = !th.style.width;
+        return `<td class="${cls}">${skel(w)}${wide ? skel(Math.max(34, w - 28), 'skel-sm') : ''}</td>`;
+      }).join('')}</tr>`;
+    }
+    return html;
+  }
+
+  /** Bảng đang có dữ liệu thật (không phải khung xương / dòng thông báo) */
+  function hasDataRows(tbody) {
+    return !!tbody.querySelector('tr:not(.skel-row) > td:not(.table-empty)');
+  }
+
+  /** Lần đầu: khung xương; đã có dữ liệu: giữ nguyên dòng, phủ hiệu ứng quét */
+  function beginTableLoad(table, tbody, count) {
+    tbody.setAttribute('aria-busy', 'true');
+    if (hasDataRows(tbody)) tbody.classList.add('is-loading');
+    else tbody.innerHTML = skeletonRows(table, count);
+  }
+
+  function endTableLoad(tbody) {
+    tbody.classList.remove('is-loading');
+    tbody.removeAttribute('aria-busy');
+  }
+
   function setBusy(btn, busy, busyText) {
     if (!btn) return;
     if (busy) {
@@ -331,7 +370,6 @@
     const { host, id, columns, rowId, unit = 'mục', pageSize = 20 } = opts;
     const st = { rows: [], filters: {}, sort: opts.defaultSort || null, page: 1 };
     const actionW = opts.actions ? opts.actions.width || 112 : 72;
-    const colCount = columns.length + 1;
 
     const filterCell = (c) => {
       if (!c.filter) return `<th class="col-${c.key}"></th>`;
@@ -358,7 +396,7 @@
               </th>
             </tr>
           </thead>
-          <tbody><tr><td colspan="${colCount}" class="table-empty"><p>Đang tải...</p></td></tr></tbody>
+          <tbody></tbody>
         </table>
       </div>
       <div class="pagination-bar">
@@ -382,6 +420,7 @@
         if (!visible && st.filters[key]) { delete st.filters[key]; syncInputs(); st.page = 1; render(); }
       },
     });
+    tbody.innerHTML = skeletonRows(table, 6);
 
     function optionsFor(c) {
       const list = typeof c.filter.options === 'function' ? c.filter.options(st.rows) : c.filter.options;
@@ -437,6 +476,7 @@
     }
 
     function render() {
+      endTableLoad(tbody);
       const list = sorted(st.rows.filter(matches));
       const pages = Math.max(1, Math.ceil(list.length / pageSize));
       if (st.page > pages) st.page = pages;
@@ -491,8 +531,9 @@
 
     return {
       chooser,
+      setLoading() { beginTableLoad(table, tbody, 6); },
       setRows(rows) { st.rows = Array.isArray(rows) ? rows : []; render(); },
-      setError(message) { tbody.innerHTML = `<tr><td colspan="${visibleCols(table)}" class="table-empty"><p>${esc(message)}</p></td></tr>`; },
+      setError(message) { endTableLoad(tbody); tbody.innerHTML = `<tr><td colspan="${visibleCols(table)}" class="table-empty"><p>${esc(message)}</p></td></tr>`; },
       rowById(rid) { return st.rows.find((r) => String(rowId(r)) === String(rid)) || null; },
       rows: () => st.rows,
       refresh: render,
@@ -632,7 +673,7 @@
   async function loadTable() {
     const seq = ++state.reqSeq;
     const body = $('officeTableBody');
-    body.classList.add('is-loading');
+    beginTableLoad($('officeTable'), body, Math.min(state.pageSize, 10));
     if (state.filters.q) {
       showSearchInfo('<span class="search-info-pending">Đang phân tích câu hỏi...</span>');
     }
@@ -649,7 +690,7 @@
       body.innerHTML = emptyRow($('officeTable'), 'Không tải được sổ công văn: ' + e.message);
       hideSearchInfo();
     } finally {
-      if (seq === state.reqSeq) body.classList.remove('is-loading');
+      if (seq === state.reqSeq) endTableLoad(body);
     }
   }
 
@@ -1033,14 +1074,49 @@
 
   async function loadDashboard() {
     const seq = ++state.dashSeq;
+    if (!state.dash) dashSkeleton();
     try {
       const res = await apiRequest('/api/office-docs/dashboard');
       if (seq !== state.dashSeq) return;
       state.dash = res;
       renderDashboard(res);
     } catch (e) {
-      if (seq === state.dashSeq) showToast('Không tải được trang Tổng quan: ' + e.message, 'error');
+      if (seq !== state.dashSeq) return;
+      if (!state.dash) dashSkeletonFail();
+      showToast('Không tải được trang Tổng quan: ' + e.message, 'error');
     }
+  }
+
+  /** Khung xương cho trang Tổng quan (chỉ lần tải đầu, lần sau giữ số liệu cũ đến khi có số mới) */
+  function dashSkeleton() {
+    $('view-office-dashboard').setAttribute('aria-busy', 'true');
+    $('dashToday').innerHTML = skel('150px', 'skel-sm skel-inline');
+    ['officeTotalDen', 'officeTotalDi', 'dashMonthTotal', 'dashDueSoon', 'dashLookups'].forEach((id) => { $(id).innerHTML = '<span class="skel skel-num"></span>'; });
+    ['dashMonthDen', 'dashMonthDi', 'dashMonthDelta', 'dashUrgent'].forEach((id) => { const el = $(id); el.className = 'dash-trend'; el.innerHTML = skel('132px', 'skel-sm'); });
+    ['officeMetaDen', 'officeMetaDi', 'dashYearTotal'].forEach((id) => { $(id).innerHTML = skel(78, 'skel-sm'); });
+    ['dashGranted', 'dashPending'].forEach((id) => { $(id).innerHTML = '<span class="skel skel-num skel-num-sm"></span>'; });
+
+    const heights = [38, 52, 44, 66, 48, 72, 58, 40, 62, 54, 76, 60];
+    $('dashMonthChart').innerHTML = `<div class="skel-chart" aria-hidden="true">${heights.map((h, i) => `
+      <div class="skel-chart-col"><span class="skel skel-bar" style="height: ${h}%"></span><span class="skel skel-bar" style="height: ${Math.max(16, h - 24 + (i % 3) * 9)}%"></span></div>`).join('')}</div>`;
+    $('dashTypes').innerHTML = `<span class="skel skel-donut" aria-hidden="true"></span>
+      <div class="skel-legend" aria-hidden="true">${[70, 55, 62, 46].map((w) => `<div class="skel-legend-row"><span class="skel skel-dot"></span>${skel(w)}</div>`).join('')}</div>`;
+    const items = (n) => Array.from({ length: n }, (_, i) => `
+      <li class="skel-li" aria-hidden="true" style="--skel-i: ${i}"><span class="skel skel-tile"></span>
+        <div class="skel-li-text">${skel([82, 64, 74, 58][i % 4])}${skel([46, 38, 52, 30][i % 4], 'skel-sm')}</div></li>`).join('');
+    $('dashRecent').innerHTML = items(4);
+    $('dashDeadlines').innerHTML = items(4);
+    $('dashSpark').innerHTML = '<span class="skel skel-spark" aria-hidden="true"></span>';
+  }
+
+  function dashSkeletonFail() {
+    const sec = $('view-office-dashboard');
+    sec.removeAttribute('aria-busy');
+    $('dashMonthChart').innerHTML = '<div class="dash-empty">Không tải được dữ liệu.</div>';
+    $('dashTypes').innerHTML = '<div class="dash-empty">Không tải được dữ liệu.</div>';
+    ['dashRecent', 'dashDeadlines'].forEach((id) => { $(id).innerHTML = '<li class="dash-empty">Không tải được dữ liệu.</li>'; });
+    $('dashSpark').innerHTML = '';
+    sec.querySelectorAll('.skel').forEach((s) => { if (s.parentElement) s.parentElement.textContent = '--'; });
   }
 
   function setTrend(el, tone, html) {
@@ -1088,6 +1164,7 @@
     const z = res.zalo || {};
     $('dashGranted').textContent = fmtNumber(z.granted);
     $('dashPending').textContent = fmtNumber(z.pendingCodes);
+    $('view-office-dashboard').removeAttribute('aria-busy');
   }
 
   /** Mốc trục tung "đẹp" chia hết 4 vạch */
@@ -1314,10 +1391,15 @@
     if (!Number.isFinite(id)) return;
     const modal = $('officeDocModal');
     state.lastFocus = document.activeElement;
-    $('officeDocCode').textContent = '...';
-    $('officeDocTitle').textContent = 'Đang tải văn bản';
-    $('officeDocDirBadge').innerHTML = '';
-    $('officeDocBody').innerHTML = '<div class="od-loading"><span class="spinner-dot"></span><span class="spinner-dot"></span><span class="spinner-dot"></span></div>';
+    $('officeDocCode').innerHTML = skel('96px', 'skel-sm skel-inline');
+    $('officeDocTitle').innerHTML = `<span class="sr-only">Đang tải văn bản</span>${skel('220px', 'skel-title')}`;
+    $('officeDocDirBadge').innerHTML = skel('58px', 'skel-badge skel-inline');
+    $('officeDocBody').setAttribute('aria-busy', 'true');
+    $('officeDocBody').innerHTML = `
+      <div class="od-skel" aria-hidden="true">
+        <div class="od-summary">${skel(94)}${skel(68)}</div>
+        <div class="od-grid">${[64, 48, 56, 72, 44, 60, 52, 40].map((w) => `<div class="od-field">${skel(36, 'skel-sm')}${skel(w)}</div>`).join('')}</div>
+      </div>`;
     modal.classList.add('active');
     $('btnCloseOfficeDocModal').focus();
     try {
@@ -1330,7 +1412,12 @@
       $('officeDocDirBadge').innerHTML = dirBadge(d.direction);
       $('officeDocBody').innerHTML = renderDocBody(d);
     } catch (e) {
+      $('officeDocCode').textContent = '--';
+      $('officeDocTitle').textContent = 'Chi tiết văn bản';
+      $('officeDocDirBadge').innerHTML = '';
       $('officeDocBody').innerHTML = `<p class="cell-muted">Không tải được văn bản: ${esc(e.message)}</p>`;
+    } finally {
+      $('officeDocBody').removeAttribute('aria-busy');
     }
   }
 
@@ -1549,6 +1636,7 @@
 
   async function loadImports() {
     const table = state.tables.imports;
+    table.setLoading();
     try {
       const res = await apiRequest('/api/office-docs/imports');
       table.setRows(res.imports || []);
@@ -1663,6 +1751,7 @@
   }
 
   async function loadCodes() {
+    state.tables.codes.setLoading();
     try {
       const res = await apiRequest('/api/zalo-activation-codes');
       state.tables.codes.setRows(res.codes || []);
@@ -1765,6 +1854,7 @@
   }
 
   async function loadZaloUsers() {
+    state.tables.zalo.setLoading();
     try {
       const res = await apiRequest('/api/zalo-users');
       const users = res.users || [];
@@ -1958,7 +2048,7 @@
     const m = state.manage;
     const seq = ++m.seq;
     const body = $('manageTableBody');
-    body.classList.add('is-loading');
+    beginTableLoad($('manageTable'), body, Math.min(m.pageSize, 10));
     const p = new URLSearchParams({ page: m.page, pageSize: m.pageSize });
     Object.entries(m.filters).forEach(([k, v]) => {
       if (!v) return;
@@ -1977,7 +2067,7 @@
       if (seq !== m.seq) return;
       body.innerHTML = emptyRow($('manageTable'), 'Không tải được danh sách: ' + e.message);
     } finally {
-      if (seq === m.seq) body.classList.remove('is-loading');
+      if (seq === m.seq) endTableLoad(body);
     }
   }
 
