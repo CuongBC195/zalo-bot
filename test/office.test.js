@@ -327,6 +327,59 @@ async function main() {
     assert.strictEqual(await store.deleteDocument(doc.id), null);
   });
 
+  console.log('[Office] Tổng quan + lọc nguồn + sửa/xóa mã và tài khoản Zalo (admin)');
+  await loadFixtures();
+  await test('tổng quan: tổng sổ, 12 tháng, thể loại, văn bản mới, 14 ngày tra cứu', async () => {
+    const d = await store.getDashboard({ now: NOW });
+    assert.strictEqual(d.today, '2026-10-20');
+    assert.strictEqual(d.totals.den, 4);
+    assert.strictEqual(d.totals.di, 4);
+    assert.strictEqual(d.months.length, 12);
+    assert.strictEqual(d.months[11].month, '2026-10');
+    assert.strictEqual(d.months[0].month, '2025-11');
+    assert.strictEqual(d.months[11].den + d.months[11].di, d.totals.month);
+    assert.strictEqual(d.types.reduce((s, t) => s + t.count, 0), 8);
+    assert.strictEqual(d.recent.length, 6);
+    const days = d.recent.map((r) => r.ngay);
+    assert.deepStrictEqual(days, [...days].sort().reverse(), 'văn bản mới xếp ngày giảm dần');
+    assert.ok(d.recent.every((r) => !('y_kien_chuyen' in r) && !('y_kien_chi_dao' in r)));
+    assert.strictEqual(d.lookups.length, 14);
+    assert.strictEqual(d.lookups[13].day, '2026-10-20');
+    assert.ok(d.deadlines.every((r) => r.han_xu_ly >= '2026-10-20'));
+  });
+  await test('lọc nguồn: sửa tay / từ file Excel; giá trị lạ bị bỏ', async () => {
+    assert.strictEqual(readColumnFilters({ nguon: 'hack' }).nguon, undefined);
+    const rec = validateDocInput({ direction: 'di', so_ky_hieu: '88-TB/ĐU', trich_yeu: 'Thông báo thêm tay', ngay_van_ban: '2026-10-19' }).record;
+    await store.createDocument(rec, admin);
+    assert.deepStrictEqual((await findBy({ nguon: 'tay' })).map((d) => d.so_ky_hieu), ['88-TB/ĐU']);
+    assert.strictEqual((await findBy({ nguon: 'excel' })).length, 8);
+    assert.strictEqual((await store.getDashboard({ now: NOW })).totals.manual, 1);
+  });
+  await test('mã kích hoạt: sửa tên cán bộ, xóa; xóa lần hai trả về không tìm thấy', async () => {
+    const created = await store.createActivationCode({ staffLabel: 'Tên cũ' });
+    assert.strictEqual(await store.updateActivationCodeLabel(created.id, 'Nguyễn Văn Mới - Chuyên viên'), true);
+    const row = (await store.listActivationCodes()).find((c) => c.id === created.id);
+    assert.strictEqual(row.staff_label, 'Nguyễn Văn Mới - Chuyên viên');
+    assert.strictEqual(await store.updateActivationCodeLabel(999999, 'x'), false);
+    assert.strictEqual((await store.deleteActivationCode(created.id)).staff_label, 'Nguyễn Văn Mới - Chuyên viên');
+    assert.ok(!(await store.listActivationCodes()).some((c) => c.id === created.id));
+    assert.strictEqual(await store.deleteActivationCode(created.id), null);
+    assert.strictEqual((await store.redeemActivationCode(created.code, 'Z-del', 'X')).ok, false, 'mã đã xóa không dùng được');
+  });
+  await test('tài khoản Zalo: sửa tên cán bộ + thu quyền, xóa tài khoản', async () => {
+    await store.setOfficePermission('Z-9', true, { staffLabel: 'Cán bộ A', displayName: 'Zalo A' });
+    assert.strictEqual(await store.canLookupOffice('Z-9'), true);
+    const u = await store.updateZaloUser('Z-9', { staffLabel: 'Cán bộ B - Phó Văn phòng', canLookup: false });
+    assert.strictEqual(u.staff_label, 'Cán bộ B - Phó Văn phòng');
+    assert.strictEqual(u.can_lookup_office, false);
+    assert.strictEqual(await store.canLookupOffice('Z-9'), false);
+    assert.strictEqual((await store.updateZaloUser('Z-9', { canLookup: true })).staff_label, 'Cán bộ B - Phó Văn phòng', 'trường không gửi giữ nguyên');
+    assert.strictEqual(await store.updateZaloUser('Z-404', { staffLabel: 'x' }), null);
+    assert.strictEqual((await store.deleteZaloUser('Z-9')).zalo_id, 'Z-9');
+    assert.strictEqual(await store.canLookupOffice('Z-9'), false);
+    assert.strictEqual(await store.deleteZaloUser('Z-9'), null);
+  });
+
   console.log('[Office] Lớp AI (kiểm tra đầu ra, không gọi mạng)');
   await test('chặn giá trị ngoài danh sách trắng', () => {
     const v = validateAiOutput({ pham_vi: true, huong: 'xoa', the_loai: 'DROP TABLE', so_ky_hieu: "1'; --", tu_ngay: '2026-13-40', so: -5, tu_khoa: 'tham nhũng' });

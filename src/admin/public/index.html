@@ -369,47 +369,149 @@
              ============================================================ -->
         <section id="view-office-dashboard" class="view-section">
 
-          <div class="office-hero dashboard-hero">
-            <div class="office-stat office-stat-den" id="officeStatDen" role="button" tabindex="0" data-direction="den" aria-label="Xem sổ văn bản đến trong Tra cứu">
-              <div class="office-stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                  <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
-                  <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
-                </svg>
-              </div>
-              <div class="office-stat-body">
+          <div class="dash-head">
+            <div class="dash-greet">
+              <span class="dash-date" id="dashToday">--</span>
+              <h2 class="dash-title" id="dashGreeting">Chào đồng chí</h2>
+              <p class="dash-sub">Tình hình sổ công văn đến / đi của <b id="dashUnit">Văn phòng Đảng ủy xã Thạnh Phú</b>.</p>
+            </div>
+            <div class="dash-actions">
+              <button type="button" class="btn btn-secondary" id="dashGoImport">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <span>Nhập sổ Excel</span>
+              </button>
+              <button type="button" class="btn btn-secondary" id="dashGoZalo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                <span>Cấp mã Zalo</span>
+              </button>
+              <button type="button" class="btn btn-primary" id="dashAddDoc">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Thêm văn bản</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="dash-kpis">
+            <div class="office-stat office-stat-den dash-kpi" id="officeStatDen" role="button" tabindex="0" data-direction="den" aria-label="Xem sổ văn bản đến trong Tra cứu">
+              <div class="dash-kpi-top">
                 <span class="office-stat-label">Sổ văn bản đến</span>
-                <span class="office-stat-value" id="officeTotalDen">--</span>
-                <span class="office-stat-meta" id="officeMetaDen">Chưa có dữ liệu</span>
-                <span class="office-stat-cta">Xem sổ đến<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+                <div class="office-stat-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                  </svg>
+                </div>
               </div>
+              <span class="office-stat-value" id="officeTotalDen">--</span>
+              <span class="dash-trend" id="dashMonthDen"></span>
+              <span class="office-stat-meta" id="officeMetaDen">Chưa có dữ liệu</span>
             </div>
 
-            <div class="office-stat office-stat-di" id="officeStatDi" role="button" tabindex="0" data-direction="di" aria-label="Xem sổ văn bản đi trong Tra cứu">
-              <div class="office-stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                  <line x1="22" y1="2" x2="11" y2="13"></line>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                </svg>
-              </div>
-              <div class="office-stat-body">
+            <div class="office-stat office-stat-di dash-kpi" id="officeStatDi" role="button" tabindex="0" data-direction="di" aria-label="Xem sổ văn bản đi trong Tra cứu">
+              <div class="dash-kpi-top">
                 <span class="office-stat-label">Sổ văn bản đi</span>
-                <span class="office-stat-value" id="officeTotalDi">--</span>
-                <span class="office-stat-meta" id="officeMetaDi">Chưa có dữ liệu</span>
-                <span class="office-stat-cta">Xem sổ đi<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+                <div class="office-stat-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </div>
               </div>
+              <span class="office-stat-value" id="officeTotalDi">--</span>
+              <span class="dash-trend" id="dashMonthDi"></span>
+              <span class="office-stat-meta" id="officeMetaDi">Chưa có dữ liệu</span>
             </div>
 
-            <div class="office-notice">
-              <div class="office-notice-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                </svg>
+            <div class="office-stat office-stat-month dash-kpi" id="dashKpiMonth">
+              <div class="dash-kpi-top">
+                <span class="office-stat-label" id="dashMonthLabel">Vào sổ tháng này</span>
+                <div class="office-stat-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </div>
               </div>
-              <div>
-                <span class="office-notice-title">Cần bản gốc văn bản?</span>
-                <span class="office-notice-text">Liên hệ <b id="officeUnitName">Văn thư Văn phòng Đảng ủy xã Thạnh Phú</b>, cung cấp <b>Mã văn bản</b> để được trích xuất file.</span>
+              <span class="office-stat-value" id="dashMonthTotal">--</span>
+              <span class="dash-trend" id="dashMonthDelta"></span>
+              <span class="office-stat-meta" id="dashYearTotal">--</span>
+            </div>
+
+            <div class="office-stat office-stat-due dash-kpi" id="dashKpiDue" role="button" tabindex="0" aria-label="Xem văn bản đến có hạn xử lý trong 7 ngày tới">
+              <div class="dash-kpi-top">
+                <span class="office-stat-label">Hạn xử lý 7 ngày tới</span>
+                <div class="office-stat-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                </div>
               </div>
+              <span class="office-stat-value" id="dashDueSoon">--</span>
+              <span class="dash-trend" id="dashUrgent"></span>
+              <span class="office-stat-meta">Văn bản đến, tính từ hôm nay</span>
+            </div>
+          </div>
+
+          <div class="dash-row dash-row-chart">
+            <article class="dash-card">
+              <header class="dash-card-head">
+                <div>
+                  <h3 class="dash-card-title">Văn bản vào sổ 12 tháng gần nhất</h3>
+                  <span class="dash-card-sub">Sổ đến tính theo ngày đến, sổ đi theo ngày văn bản</span>
+                </div>
+                <div class="dash-legend">
+                  <span class="legend-item"><i class="legend-dot dot-den"></i>Đến</span>
+                  <span class="legend-item"><i class="legend-dot dot-di"></i>Đi</span>
+                </div>
+              </header>
+              <div class="dash-chart" id="dashMonthChart"></div>
+            </article>
+            <article class="dash-card">
+              <header class="dash-card-head">
+                <div>
+                  <h3 class="dash-card-title">Cơ cấu theo thể loại</h3>
+                  <span class="dash-card-sub">Toàn bộ văn bản trong sổ</span>
+                </div>
+              </header>
+              <div class="dash-types" id="dashTypes"></div>
+            </article>
+          </div>
+
+          <div class="dash-row dash-row-3">
+            <article class="dash-card">
+              <header class="dash-card-head">
+                <h3 class="dash-card-title">Mới vào sổ</h3>
+                <button type="button" class="dash-link" id="dashSeeAll">Xem tất cả</button>
+              </header>
+              <ul class="dash-list" id="dashRecent"></ul>
+            </article>
+            <article class="dash-card">
+              <header class="dash-card-head">
+                <h3 class="dash-card-title">Sắp đến hạn xử lý</h3>
+              </header>
+              <ul class="dash-list" id="dashDeadlines"></ul>
+            </article>
+            <article class="dash-card dash-zalo-card">
+              <header class="dash-card-head">
+                <h3 class="dash-card-title">Tra cứu qua Zalo</h3>
+                <button type="button" class="dash-link" id="dashGoZaloUsers">Cấp quyền</button>
+              </header>
+              <div class="dash-zalo-main">
+                <span class="dash-big" id="dashLookups">--</span>
+                <span class="dash-big-sub">lượt tra cứu trong 14 ngày</span>
+              </div>
+              <div class="dash-spark" id="dashSpark"></div>
+              <div class="dash-zalo-stats">
+                <div><span class="dash-zalo-num" id="dashGranted">--</span><span class="dash-zalo-label">tài khoản được tra cứu</span></div>
+                <div><span class="dash-zalo-num" id="dashPending">--</span><span class="dash-zalo-label">mã chờ kích hoạt</span></div>
+              </div>
+            </article>
+          </div>
+
+          <div class="office-notice dash-notice">
+            <div class="office-notice-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+            </div>
+            <div>
+              <span class="office-notice-title">Cần bản gốc văn bản?</span>
+              <span class="office-notice-text">Liên hệ <b id="officeUnitName">Văn thư Văn phòng Đảng ủy xã Thạnh Phú</b>, cung cấp <b>Mã văn bản</b> để được trích xuất file.</span>
             </div>
           </div>
         </section>
@@ -572,34 +674,46 @@
                 <thead>
                   <tr>
                     <th class="col-stt" style="width: 56px; text-align: center;">STT</th>
-                    <th class="sortable" data-sort="so_ky_hieu" style="width: 150px;">Số / Ký hiệu</th>
-                    <th class="sortable" data-sort="ngay" style="width: 132px;">Ngày</th>
-                    <th style="width: 96px;">Sổ</th>
-                    <th class="sortable" data-sort="the_loai" style="width: 136px;">Thể loại</th>
-                    <th class="sortable" data-sort="trich_yeu">Trích yếu</th>
-                    <th class="sortable" data-sort="nguoi_ky" style="width: 160px;">Người ký</th>
-                    <th class="sortable" data-sort="source_id" style="width: 116px;">Mã VB</th>
+                    <th class="col-so sortable" data-sort="so_ky_hieu" style="width: 150px;">Số / Ký hiệu</th>
+                    <th class="col-ngay sortable" data-sort="ngay" style="width: 132px;">Ngày</th>
+                    <th class="col-nhan" style="width: 132px;">Ngày đến</th>
+                    <th class="col-dir" style="width: 88px;">Sổ</th>
+                    <th class="col-loai sortable" data-sort="the_loai" style="width: 136px;">Thể loại</th>
+                    <th class="col-trichyeu sortable" data-sort="trich_yeu">Trích yếu</th>
+                    <th class="col-nguoiky sortable" data-sort="nguoi_ky" style="width: 160px;">Người ký</th>
+                    <th class="col-nguoigui" style="width: 170px;">Người gửi / trình</th>
+                    <th class="col-dokhan" style="width: 112px;">Độ khẩn</th>
+                    <th class="col-han" style="width: 132px;">Hạn xử lý</th>
+                    <th class="col-sovb" style="width: 190px;">Sổ văn bản</th>
+                    <th class="col-trangthai" style="width: 140px;">Trạng thái</th>
+                    <th class="col-ma sortable" data-sort="source_id" style="width: 116px;">Mã VB</th>
                     <th class="sticky-action-col" style="text-align: center;">
-                      <button type="button" class="th-filter-toggle" id="btnOfficeFilterToggle" aria-pressed="true" aria-controls="officeFilterRow" title="Ẩn / hiện hàng lọc theo cột">
+                      <button type="button" class="th-filter-toggle" id="btnOfficeColumns" aria-haspopup="true" aria-expanded="false" title="Chọn cột hiển thị" aria-label="Chọn cột hiển thị">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                       </button>
                     </th>
                   </tr>
                   <tr class="col-filter-row" id="officeFilterRow">
-                    <th></th>
-                    <th><input type="text" class="col-filter" data-filter="soKyHieu" maxlength="100" placeholder="Lọc số..." aria-label="Lọc theo số, ký hiệu"></th>
-                    <th><input type="date" class="col-filter" data-filter="docDate" aria-label="Lọc theo ngày văn bản"></th>
-                    <th>
+                    <th class="col-stt"></th>
+                    <th class="col-so"><input type="text" class="col-filter" data-filter="soKyHieu" maxlength="100" placeholder="Lọc số..." aria-label="Lọc theo số, ký hiệu"></th>
+                    <th class="col-ngay"><input type="date" class="col-filter" data-filter="docDate" aria-label="Lọc theo ngày văn bản"></th>
+                    <th class="col-nhan"><input type="date" class="col-filter" data-filter="receivedDate" aria-label="Lọc theo ngày đến"></th>
+                    <th class="col-dir">
                       <select class="col-filter" data-filter="direction" aria-label="Lọc theo sổ">
                         <option value="">Tất cả</option>
                         <option value="den">Đến</option>
                         <option value="di">Đi</option>
                       </select>
                     </th>
-                    <th><select class="col-filter" data-filter="theLoai" data-options="types" aria-label="Lọc theo thể loại"><option value="">Tất cả</option></select></th>
-                    <th><input type="text" class="col-filter" data-filter="trichYeu" maxlength="100" placeholder="Lọc trích yếu..." aria-label="Lọc theo trích yếu"></th>
-                    <th><input type="text" class="col-filter" data-filter="nguoiKy" maxlength="100" placeholder="Lọc người ký..." aria-label="Lọc theo người ký"></th>
-                    <th><input type="text" class="col-filter" data-filter="sourceId" maxlength="50" placeholder="Mã..." aria-label="Lọc theo mã văn bản"></th>
+                    <th class="col-loai"><select class="col-filter" data-filter="theLoai" data-options="types" aria-label="Lọc theo thể loại"><option value="">Tất cả</option></select></th>
+                    <th class="col-trichyeu"><input type="text" class="col-filter" data-filter="trichYeu" maxlength="100" placeholder="Lọc trích yếu..." aria-label="Lọc theo trích yếu"></th>
+                    <th class="col-nguoiky"><input type="text" class="col-filter" data-filter="nguoiKy" maxlength="100" placeholder="Lọc người ký..." aria-label="Lọc theo người ký"></th>
+                    <th class="col-nguoigui"><input type="text" class="col-filter" data-filter="nguoiGui" maxlength="100" placeholder="Lọc người gửi..." aria-label="Lọc theo người gửi hoặc người trình"></th>
+                    <th class="col-dokhan"><select class="col-filter" data-filter="doKhan" data-options="urgencies" aria-label="Lọc theo độ khẩn"><option value="">Tất cả</option></select></th>
+                    <th class="col-han"><input type="date" class="col-filter" data-filter="deadlineDate" aria-label="Lọc theo hạn xử lý"></th>
+                    <th class="col-sovb"><select class="col-filter" data-filter="soVanBan" data-options="books" aria-label="Lọc theo sổ văn bản"><option value="">Tất cả</option></select></th>
+                    <th class="col-trangthai"><select class="col-filter" data-filter="trangThai" data-options="statuses" aria-label="Lọc theo trạng thái"><option value="">Tất cả</option></select></th>
+                    <th class="col-ma"><input type="text" class="col-filter" data-filter="sourceId" maxlength="50" placeholder="Mã..." aria-label="Lọc theo mã văn bản"></th>
                     <th class="sticky-action-col">
                       <button type="button" class="col-filter-clear" id="btnOfficeClearColumns" aria-label="Xóa lọc theo cột" title="Xóa lọc theo cột">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -688,18 +802,52 @@
               <table class="data-table office-table manage-table" id="manageTable">
                 <thead>
                   <tr>
-                    <th style="width: 56px; text-align: center;">STT</th>
-                    <th style="width: 150px;">Số / Ký hiệu</th>
-                    <th style="width: 120px;">Ngày</th>
-                    <th style="width: 84px;">Sổ</th>
-                    <th>Trích yếu</th>
-                    <th style="width: 116px;">Mã VB</th>
-                    <th style="width: 170px;">Nguồn dữ liệu</th>
-                    <th class="sticky-action-col" style="width: 120px; text-align: center;">Thao tác</th>
+                    <th class="col-stt" style="width: 56px; text-align: center;">STT</th>
+                    <th class="col-so sortable" data-sort="so_ky_hieu" style="width: 150px;">Số / Ký hiệu</th>
+                    <th class="col-ngay sortable" data-sort="ngay" style="width: 132px;">Ngày</th>
+                    <th class="col-dir" style="width: 88px;">Sổ</th>
+                    <th class="col-loai sortable" data-sort="the_loai" style="width: 132px;">Thể loại</th>
+                    <th class="col-trichyeu sortable" data-sort="trich_yeu">Trích yếu</th>
+                    <th class="col-nguoiky sortable" data-sort="nguoi_ky" style="width: 150px;">Người ký</th>
+                    <th class="col-ma sortable" data-sort="source_id" style="width: 120px;">Mã VB</th>
+                    <th class="col-nguon" style="width: 160px;">Nguồn dữ liệu</th>
+                    <th class="sticky-action-col" style="text-align: center;">
+                      <button type="button" class="th-filter-toggle" id="btnManageColumns" aria-haspopup="true" aria-expanded="false" title="Chọn cột hiển thị" aria-label="Chọn cột hiển thị">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                      </button>
+                    </th>
+                  </tr>
+                  <tr class="col-filter-row" id="manageFilterRow">
+                    <th class="col-stt"></th>
+                    <th class="col-so"><input type="text" class="col-filter" data-filter="soKyHieu" maxlength="100" placeholder="Lọc số..." aria-label="Lọc theo số, ký hiệu"></th>
+                    <th class="col-ngay"><input type="date" class="col-filter" data-filter="docDate" aria-label="Lọc theo ngày văn bản"></th>
+                    <th class="col-dir">
+                      <select class="col-filter" data-filter="direction" aria-label="Lọc theo sổ">
+                        <option value="">Tất cả</option>
+                        <option value="den">Đến</option>
+                        <option value="di">Đi</option>
+                      </select>
+                    </th>
+                    <th class="col-loai"><select class="col-filter" data-filter="theLoai" data-options="types" aria-label="Lọc theo thể loại"><option value="">Tất cả</option></select></th>
+                    <th class="col-trichyeu"><input type="text" class="col-filter" data-filter="trichYeu" maxlength="100" placeholder="Lọc trích yếu..." aria-label="Lọc theo trích yếu"></th>
+                    <th class="col-nguoiky"><input type="text" class="col-filter" data-filter="nguoiKy" maxlength="100" placeholder="Lọc người ký..." aria-label="Lọc theo người ký"></th>
+                    <th class="col-ma"><input type="text" class="col-filter" data-filter="sourceId" maxlength="50" placeholder="Mã..." aria-label="Lọc theo mã văn bản"></th>
+                    <th class="col-nguon">
+                      <select class="col-filter" data-filter="nguon" aria-label="Lọc theo nguồn dữ liệu">
+                        <option value="">Tất cả</option>
+                        <option value="tay">Sửa tay</option>
+                        <option value="excel">Từ file Excel</option>
+                      </select>
+                    </th>
+                    <th class="sticky-action-col">
+                      <button type="button" class="col-filter-clear" id="btnManageClearColumns" aria-label="Xóa lọc theo cột" title="Xóa lọc theo cột">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                      </button>
+                    </th>
                   </tr>
                 </thead>
                 <tbody id="manageTableBody">
-                  <tr><td colspan="8" class="table-empty"><p>Đang tải...</p></td></tr>
+                  <tr><td colspan="9" class="table-empty"><p>Đang tải...</p></td></tr>
                 </tbody>
               </table>
             </div>
@@ -759,17 +907,10 @@
               <div class="panel-head">
                 <div>
                   <h2 class="panel-title">Lịch sử nhập sổ</h2>
-                  <span class="panel-sub">30 lần nhập gần nhất.</span>
+                  <span class="panel-sub">30 lần nhập gần nhất. Lọc theo từng cột, bấm tiêu đề để sắp xếp, bấm hình phễu để chọn cột hiển thị.</span>
                 </div>
               </div>
-              <div class="table-responsive">
-                <table class="data-table compact-table">
-                  <thead>
-                    <tr><th>Thời gian</th><th>Sổ</th><th>File</th><th>Chốt dữ liệu</th><th>Mới</th><th>Cập nhật</th><th>Không đổi</th><th>Bỏ qua</th><th>Người nhập</th></tr>
-                  </thead>
-                  <tbody id="officeImportsBody"><tr><td colspan="9" class="table-empty"><p>Chưa có lần nhập nào.</p></td></tr></tbody>
-                </table>
-              </div>
+              <div class="ct-host" id="importsTableHost"></div>
             </div>
           </div>
         </section>
@@ -805,14 +946,7 @@
               <div class="code-reveal hidden" id="officeCodeReveal" aria-live="polite"></div>
 
               <div class="panel-subhead">Mã đã tạo</div>
-              <div class="table-responsive">
-                <table class="data-table compact-table">
-                  <thead>
-                    <tr><th>Cán bộ</th><th>Người tạo</th><th>Hết hạn</th><th>Trạng thái</th><th style="text-align: right;">Thao tác</th></tr>
-                  </thead>
-                  <tbody id="officeCodesBody"><tr><td colspan="5" class="table-empty"><p>Chưa có mã nào.</p></td></tr></tbody>
-                </table>
-              </div>
+              <div class="ct-host" id="codesTableHost"></div>
             </div>
           </div>
 
@@ -821,24 +955,10 @@
               <div class="panel-head">
                 <div>
                   <h2 class="panel-title">Tài khoản Zalo</h2>
-                  <span class="panel-sub">Người đã nhắn tin cho bot. Bật/tắt quyền tra cứu sổ công văn trực tiếp tại đây.</span>
-                </div>
-                <div class="search-input-wrap" style="max-width: 280px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
-                  <input type="search" id="officeZaloSearch" class="search-input" placeholder="Tìm tên hoặc Zalo ID" aria-label="Tìm tài khoản Zalo">
+                  <span class="panel-sub">Người đã nhắn tin cho bot. Bật/tắt quyền tra cứu ngay trên bảng; bấm Sửa để đổi tên cán bộ, ghi chú hoặc chặn tài khoản.</span>
                 </div>
               </div>
-              <div class="table-responsive">
-                <table class="data-table compact-table">
-                  <thead>
-                    <tr><th>Tên Zalo</th><th>Cán bộ</th><th>Zalo ID</th><th>Hoạt động gần nhất</th><th style="text-align: center;">Quyền tra cứu</th></tr>
-                  </thead>
-                  <tbody id="officeZaloBody"><tr><td colspan="5" class="table-empty"><p>Đang tải...</p></td></tr></tbody>
-                </table>
-              </div>
+              <div class="ct-host" id="zaloUsersTableHost"></div>
             </div>
           </div>
         </section>
@@ -1919,6 +2039,51 @@ Hướng dẫn này quy định về thể thức...
   <datalist id="dlOfficeTypes"></datalist>
   <datalist id="dlOfficeBooks"></datalist>
   <datalist id="dlOfficeUrgencies"></datalist>
+
+  <!-- Modal: Sửa mã kích hoạt / tài khoản Zalo (#zaloEditModal) - chỉ admin -->
+  <div id="zaloEditModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="zaloEditTitle">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2 class="modal-title" id="zaloEditTitle">Sửa tài khoản Zalo</h2>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseZaloEdit" aria-label="Đóng">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <form class="modal-body edit-form" id="zaloEditForm" novalidate autocomplete="off">
+        <div class="edit-error hidden" id="zaloEditError" role="alert"></div>
+        <dl class="zalo-edit-meta" id="zaloEditMeta"></dl>
+        <label class="edit-field">
+          <span class="form-label">Họ tên, chức vụ cán bộ <span class="req" id="zaloEditLabelReq">*</span></span>
+          <input type="text" name="staffLabel" class="form-control" maxlength="100" placeholder="VD: Nguyễn Văn A - Chuyên viên Văn phòng">
+        </label>
+        <div data-mode="user">
+          <label class="edit-field">
+            <span class="form-label">Ghi chú</span>
+            <textarea name="notes" class="form-control" rows="2" maxlength="500" placeholder="Ghi chú nội bộ, cán bộ không thấy"></textarea>
+          </label>
+          <div class="zalo-edit-toggles">
+            <label class="toggle-row">
+              <span class="toggle-text"><b>Quyền tra cứu sổ công văn</b><span>Cho phép hỏi sổ đến / đi qua bot Zalo</span></span>
+              <span class="switch"><input type="checkbox" name="canLookup"><span class="switch-track"><span class="switch-thumb"></span></span></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-text"><b>Chặn tài khoản</b><span>Bot không trả lời tin nhắn của tài khoản này</span></span>
+              <span class="switch switch-danger"><input type="checkbox" name="isBlocked"><span class="switch-track"><span class="switch-thumb"></span></span></span>
+            </label>
+          </div>
+        </div>
+      </form>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btnCancelZaloEdit">Hủy</button>
+        <button type="submit" form="zaloEditForm" class="btn btn-primary" id="btnSaveZaloEdit">Lưu</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal 2: Chi Tiết Nhật Ký Hội Thoại (#logDetailModal - Rộng 780px) -->
   <div id="logDetailModal" class="modal-overlay">

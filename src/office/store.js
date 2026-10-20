@@ -428,6 +428,159 @@ async function getOverview() {
   return empty;
 }
 
+/** Ngày (YYYY-MM-DD) theo giờ Việt Nam, lệch `days` ngày */
+function vnDay(now, days = 0) {
+  return new Date(now.getTime() + 7 * 3600 * 1000 + days * 86400000).toISOString().slice(0, 10);
+}
+
+/** Đầu tháng lùi `back` tháng so với `isoDay` */
+function monthStart(isoDay, back = 0) {
+  const [y, m] = isoDay.split('-').map(Number);
+  const d = new Date(Date.UTC(y, m - 1 - back, 1));
+  return d.toISOString().slice(0, 10);
+}
+
+const DASHBOARD_MONTHS = 12;
+const DUE_SOON_DAYS = 7;
+
+/**
+ * Số liệu trang Tổng quan (chỉ admin). Không trả Ý kiến chuyển/chỉ đạo.
+ * Ngày hiệu lực: sổ đến lấy ngày nhận (nếu có), sổ đi lấy ngày văn bản (khớp bảng Tra cứu).
+ */
+async function getDashboard({ now = new Date() } = {}) {
+  const today = vnDay(now);
+  const curMonth = monthStart(today);
+  const prevMonth = monthStart(today, 1);
+  const yearStart = `${today.slice(0, 4)}-01-01`;
+  const chartFrom = monthStart(today, DASHBOARD_MONTHS - 1);
+  const dueTo = vnDay(now, DUE_SOON_DAYS);
+  const lookupFrom = vnDay(now, -13);
+
+  const months = [];
+  for (let i = DASHBOARD_MONTHS - 1; i >= 0; i--) months.push({ month: monthStart(today, i).slice(0, 7), den: 0, di: 0 });
+  const lookups = [];
+  for (let i = 13; i >= 0; i--) lookups.push({ day: vnDay(now, -i), count: 0 });
+  const out = {
+    today,
+    totals: { den: 0, di: 0, month: 0, monthDen: 0, monthDi: 0, prevMonth: 0, year: 0, urgent: 0, dueSoon: 0, manual: 0 },
+    months, types: [], recent: [], deadlines: [], lookups,
+    zalo: { users: 0, granted: 0, pendingCodes: 0 },
+    dueSoonDays: DUE_SOON_DAYS,
+  };
+
+  if (await isPg()) {
+    const eff = `(${EFFECTIVE_DATE_SQL})`;
+    const [totals, monthly, types, recent, deadlines, zalo, codes, logs] = await Promise.all([
+      db.pool.query(
+        `SELECT COUNT(*) FILTER (WHERE direction = 'den')::int AS den,
+                COUNT(*) FILTER (WHERE direction = 'di')::int AS di,
+                COUNT(*) FILTER (WHERE ${eff} >= $1::date)::int AS month,
+                COUNT(*) FILTER (WHERE ${eff} >= $1::date AND direction = 'den')::int AS month_den,
+                COUNT(*) FILTER (WHERE ${eff} >= $1::date AND direction = 'di')::int AS month_di,
+                COUNT(*) FILTER (WHERE ${eff} >= $2::date AND ${eff} < $1::date)::int AS prev_month,
+                COUNT(*) FILTER (WHERE ${eff} >= $3::date)::int AS year,
+                COUNT(*) FILTER (WHERE do_khan IS NOT NULL AND do_khan <> 'Thường')::int AS urgent,
+                COUNT(*) FILTER (WHERE direction = 'den' AND han_xu_ly BETWEEN $4::date AND $5::date)::int AS due_soon,
+                COUNT(*) FILTER (WHERE edited_by_name IS NOT NULL)::int AS manual
+         FROM office_documents`,
+        [curMonth, prevMonth, yearStart, today, dueTo]
+      ),
+      db.pool.query(
+        `SELECT to_char(${eff}, 'YYYY-MM') AS month, direction, COUNT(*)::int AS count
+         FROM office_documents WHERE ${eff} >= $1::date GROUP BY 1, 2`,
+        [chartFrom]
+      ),
+      db.pool.query(
+        `SELECT COALESCE(the_loai, 'Chưa phân loại') AS name, COUNT(*)::int AS count
+         FROM office_documents GROUP BY 1 ORDER BY count DESC, name`
+      ),
+      db.pool.query(
+        `SELECT id, direction, so_ky_hieu, trich_yeu, the_loai, do_khan, to_char(${eff}, 'YYYY-MM-DD') AS ngay
+         FROM office_documents ORDER BY ${eff} DESC NULLS LAST, id DESC LIMIT 6`
+      ),
+      db.pool.query(
+        `SELECT id, so_ky_hieu, trich_yeu, do_khan, to_char(han_xu_ly, 'YYYY-MM-DD') AS han_xu_ly
+         FROM office_documents WHERE direction = 'den' AND han_xu_ly >= $1::date
+         ORDER BY han_xu_ly ASC, id DESC LIMIT 5`,
+        [today]
+      ),
+      db.pool.query(
+        `SELECT COUNT(*)::int AS users,
+                COUNT(*) FILTER (WHERE can_lookup_office AND NOT is_blocked)::int AS granted
+         FROM zalo_users`
+      ),
+      db.pool.query('SELECT COUNT(*)::int AS pending FROM zalo_activation_codes WHERE used_at IS NULL AND expires_at > NOW()'),
+      db.pool.query(
+        `SELECT to_char(created_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS day, COUNT(*)::int AS count
+         FROM query_logs WHERE intent = 'office_lookup' AND created_at >= ($1::date - INTERVAL '7 hours')
+         GROUP BY 1`,
+        [lookupFrom]
+      ),
+    ]);
+    const t = totals.rows[0];
+    Object.assign(out.totals, {
+      den: t.den, di: t.di, month: t.month, monthDen: t.month_den, monthDi: t.month_di,
+      prevMonth: t.prev_month, year: t.year, urgent: t.urgent, dueSoon: t.due_soon, manual: t.manual,
+    });
+    for (const r of monthly.rows) {
+      const slot = months.find((m) => m.month === r.month);
+      if (slot && (r.direction === 'den' || r.direction === 'di')) slot[r.direction] = r.count;
+    }
+    out.types = types.rows;
+    out.recent = recent.rows;
+    out.deadlines = deadlines.rows;
+    out.zalo = { users: zalo.rows[0].users, granted: zalo.rows[0].granted, pendingCodes: codes.rows[0].pending };
+    for (const r of logs.rows) {
+      const slot = lookups.find((l) => l.day === r.day);
+      if (slot) slot.count = r.count;
+    }
+    return out;
+  }
+
+  // Bộ nhớ dự phòng
+  const effOf = (d) => ((d.direction === 'den' ? (d.thoi_gian_nhan || d.ngay_van_ban) : d.ngay_van_ban) || '').slice(0, 10);
+  const typeCount = new Map();
+  for (const d of local.docs) {
+    const e = effOf(d);
+    const t = out.totals;
+    if (d.direction === 'den') t.den++; else t.di++;
+    if (e && e >= curMonth) { t.month++; if (d.direction === 'den') t.monthDen++; else t.monthDi++; }
+    if (e && e >= prevMonth && e < curMonth) t.prevMonth++;
+    if (e && e >= yearStart) t.year++;
+    if (d.do_khan && d.do_khan !== 'Thường') t.urgent++;
+    if (d.direction === 'den' && d.han_xu_ly && d.han_xu_ly >= today && d.han_xu_ly <= dueTo) t.dueSoon++;
+    if (d.edited_by_name) t.manual++;
+    const slot = e ? months.find((m) => m.month === e.slice(0, 7)) : null;
+    if (slot) slot[d.direction]++;
+    const name = d.the_loai || 'Chưa phân loại';
+    typeCount.set(name, (typeCount.get(name) || 0) + 1);
+  }
+  out.types = [...typeCount.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  out.recent = [...local.docs]
+    .sort((a, b) => (effOf(b) > effOf(a) ? 1 : effOf(b) < effOf(a) ? -1 : b.id - a.id))
+    .slice(0, 6)
+    .map((d) => ({ id: d.id, direction: d.direction, so_ky_hieu: d.so_ky_hieu, trich_yeu: d.trich_yeu, the_loai: d.the_loai, do_khan: d.do_khan, ngay: effOf(d) || null }));
+  out.deadlines = local.docs
+    .filter((d) => d.direction === 'den' && d.han_xu_ly && d.han_xu_ly >= today)
+    .sort((a, b) => (a.han_xu_ly > b.han_xu_ly ? 1 : a.han_xu_ly < b.han_xu_ly ? -1 : b.id - a.id))
+    .slice(0, 5)
+    .map((d) => ({ id: d.id, so_ky_hieu: d.so_ky_hieu, trich_yeu: d.trich_yeu, do_khan: d.do_khan, han_xu_ly: d.han_xu_ly }));
+  const users = Array.from(db.localZaloUsers.values());
+  const granted = [...local.permissions.values()].filter((p) => p.can_lookup_office).length;
+  out.zalo = {
+    users: Math.max(users.length, local.permissions.size),
+    granted,
+    pendingCodes: local.codes.filter((c) => !c.used_at && new Date(c.expires_at).getTime() > now.getTime()).length,
+  };
+  for (const l of db.localQueryLogs || []) {
+    if (l.intent !== 'office_lookup') continue;
+    const day = vnDay(new Date(l.created_at));
+    const slot = lookups.find((x) => x.day === day);
+    if (slot) slot.count++;
+  }
+  return out;
+}
+
 // ============================================================
 // QUYỀN TRA CỨU CỦA NGƯỜI DÙNG ZALO
 // ============================================================
@@ -527,6 +680,88 @@ async function revokeActivationCode(id) {
   const c = local.codes.find((x) => x.id === Number(id) && !x.used_at);
   if (c) c.expires_at = new Date().toISOString();
   return !!c;
+}
+
+/** Đổi tên cán bộ ghi trên mã (mọi trạng thái); trả về false nếu không có mã */
+async function updateActivationCodeLabel(id, staffLabel) {
+  if (await isPg()) {
+    const res = await db.pool.query('UPDATE zalo_activation_codes SET staff_label = $2 WHERE id = $1 RETURNING id', [id, staffLabel]);
+    return res.rowCount > 0;
+  }
+  const c = local.codes.find((x) => x.id === Number(id));
+  if (c) c.staff_label = staffLabel;
+  return !!c;
+}
+
+/** Xóa mã khỏi danh sách. Mã chưa dùng bị xóa cũng không dùng được nữa; quyền đã cấp từ mã không bị ảnh hưởng. */
+async function deleteActivationCode(id) {
+  if (await isPg()) {
+    const res = await db.pool.query('DELETE FROM zalo_activation_codes WHERE id = $1 RETURNING id, staff_label', [id]);
+    return res.rows[0] || null;
+  }
+  const i = local.codes.findIndex((x) => x.id === Number(id));
+  if (i < 0) return null;
+  const [removed] = local.codes.splice(i, 1);
+  return { id: removed.id, staff_label: removed.staff_label };
+}
+
+/**
+ * Sửa thông tin tài khoản Zalo: tên cán bộ, ghi chú, quyền tra cứu, chặn bot.
+ * Trường undefined giữ nguyên. Trả về bản ghi sau khi sửa, hoặc null nếu không có tài khoản.
+ */
+async function updateZaloUser(zaloId, { staffLabel, notes, canLookup, isBlocked } = {}, { grantedBy = null } = {}) {
+  const id = String(zaloId);
+  if (await isPg()) {
+    const res = await db.pool.query(
+      `UPDATE zalo_users SET
+         staff_label = CASE WHEN $2::boolean THEN $3 ELSE staff_label END,
+         notes = CASE WHEN $4::boolean THEN $5 ELSE notes END,
+         is_blocked = COALESCE($6::boolean, is_blocked),
+         granted_by = CASE WHEN $7::boolean IS TRUE AND NOT can_lookup_office THEN $8 ELSE granted_by END,
+         granted_at = CASE WHEN $7::boolean IS NULL THEN granted_at
+                           WHEN $7::boolean AND NOT can_lookup_office THEN NOW()
+                           WHEN $7::boolean THEN granted_at ELSE NULL END,
+         can_lookup_office = COALESCE($7::boolean, can_lookup_office)
+       WHERE zalo_id = $1
+       RETURNING zalo_id, display_name, staff_label, notes, is_blocked, can_lookup_office`,
+      [id, staffLabel !== undefined, staffLabel ?? null, notes !== undefined, notes ?? null,
+        typeof isBlocked === 'boolean' ? isBlocked : null, typeof canLookup === 'boolean' ? canLookup : null, grantedBy]
+    );
+    return res.rows[0] || null;
+  }
+  const u = db.localZaloUsers.get(id);
+  const perm = local.permissions.get(id);
+  if (!u && !perm) return null;
+  const nextPerm = { ...(perm || {}) };
+  if (staffLabel !== undefined) nextPerm.staff_label = staffLabel;
+  if (typeof canLookup === 'boolean') { nextPerm.can_lookup_office = canLookup; if (canLookup) nextPerm.granted_by = grantedBy; }
+  local.permissions.set(id, nextPerm);
+  if (u) {
+    if (staffLabel !== undefined) u.staff_label = staffLabel;
+    if (notes !== undefined) u.notes = notes;
+    if (typeof isBlocked === 'boolean') u.is_blocked = isBlocked;
+    if (typeof canLookup === 'boolean') u.can_lookup_office = canLookup;
+  }
+  return {
+    zalo_id: id, display_name: u?.display_name || null, staff_label: nextPerm.staff_label ?? null,
+    notes: u?.notes ?? null, is_blocked: u?.is_blocked === true, can_lookup_office: nextPerm.can_lookup_office === true,
+  };
+}
+
+/** Xóa tài khoản Zalo khỏi danh sách (mất quyền tra cứu + bộ nhớ hội thoại). Nhắn lại bot sẽ hiện lại, chưa có quyền. */
+async function deleteZaloUser(zaloId) {
+  const id = String(zaloId);
+  if (await isPg()) {
+    const res = await db.pool.query('DELETE FROM zalo_users WHERE zalo_id = $1 RETURNING zalo_id, display_name', [id]);
+    await db.pool.query('DELETE FROM zalo_sessions WHERE zalo_id = $1', [id]);
+    return res.rows[0] || null;
+  }
+  const u = db.localZaloUsers.get(id);
+  const had = !!u || local.permissions.has(id);
+  db.localZaloUsers.delete(id);
+  local.permissions.delete(id);
+  local.sessions.delete(id);
+  return had ? { zalo_id: id, display_name: u?.display_name || null } : null;
 }
 
 /**
@@ -651,11 +886,16 @@ module.exports = {
   EXPORT_MAX_ROWS,
   getImports,
   getOverview,
+  getDashboard,
   canLookupOffice,
   setOfficePermission,
   createActivationCode,
   listActivationCodes,
   revokeActivationCode,
+  updateActivationCodeLabel,
+  deleteActivationCode,
+  updateZaloUser,
+  deleteZaloUser,
   redeemActivationCode,
   normalizeCode,
   getSession,

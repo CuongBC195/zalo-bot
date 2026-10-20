@@ -36,10 +36,14 @@ const DATE_FILTERS = [
   ['deadlineFrom', 'deadlineTo', 'han_xu_ly'],
 ];
 
+/** Nguồn dữ liệu (trang Quản lý văn bản): 'tay' = thêm/sửa tay trên web, 'excel' = từ file nhập */
+const SOURCE_VALUES = ['tay', 'excel'];
+
 const ALL_KEYS = [
   ...Object.keys(TEXT_FILTERS),
   ...Object.keys(EXACT_FILTERS),
   ...DATE_FILTERS.flatMap(([a, b]) => [a, b]),
+  'nguon',
 ];
 
 /** Chữ thường, bỏ dấu, gộp khoảng trắng: dạng so khớp chung cho SQL và JS */
@@ -83,6 +87,7 @@ function readColumnFilters(query = {}) {
       if (ISO_DATE.test(query[key] || '')) out[key] = query[key];
     }
   }
+  if (SOURCE_VALUES.includes(query.nguon)) out.nguon = query.nguon;
   return out;
 }
 
@@ -137,6 +142,8 @@ function columnFiltersSql(cf, params) {
     if (cf[fromKey]) { params.push(cf[fromKey]); where.push(`${col} >= $${params.length}`); }
     if (cf[toKey]) { params.push(cf[toKey]); where.push(`${col} <= $${params.length}`); }
   }
+  if (cf.nguon === 'tay') where.push('edited_by_name IS NOT NULL');
+  if (cf.nguon === 'excel') where.push('edited_by_name IS NULL');
   return where;
 }
 
@@ -157,6 +164,8 @@ function matchesColumnFilters(doc, cf) {
     if (cf[fromKey] && (!v || v < cf[fromKey])) return false;
     if (cf[toKey] && (!v || v > cf[toKey])) return false;
   }
+  if (cf.nguon === 'tay' && !doc.edited_by_name) return false;
+  if (cf.nguon === 'excel' && doc.edited_by_name) return false;
   return true;
 }
 

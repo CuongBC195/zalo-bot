@@ -2,7 +2,8 @@
  * API quản trị luồng Tra cứu Sổ công văn.
  * Gắn sau authMiddleware. Phân quyền:
  *  - Mọi tài khoản đăng nhập: xem/tìm sổ (vai trò 'user' không thấy Ý kiến chuyển/chỉ đạo), thử câu hỏi.
- *  - admin/superadmin: nhập Excel, thêm/sửa/xóa từng văn bản, xem lịch sử nhập, cấp mã kích hoạt Zalo, cấp/thu quyền.
+ *  - admin/superadmin: tổng quan, nhập Excel, thêm/sửa/xóa từng văn bản, xem lịch sử nhập,
+ *    cấp/sửa/xóa mã kích hoạt Zalo, cấp/thu quyền, sửa/xóa tài khoản Zalo.
  */
 
 const express = require('express');
@@ -174,6 +175,7 @@ function describeFilters(f) {
   if (c.docDateFrom || c.docDateTo) parts.push(`Ngày VB: ${range(c.docDateFrom, c.docDateTo)}`);
   if (c.receivedFrom || c.receivedTo) parts.push(`Ngày đến: ${range(c.receivedFrom, c.receivedTo)}`);
   if (c.deadlineFrom || c.deadlineTo) parts.push(`Hạn xử lý: ${range(c.deadlineFrom, c.deadlineTo)}`);
+  if (c.nguon) parts.push(`Nguồn: ${c.nguon === 'tay' ? 'Sửa tay' : 'Từ file Excel'}`);
   return parts.join('; ');
 }
 
@@ -226,6 +228,17 @@ router.get('/office-docs/imports', adminOnly, async (req, res) => {
     res.json({ ok: true, imports: await store.getImports({ limit: 30 }) });
   } catch (err) {
     res.status(500).json({ ok: false, error: 'Không tải được lịch sử nhập.' });
+  }
+});
+
+/** Trang Tổng quan (admin): số liệu theo tháng, thể loại, văn bản mới, hạn xử lý, Zalo */
+router.get('/office-docs/dashboard', adminOnly, async (req, res) => {
+  try {
+    const [dashboard, overview] = await Promise.all([store.getDashboard(), store.getOverview()]);
+    res.json({ ok: true, ...dashboard, overview, unitName: config.office.unitName });
+  } catch (err) {
+    console.error('[Office API] dashboard:', err.message);
+    res.status(500).json({ ok: false, error: 'Không tải được số liệu tổng quan.' });
   }
 });
 
@@ -417,6 +430,77 @@ router.post('/zalo-users/:zaloId/office-permission', adminOnly, async (req, res)
     res.json({ ok: true, user, message: allowed ? 'Đã cấp quyền tra cứu sổ công văn.' : 'Đã thu hồi quyền tra cứu.' });
   } catch (err) {
     res.status(500).json({ ok: false, error: 'Không cập nhật được quyền.' });
+  }
+});
+
+const readLabel = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : undefined);
+const ZALO_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+
+/** Sửa tên cán bộ ghi trên mã kích hoạt */
+router.put('/zalo-activation-codes/:id', adminOnly, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'Mã không hợp lệ.' });
+  const staffLabel = readLabel(req.body?.staffLabel, 100);
+  if (!staffLabel) return res.status(400).json({ ok: false, error: 'Vui lòng nhập họ tên/chức vụ cán bộ.', fields: { staffLabel: 'Bắt buộc' } });
+  try {
+    if (!(await store.updateActivationCodeLabel(id, staffLabel))) return res.status(404).json({ ok: false, error: 'Không tìm thấy mã.' });
+    res.json({ ok: true, message: 'Đã lưu tên cán bộ trên mã.' });
+  } catch (err) {
+    console.error('[Office API] update code:', err.message);
+    res.status(500).json({ ok: false, error: 'Không lưu được.' });
+  }
+});
+
+router.delete('/zalo-activation-codes/:id', adminOnly, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'Mã không hợp lệ.' });
+  try {
+    const removed = await store.deleteActivationCode(id);
+    if (!removed) return res.status(404).json({ ok: false, error: 'Không tìm thấy mã.' });
+    console.log(`[Office API] delete code: user=${req.user.username} id=${id}`);
+    res.json({ ok: true, message: `Đã xóa mã của ${removed.staff_label}.` });
+  } catch (err) {
+    console.error('[Office API] delete code:', err.message);
+    res.status(500).json({ ok: false, error: 'Không xóa được mã.' });
+  }
+});
+
+/** Sửa tài khoản Zalo: tên cán bộ, ghi chú, quyền tra cứu, chặn bot */
+router.put('/zalo-users/:zaloId', adminOnly, async (req, res) => {
+  const zaloId = String(req.params.zaloId || '');
+  if (!ZALO_ID_RE.test(zaloId)) return res.status(400).json({ ok: false, error: 'Zalo ID không hợp lệ.' });
+  const b = req.body || {};
+  const staffLabel = readLabel(b.staffLabel, 100);
+  const notes = readLabel(b.notes, 500);
+  const patch = {
+    staffLabel: staffLabel === undefined ? undefined : staffLabel || null,
+    notes: notes === undefined ? undefined : notes || null,
+    canLookup: typeof b.canLookup === 'boolean' ? b.canLookup : undefined,
+    isBlocked: typeof b.isBlocked === 'boolean' ? b.isBlocked : undefined,
+  };
+  try {
+    const user = await store.updateZaloUser(zaloId, patch, { grantedBy: req.user.id });
+    if (!user) return res.status(404).json({ ok: false, error: 'Không tìm thấy tài khoản Zalo.' });
+    if (patch.canLookup === false || patch.isBlocked === true) await store.clearSession(zaloId).catch(() => {});
+    console.log(`[Office API] update zalo user: user=${req.user.username} zalo=${zaloId}`);
+    res.json({ ok: true, user, message: 'Đã lưu tài khoản Zalo.' });
+  } catch (err) {
+    console.error('[Office API] update zalo user:', err.message);
+    res.status(500).json({ ok: false, error: 'Không lưu được tài khoản Zalo.' });
+  }
+});
+
+router.delete('/zalo-users/:zaloId', adminOnly, async (req, res) => {
+  const zaloId = String(req.params.zaloId || '');
+  if (!ZALO_ID_RE.test(zaloId)) return res.status(400).json({ ok: false, error: 'Zalo ID không hợp lệ.' });
+  try {
+    const removed = await store.deleteZaloUser(zaloId);
+    if (!removed) return res.status(404).json({ ok: false, error: 'Không tìm thấy tài khoản Zalo.' });
+    console.log(`[Office API] delete zalo user: user=${req.user.username} zalo=${zaloId}`);
+    res.json({ ok: true, message: `Đã xóa tài khoản ${removed.display_name || zaloId}.` });
+  } catch (err) {
+    console.error('[Office API] delete zalo user:', err.message);
+    res.status(500).json({ ok: false, error: 'Không xóa được tài khoản Zalo.' });
   }
 });
 
