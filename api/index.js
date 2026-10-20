@@ -1,11 +1,11 @@
 require('dotenv').config();
 
-let rag = null;
+let bootstrap = null;
 let app = null;
 let bootError = null;
 
 try {
-  rag = require('../src/rag');
+  bootstrap = require('../src/bootstrap');
   app = require('../src/admin/server');
 } catch (err) {
   bootError = err;
@@ -14,9 +14,9 @@ try {
 
 let initPromise = null;
 function ensureInit() {
-  if (!initPromise && rag) {
-    initPromise = rag.init().catch(err => {
-      console.warn('[Vercel Serverless] Cảnh báo khởi tạo RAG Engine:', err.message);
+  if (!initPromise && bootstrap) {
+    initPromise = bootstrap.initServices().catch(err => {
+      console.warn('[Vercel Serverless] Cảnh báo khởi tạo dịch vụ:', err.message);
     });
   }
   return initPromise || Promise.resolve();

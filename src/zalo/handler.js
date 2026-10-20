@@ -5,6 +5,20 @@
 
 const pipeline = require('../pipeline');
 const db = require('../db');
+const config = require('../config');
+const office = require('../office');
+const officeStore = require('../office/store');
+const responder = require('../office/responder');
+const { normText } = require('../office/normalize');
+
+const MAX_ACTIVATION_FAILURES = 5;
+const ACTIVATION_RE = /^\/?(?:dangky|dang\s*ky|kichhoat|kich\s*hoat)\b\s*(.*)$/i;
+const OFFICE_HINT_RE = /\b(?:van ban|cong van|cv|vb|so)\s+(?:den|di)\b|\b\d{1,5}\s*-\s*[a-z]{1,8}\s*\/|\bky hieu\b|\btrich yeu\b|\bnguoi ky\b|\bso cong van\b|\b\d{7,9}\b/;
+
+/** Che mã kích hoạt khi ghi log */
+function maskSecrets(text) {
+  return ACTIVATION_RE.test(normText(text)) ? '/dangky ****' : text;
+}
 
 // Cache chống xử lý trùng lặp (Deduplication) dùng chung cho cả Polling và Webhook
 const seenMessageIds = new Set();
@@ -54,7 +68,7 @@ async function handleZaloUpdate(api, update) {
 
   const senderName = from.display_name || from.name || from.username || message.sender_name || 'Đồng chí';
 
-  console.log(`[Zalo] Nhận tin nhắn từ ${senderName} (${chatId}): "${text}"`);
+  console.log(`[Zalo] Nhận tin nhắn từ ${senderName} (${chatId}): "${maskSecrets(text)}"`);
 
   // Kiểm tra người dùng có bị khóa tương tác không
   const isBlocked = await db.isZaloUserBlocked(from.id);
@@ -65,18 +79,7 @@ async function handleZaloUpdate(api, update) {
   }
 
   const startTime = Date.now();
-
-  const pipelineResult = await pipeline.processMessage({
-    text,
-    chatId,
-    senderId: from.id,
-    senderName,
-  });
-
-  const reply = typeof pipelineResult === 'string' ? pipelineResult : pipelineResult.answer;
-  const intent = pipelineResult.intent || 'party_qa';
-  const retrievedDocs = pipelineResult.retrievedDocs || [];
-
+  const { reply, intent, retrievedDocs } = await routeMessage({ text, chatId, zaloId: from.id, senderName });
   const latencyMs = Date.now() - startTime;
 
   // Gửi phản hồi lại Zalo
@@ -88,7 +91,7 @@ async function handleZaloUpdate(api, update) {
     zaloId: from.id,
     displayName: senderName,
     chatId,
-    queryText: text,
+    queryText: maskSecrets(text),
     intent,
     retrievedDocs,
     responseText: reply,
@@ -100,4 +103,61 @@ async function handleZaloUpdate(api, update) {
   return { ok: true, reply, intent, latencyMs };
 }
 
-module.exports = { handleZaloUpdate };
+/** Đổi mã kích hoạt lấy quyền tra cứu sổ công văn */
+async function handleActivation({ code, zaloId, senderName }) {
+  if (await officeStore.canLookupOffice(zaloId)) return responder.formatActivation('already');
+  if (!code) return responder.formatActivation('missing');
+  const failures = await officeStore.getActivationFailures(zaloId);
+  if (failures >= MAX_ACTIVATION_FAILURES) return responder.formatActivation('locked');
+  const res = await officeStore.redeemActivationCode(code, zaloId, senderName);
+  if (res.ok) {
+    console.log(`[Zalo] Kích hoạt quyền tra cứu sổ công văn cho ${zaloId}`);
+    return responder.formatActivation('ok');
+  }
+  await officeStore.recordActivationFailure(zaloId);
+  return responder.formatActivation(failures + 1 >= MAX_ACTIVATION_FAILURES ? 'locked' : 'invalid');
+}
+
+/**
+ * Chọn luồng xử lý:
+ * - /dangky MÃ: kích hoạt quyền.
+ * - Có quyền tra cứu + (hỏi đáp quy định đang tắt, hoặc câu hỏi mang dấu hiệu sổ công văn): luồng sổ công văn.
+ * - Hỏi đáp quy định đang bật: pipeline cũ.
+ * - Còn lại: hướng dẫn xin quyền.
+ */
+async function routeMessage({ text, chatId, zaloId, senderName }) {
+  const norm = normText(text);
+  const act = norm.match(ACTIVATION_RE);
+  if (act) {
+    const code = officeStore.normalizeCode(text.replace(/^\s*\/?\S+\s*/, ''));
+    return { reply: await handleActivation({ code, zaloId, senderName }), intent: 'office_activation', retrievedDocs: [] };
+  }
+
+  const regulationOn = config.features.regulationQa;
+  if (config.features.officeLookup) {
+    const allowed = await officeStore.canLookupOffice(zaloId);
+    if (allowed) {
+      let useOffice = !regulationOn || OFFICE_HINT_RE.test(norm);
+      if (!useOffice) useOffice = !!(await officeStore.getSession(zaloId, config.office.sessionTtlMinutes).catch(() => null));
+      if (useOffice) {
+        const r = await office.handleOfficeMessage({ text, sessionId: String(zaloId) });
+        return { reply: r.answer, intent: r.intent, retrievedDocs: r.retrievedDocs };
+      }
+    } else if (!regulationOn) {
+      return { reply: responder.formatUnregistered(), intent: 'office_unregistered', retrievedDocs: [] };
+    }
+  }
+
+  if (!regulationOn) {
+    return { reply: responder.formatMaintenance(), intent: 'maintenance', retrievedDocs: [] };
+  }
+
+  const pipelineResult = await pipeline.processMessage({ text, chatId, senderId: zaloId, senderName });
+  return {
+    reply: typeof pipelineResult === 'string' ? pipelineResult : pipelineResult.answer,
+    intent: pipelineResult.intent || 'party_qa',
+    retrievedDocs: pipelineResult.retrievedDocs || [],
+  };
+}
+
+module.exports = { handleZaloUpdate, routeMessage };

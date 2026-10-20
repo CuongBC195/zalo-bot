@@ -106,3 +106,90 @@ CREATE TABLE IF NOT EXISTS response_cache (
 );
 CREATE INDEX IF NOT EXISTS idx_response_cache_expires ON response_cache(expires_at);
 
+-- ============================================================
+-- TRA CỨU SỔ CÔNG VĂN ĐẾN / ĐI
+-- ============================================================
+
+-- 7. Lịch sử nhập file Excel sổ văn bản
+CREATE TABLE IF NOT EXISTS office_doc_imports (
+    id SERIAL PRIMARY KEY,
+    direction VARCHAR(3) NOT NULL CHECK (direction IN ('den', 'di')),
+    file_name VARCHAR(255),
+    report_date DATE,
+    total_rows INTEGER NOT NULL DEFAULT 0,
+    inserted INTEGER NOT NULL DEFAULT 0,
+    updated INTEGER NOT NULL DEFAULT 0,
+    unchanged INTEGER NOT NULL DEFAULT 0,
+    skipped_secret INTEGER NOT NULL DEFAULT 0,
+    skipped_unpublished INTEGER NOT NULL DEFAULT 0,
+    errors JSONB NOT NULL DEFAULT '[]'::jsonb,
+    imported_by INTEGER,
+    imported_by_name VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_office_doc_imports_dir_created ON office_doc_imports(direction, created_at DESC);
+
+-- 8. Sổ công văn đến / đi (chỉ lưu văn bản Độ mật = "Thường")
+CREATE TABLE IF NOT EXISTS office_documents (
+    id SERIAL PRIMARY KEY,
+    direction VARCHAR(3) NOT NULL CHECK (direction IN ('den', 'di')),
+    source_id VARCHAR(50) NOT NULL,           -- Cột "ID" của phần mềm quản lý văn bản
+    so_ky_hieu VARCHAR(100),
+    so_dang_ky INTEGER,
+    trich_yeu TEXT,
+    so_van_ban VARCHAR(255),
+    the_loai VARCHAR(100),
+    do_khan VARCHAR(50),
+    do_mat VARCHAR(50),
+    nguoi_gui VARCHAR(255),
+    nguoi_trinh VARCHAR(255),
+    nguoi_ky VARCHAR(255),
+    y_kien_chuyen TEXT,
+    y_kien_chi_dao TEXT,
+    noi_nhan TEXT,
+    trang_thai_phat_hanh VARCHAR(100),
+    ngay_van_ban DATE,
+    thoi_gian_nhan DATE,
+    han_xu_ly DATE,
+    so_trang INTEGER,
+    so_ban INTEGER,
+    file_names TEXT[] NOT NULL DEFAULT '{}',
+    search_norm TEXT NOT NULL DEFAULT '',     -- Chữ thường, bỏ dấu (chuẩn hóa trong Node)
+    row_hash VARCHAR(64),
+    import_id INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (direction, source_id)
+);
+CREATE INDEX IF NOT EXISTS idx_office_docs_dir_date ON office_documents(direction, ngay_van_ban DESC);
+CREATE INDEX IF NOT EXISTS idx_office_docs_the_loai ON office_documents(the_loai);
+CREATE INDEX IF NOT EXISTS idx_office_docs_so_ky_hieu ON office_documents(LOWER(so_ky_hieu));
+
+-- 9. Quyền tra cứu công văn của người dùng Zalo
+ALTER TABLE zalo_users ADD COLUMN IF NOT EXISTS can_lookup_office BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE zalo_users ADD COLUMN IF NOT EXISTS staff_label VARCHAR(150);
+ALTER TABLE zalo_users ADD COLUMN IF NOT EXISTS granted_by INTEGER;
+ALTER TABLE zalo_users ADD COLUMN IF NOT EXISTS granted_at TIMESTAMP WITH TIME ZONE;
+
+-- 10. Mã kích hoạt dùng một lần (chỉ lưu SHA-256 của mã)
+CREATE TABLE IF NOT EXISTS zalo_activation_codes (
+    id SERIAL PRIMARY KEY,
+    code_hash VARCHAR(64) UNIQUE NOT NULL,
+    staff_label VARCHAR(150) NOT NULL,
+    created_by INTEGER,
+    created_by_name VARCHAR(100),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used_at TIMESTAMP WITH TIME ZONE,
+    used_by_zalo_id VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 11. Trạng thái hội thoại ngắn hạn (bộ nhớ dạng bộ lọc, không lưu lịch sử chat)
+CREATE TABLE IF NOT EXISTS zalo_sessions (
+    zalo_id VARCHAR(100) PRIMARY KEY,
+    state JSONB NOT NULL DEFAULT '{}'::jsonb,
+    failed_activation_count INTEGER NOT NULL DEFAULT 0,
+    failed_activation_window_start TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+

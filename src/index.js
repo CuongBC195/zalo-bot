@@ -8,7 +8,7 @@ require('dotenv').config();
 const config = require('./config');
 const ZaloAPI = require('./zalo/api');
 const PollingEngine = require('./zalo/polling');
-const rag = require('./rag');
+const { initServices } = require('./bootstrap');
 
 async function main() {
   console.log('');
@@ -25,10 +25,14 @@ async function main() {
     process.exit(1);
   }
 
-  // 2. Nạp kho dữ liệu RAG
-  console.log('📚 Đang nạp cơ sở dữ liệu văn bản Đảng...');
-  const count = await rag.init();
-  console.log(`✅ Đã nạp thành công ${count} điều khoản quy định.`);
+  // 2. Khởi tạo dịch vụ (schema Postgres; RAG chỉ nạp khi bật hỏi đáp quy định)
+  console.log('📚 Đang khởi tạo dịch vụ dữ liệu...');
+  const initResult = await initServices();
+  if (initResult.mode === 'regulation') {
+    console.log(`✅ Đã nạp thành công ${initResult.articles} điều khoản quy định.`);
+  } else {
+    console.log(`✅ Chế độ Tra cứu Sổ công văn (hỏi đáp quy định đang tắt). Schema: ${initResult.schemaReady ? 'sẵn sàng' : 'dự phòng bộ nhớ'}.`);
+  }
 
   // 3. Khởi tạo Zalo API
   console.log('🔌 Đang kết nối tới Zalo Bot API...');

@@ -11,6 +11,29 @@ const config = {
     pollingIntervalMs: Math.max(1000, parseInt(process.env.POLLING_INTERVAL_SECONDS || '3', 10) * 1000),
     longPollTimeoutSeconds: String(process.env.ZALO_LONG_POLL_TIMEOUT_SECONDS || '30'),
     deleteWebhookOnStart: process.env.DELETE_WEBHOOK_ON_START !== 'false',
+    // Chuỗi bí mật đã đăng ký qua setWebhook; Zalo gửi lại trong header X-Bot-Api-Secret-Token
+    webhookSecret: (process.env.ZALO_WEBHOOK_SECRET || '').trim(),
+  },
+
+  // Cờ bật/tắt tính năng
+  features: {
+    // Hỏi đáp quy định Đảng (Jev + RAG + Gemini). Mặc định TẮT (đang bảo trì).
+    regulationQa: process.env.FEATURE_REGULATION_QA === 'true',
+    // Tra cứu Sổ công văn đến/đi. Mặc định BẬT.
+    officeLookup: process.env.FEATURE_OFFICE_LOOKUP !== 'false',
+  },
+
+  // Tra cứu Sổ công văn đến/đi
+  office: {
+    unitName: process.env.OFFICE_UNIT_NAME || 'Văn phòng Đảng ủy xã Thạnh Phú',
+    maxResults: parseInt(process.env.OFFICE_MAX_RESULTS || '5', 10),
+    sessionTtlMinutes: parseInt(process.env.OFFICE_SESSION_TTL_MINUTES || '30', 10),
+    // Cho phép gọi Gemini viết lại câu hỏi khi bộ quy tắc không hiểu (chỉ gửi câu hỏi, không gửi dữ liệu sổ)
+    aiRewrite: process.env.OFFICE_AI_REWRITE !== 'false',
+    aiRewriteTimeoutMs: parseInt(process.env.OFFICE_AI_REWRITE_TIMEOUT_MS || '5000', 10),
+    // Model nhanh cho bước viết lại câu hỏi; nếu lỗi sẽ thử GEMINI_MODEL trong thời gian còn lại
+    aiModel: process.env.OFFICE_AI_MODEL || 'gemini-flash-lite-latest',
+    activationCodeTtlHours: parseInt(process.env.OFFICE_ACTIVATION_TTL_HOURS || '24', 10),
   },
 
   // Gemini (System 1.5 Rewrite & System 2 Generation)

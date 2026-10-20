@@ -8,8 +8,11 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const db = require('../db');
 const rag = require('../rag');
+const config = require('../config');
+const { initServices } = require('../bootstrap');
 const { generateToken, authMiddleware, requireRole } = require('./auth');
 
 const app = express();
@@ -145,7 +148,32 @@ function getZaloApi() {
   return zaloApiInstance;
 }
 
+/**
+ * Xác thực webhook đến từ Zalo Bot Platform qua header X-Bot-Api-Secret-Token.
+ * Quyền tra cứu công văn gắn theo Zalo ID (from.id), nên nếu không xác thực,
+ * bất kỳ ai biết URL webhook đều có thể giả tin nhắn để mạo danh cán bộ.
+ */
+let warnedMissingWebhookSecret = false;
+function verifyWebhookSecret(req) {
+  const expected = config.zalo.webhookSecret;
+  if (!expected) {
+    if (!warnedMissingWebhookSecret) {
+      console.warn('[Bảo mật] Chưa cấu hình ZALO_WEBHOOK_SECRET: webhook không được xác thực nguồn gửi.');
+      warnedMissingWebhookSecret = true;
+    }
+    return true;
+  }
+  const received = Buffer.from(String(req.headers['x-bot-api-secret-token'] || ''));
+  const target = Buffer.from(expected);
+  return received.length === target.length && crypto.timingSafeEqual(received, target);
+}
+
 app.post('/api/webhook', async (req, res) => {
+  if (!verifyWebhookSecret(req)) {
+    console.warn('[Webhook] Từ chối request sai hoặc thiếu X-Bot-Api-Secret-Token.');
+    return res.status(403).json({ ok: false, error: 'Unauthorized webhook request' });
+  }
+
   try {
     const update = req.body;
     if (!update || Object.keys(update).length === 0) {
@@ -184,6 +212,28 @@ app.get('/api/webhook/status', async (req, res) => {
 // BẢO VỆ CÁC ROUTE QUẢN TRỊ BẰNG AUTHMIDDLEWARE
 // ============================================================
 app.use('/api', authMiddleware);
+
+// Trạng thái cờ tính năng để giao diện hiển thị đúng (bảo trì / sẵn sàng)
+app.get('/api/features', (req, res) => {
+  res.json({
+    ok: true,
+    features: {
+      regulationQa: config.features.regulationQa,
+      officeLookup: config.features.officeLookup,
+    },
+    office: { unitName: config.office.unitName },
+    webhookSecured: !!config.zalo.webhookSecret,
+  });
+});
+
+// API thử nghiệm luồng quy định tạm dừng khi tắt cờ (đang bảo trì)
+function requireRegulationQa(req, res, next) {
+  if (config.features.regulationQa) return next();
+  return res.status(503).json({ ok: false, maintenance: true, error: 'Luồng hỏi đáp quy định đang bảo trì.' });
+}
+
+// Tra cứu Sổ công văn đến/đi + cấp quyền Zalo
+app.use('/api', require('./office-routes'));
 
 // ============================================================
 // HỒ SƠ CÁ NHÂN & ĐỔI MẬT KHẨU
@@ -331,7 +381,7 @@ app.delete('/api/users/:id', requireRole('superadmin', 'admin'), async (req, res
 // ============================================================
 // QUẢN LÝ NGƯỜI DÙNG ZALO (ZALO USERS)
 // ============================================================
-app.get('/api/zalo-users', async (req, res) => {
+app.get('/api/zalo-users', requireRole('superadmin', 'admin'), async (req, res) => {
   const { search } = req.query;
   const users = await db.getZaloUsers({ search });
   res.json({ ok: true, users });
@@ -351,7 +401,7 @@ app.post('/api/zalo-users/:zaloId/toggle-block', requireRole('superadmin', 'admi
 // ============================================================
 // NHẬT KÝ HỎI ĐÁP (AUDIT & QUERY LOGS)
 // ============================================================
-app.get('/api/query-logs', async (req, res) => {
+app.get('/api/query-logs', requireRole('superadmin', 'admin'), async (req, res) => {
   const { search, limit } = req.query;
   const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 200, 1), 500);
   const logs = await db.getQueryLogs({ search, limit: parsedLimit });
@@ -442,7 +492,7 @@ app.get('/api/documents/:id', async (req, res) => {
   res.json({ ok: true, document: doc });
 });
 
-app.post('/api/documents', requireRole('superadmin', 'admin', 'user'), async (req, res) => {
+app.post('/api/documents', requireRole('superadmin', 'admin'), async (req, res) => {
   const { documentCode, documentName, issuer, category, issueDate, status, description, articles } = req.body;
 
   if (!documentCode || !documentName || !articles?.length) {
@@ -495,7 +545,7 @@ app.post('/api/documents', requireRole('superadmin', 'admin', 'user'), async (re
   }
 });
 
-app.put('/api/documents/:id', requireRole('superadmin', 'admin', 'user'), async (req, res) => {
+app.put('/api/documents/:id', requireRole('superadmin', 'admin'), async (req, res) => {
   const { id } = req.params;
   const { documentCode, documentName, issuer, category, issueDate, status, description, articles } = req.body;
   const isDbConnected = await db.checkConnection();
@@ -563,7 +613,7 @@ app.delete('/api/documents/:id', requireRole('superadmin', 'admin'), async (req,
   }
 });
 
-app.post('/api/parse-raw', (req, res) => {
+app.post('/api/parse-raw', requireRole('superadmin', 'admin'), (req, res) => {
   const { text } = req.body;
   if (!text || !text.trim()) {
     return res.status(400).json({ ok: false, error: 'Chưa có nội dung văn bản' });
@@ -596,7 +646,7 @@ app.post('/api/parse-raw', (req, res) => {
   res.json({ ok: true, count: articles.length, articles });
 });
 
-app.post('/api/rag-test', async (req, res) => {
+app.post('/api/rag-test', requireRegulationQa, async (req, res) => {
   const { query } = req.body;
   if (!query || !query.trim()) {
     return res.status(400).json({ ok: false, error: 'Vui lòng nhập câu hỏi thử nghiệm' });
@@ -621,7 +671,7 @@ app.post('/api/rag-test', async (req, res) => {
 // ============================================================
 // THỬ NGHIỆM ĐIỀU PHỐI PIPELINE 7 TẦNG & RAG X-RAY
 // ============================================================
-app.post('/api/pipeline-test', async (req, res) => {
+app.post('/api/pipeline-test', requireRegulationQa, async (req, res) => {
   const { query, skipCache } = req.body;
   if (!query || !query.trim()) {
     return res.status(400).json({ ok: false, error: 'Vui lòng nhập câu hỏi kiểm thử.' });
@@ -667,7 +717,7 @@ app.post('/api/pipeline-test', async (req, res) => {
 });
 
 // Endpoint kiểm tra sức khỏe và phân vai 3 Gemini Key trên Production
-app.get('/api/health-keys', async (req, res) => {
+app.get('/api/health-keys', requireRole('superadmin', 'admin'), async (req, res) => {
   const keyManager = require('../gemini/key-manager');
   const maskKey = (k) => (!k || k.length < 8 ? 'CHƯA_CẤU_HÌNH' : `${k.slice(0, 6)}...${k.slice(-4)}`);
 
@@ -751,7 +801,7 @@ app.get('/api/health-keys', async (req, res) => {
   res.json(status);
 });
 
-app.post('/api/seed-db', async (req, res) => {
+app.post('/api/seed-db', requireRole('superadmin', 'admin'), async (req, res) => {
   try {
     const isDbConnected = await db.checkConnection();
     if (!isDbConnected) {
@@ -780,7 +830,7 @@ app.use((req, res) => {
 });
 
 if (require.main === module) {
-  rag.init().then(() => {
+  initServices().then(() => {
     app.listen(PORT, () => {
       console.log(`\n[Web Admin] Giao diện quản trị đang chạy tại: http://localhost:${PORT}`);
       if (!process.env.ADMIN_PASSWORD) {
