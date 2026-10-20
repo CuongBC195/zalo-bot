@@ -399,7 +399,9 @@
       if (navAdminSectionTitle) navAdminSectionTitle.style.display = 'block';
     }
 
-    switchView('view-documents');
+    // office.js lắng nghe để phân luồng giao diện theo vai trò / cờ tính năng
+    document.dispatchEvent(new CustomEvent('admin:login', { detail: { user } }));
+    switchView('view-office');
     loadInitialData();
   }
 
@@ -479,6 +481,14 @@
   const pageSubtitle = document.getElementById('pageSubtitle');
 
   const VIEW_TITLES = {
+    'view-office': {
+      title: 'Tra Cứu Sổ Công Văn',
+      subtitle: 'Sổ văn bản đến / đi của Văn phòng Đảng ủy. Cần bản gốc, liên hệ Văn thư.',
+    },
+    'view-office-admin': {
+      title: 'Nhập Sổ & Cấp Quyền Tra Cứu',
+      subtitle: 'Nhập file Excel sổ công văn, cấp mã kích hoạt và quyền tra cứu qua Zalo',
+    },
     'view-documents': {
       title: 'Kho Văn Bản Quy Định',
       subtitle: 'Quản lý toàn bộ danh mục văn bản Đảng và nghiệp vụ văn thư lưu trữ',
@@ -528,6 +538,8 @@
     } else if (viewId === 'view-users') {
       loadAdminUsers();
     }
+
+    document.dispatchEvent(new CustomEvent('admin:viewchange', { detail: { viewId } }));
   }
 
   navItems.forEach(item => {
@@ -3109,11 +3121,23 @@
   function loadInitialData() {
     checkDbStatus();
     checkWebhookStatus();
-    loadStats();
-    loadDocuments();
+    // Kho quy định không còn là màn mặc định: dữ liệu được tải khi mở view-documents
     applyColumnVisibility();
     initDocTableResizable();
   }
+
+  // API dùng chung cho các module giao diện khác (office.js)
+  window.AdminApp = {
+    apiRequest,
+    showToast,
+    showConfirmDialog,
+    escapeHtml,
+    copyToClipboard,
+    formatDate,
+    debounce,
+    switchView,
+    getUser: () => state.currentUser,
+  };
 
   // Khởi động ứng dụng
   document.addEventListener('DOMContentLoaded', () => {

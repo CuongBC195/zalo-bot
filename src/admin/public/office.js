@@ -1,0 +1,925 @@
+/**
+ * Module giao diện "Sổ Công Văn" (tra cứu, nhập Excel, cấp quyền Zalo).
+ * Phụ thuộc window.AdminApp do app.js cung cấp; lắng nghe sự kiện:
+ *  - admin:login      -> phân luồng giao diện theo vai trò và cờ tính năng
+ *  - admin:viewchange -> tải dữ liệu khi mở view-office / view-office-admin
+ */
+(function () {
+  'use strict';
+
+  const App = window.AdminApp;
+  if (!App) {
+    console.error('[office.js] Thiếu window.AdminApp, cần nạp sau app.js.');
+    return;
+  }
+
+  const { apiRequest, showToast, showConfirmDialog, escapeHtml: esc, copyToClipboard, debounce } = App;
+  const $ = (id) => document.getElementById(id);
+
+  const MAX_UPLOAD_BYTES = 3 * 1024 * 1024; // Vercel giới hạn body 4.5MB, base64 tăng ~33%
+  const DIRECTION_LABEL = { den: 'Đến', di: 'Đi' };
+
+  const state = {
+    user: null,
+    features: null,
+    unitName: 'Văn phòng Đảng ủy xã Thạnh Phú',
+    filters: { direction: '', theLoai: '', dateFrom: '', dateTo: '', q: '' },
+    sort: null,
+    order: 'desc',
+    page: 1,
+    pageSize: 20,
+    lastResult: null,
+    reqSeq: 0,
+    currentDoc: null,
+    lastFocus: null,
+    importFile: null,
+    importPreviewOk: false,
+    zaloUsers: [],
+    chatBusy: false,
+  };
+
+  const isAdmin = () => !!state.user && (state.user.role === 'admin' || state.user.role === 'superadmin');
+
+  // ============================================================
+  // TIỆN ÍCH
+  // ============================================================
+  function fmtDate(iso) {
+    if (!iso) return '--';
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso));
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso);
+  }
+
+  function fmtDateTime(value) {
+    if (!value) return '--';
+    const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(value));
+    if (m && !/Z|[+-]\d{2}:?\d{2}$/.test(String(value))) return `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}`;
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value);
+    const p = (n) => String(n).padStart(2, '0');
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  function fmtNumber(n) {
+    return Number(n || 0).toLocaleString('vi-VN');
+  }
+
+  function dirBadge(direction) {
+    if (!DIRECTION_LABEL[direction]) return '';
+    return `<span class="dir-badge dir-${direction}">${DIRECTION_LABEL[direction]}</span>`;
+  }
+
+  function emptyRow(colspan, text) {
+    return `<tr><td colspan="${colspan}" class="table-empty"><p>${esc(text)}</p></td></tr>`;
+  }
+
+  function setBusy(btn, busy, busyText) {
+    if (!btn) return;
+    if (busy) {
+      btn.dataset.label = btn.textContent;
+      btn.textContent = busyText;
+      btn.disabled = true;
+    } else {
+      btn.textContent = btn.dataset.label || btn.textContent;
+      btn.disabled = false;
+    }
+  }
+
+  // ============================================================
+  // PHÂN LUỒNG THEO VAI TRÒ + CỜ TÍNH NĂNG
+  // ============================================================
+  function applyRoleVisibility() {
+    const admin = isAdmin();
+    document.querySelectorAll('.nav-admin-only').forEach((el) => { el.style.display = admin ? '' : 'none'; });
+    // Cán bộ (user) chỉ tra cứu sổ công văn
+    document.querySelectorAll('.nav-regulation').forEach((el) => { el.style.display = admin ? '' : 'none'; });
+    ['btnClearAiCache', 'btnSeedDb'].forEach((id) => { const el = $(id); if (el) el.style.display = admin ? '' : 'none'; });
+  }
+
+  function applyMaintenance(regulationQaOn) {
+    document.querySelectorAll('.nav-item.nav-regulation').forEach((btn) => {
+      let badge = btn.querySelector('.nav-maint-badge');
+      if (!regulationQaOn && !badge) {
+        badge = document.createElement('span');
+        badge.className = 'nav-maint-badge';
+        badge.textContent = 'Bảo trì';
+        btn.appendChild(badge);
+      } else if (regulationQaOn && badge) {
+        badge.remove();
+      }
+    });
+
+    ['view-documents', 'view-editor', 'view-playground'].forEach((viewId) => {
+      const section = $(viewId);
+      if (!section) return;
+      let banner = section.querySelector(':scope > .maintenance-banner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.className = 'maintenance-banner';
+        banner.setAttribute('role', 'status');
+        banner.innerHTML = `
+          <div class="maintenance-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+          </div>
+          <div>
+            <span class="maintenance-title">Luồng Hỏi đáp Quy định đang bảo trì</span>
+            <span class="maintenance-text">Bot Zalo tạm dừng trả lời câu hỏi về quy định. Dữ liệu vẫn được giữ nguyên, quản trị viên có thể xem và biên tập. Hệ thống đang ưu tiên luồng Tra cứu Sổ công văn.</span>
+          </div>`;
+        section.prepend(banner);
+      }
+      banner.classList.toggle('hidden', !!regulationQaOn);
+    });
+  }
+
+  async function loadFeatures() {
+    try {
+      const res = await apiRequest('/api/features');
+      state.features = res.features || {};
+      if (res.office && res.office.unitName) setUnitName(res.office.unitName);
+      applyMaintenance(!!state.features.regulationQa);
+    } catch (e) {
+      applyMaintenance(false);
+    }
+  }
+
+  function setUnitName(name) {
+    state.unitName = name;
+    const el = $('officeUnitName');
+    if (el) el.textContent = `Văn thư ${name}`;
+  }
+
+  // ============================================================
+  // TRA CỨU: TỔNG QUAN + BẢNG
+  // ============================================================
+  async function loadOverview() {
+    try {
+      const res = await apiRequest('/api/office-docs/overview');
+      if (res.unitName) setUnitName(res.unitName);
+      ['den', 'di'].forEach((dir) => {
+        const ov = (res.overview && res.overview[dir]) || {};
+        const key = dir === 'den' ? 'Den' : 'Di';
+        $(`officeTotal${key}`).textContent = fmtNumber(ov.total);
+        $(`officeMeta${key}`).textContent = ov.reportDate
+          ? `Dữ liệu chốt ngày ${fmtDate(ov.reportDate)}`
+          : (ov.lastImportAt ? `Cập nhật ${fmtDateTime(ov.lastImportAt)}` : 'Chưa nhập dữ liệu');
+      });
+      renderTypeOptions(res.types || []);
+    } catch (e) {
+      showToast('Không tải được tổng quan sổ công văn: ' + e.message, 'error');
+    }
+  }
+
+  function renderTypeOptions(types) {
+    const sel = $('officeTypeFilter');
+    const current = state.filters.theLoai;
+    const opts = ['<option value="">Tất cả thể loại</option>'];
+    types.forEach((t) => {
+      const value = typeof t === 'string' ? t : t.name;
+      if (!value) return;
+      const count = typeof t === 'object' && t.count != null ? ` (${fmtNumber(t.count)})` : '';
+      opts.push(`<option value="${esc(value)}">${esc(value)}${count}</option>`);
+    });
+    sel.innerHTML = opts.join('');
+    sel.value = current;
+    if (sel.value !== current) state.filters.theLoai = '';
+  }
+
+  function buildQuery() {
+    const p = new URLSearchParams();
+    const f = state.filters;
+    if (f.q) p.set('q', f.q);
+    if (f.direction) p.set('direction', f.direction);
+    if (f.theLoai) p.set('theLoai', f.theLoai);
+    if (f.dateFrom) p.set('dateFrom', f.dateFrom);
+    if (f.dateTo) p.set('dateTo', f.dateTo);
+    if (state.sort) { p.set('sort', state.sort); p.set('order', state.order); }
+    p.set('page', state.page);
+    p.set('pageSize', state.pageSize);
+    return p.toString();
+  }
+
+  async function loadTable() {
+    const seq = ++state.reqSeq;
+    const body = $('officeTableBody');
+    body.classList.add('is-loading');
+    if (state.filters.q) {
+      showSearchInfo('<span class="search-info-pending">Đang phân tích câu hỏi...</span>');
+    }
+    try {
+      const res = await apiRequest('/api/office-docs?' + buildQuery());
+      if (seq !== state.reqSeq) return; // bỏ kết quả cũ khi người dùng gõ tiếp
+      state.lastResult = res;
+      renderTable(res);
+      renderSearchInfo(res);
+      renderPagination(res);
+      renderSortState(res);
+    } catch (e) {
+      if (seq !== state.reqSeq) return;
+      body.innerHTML = emptyRow(9, 'Không tải được sổ công văn: ' + e.message);
+      hideSearchInfo();
+    } finally {
+      if (seq === state.reqSeq) body.classList.remove('is-loading');
+    }
+  }
+
+  function renderTable(res) {
+    const body = $('officeTableBody');
+    const items = res.items || [];
+    if (!items.length) {
+      const hasFilter = Object.values(state.filters).some(Boolean);
+      body.innerHTML = emptyRow(9, hasFilter
+        ? 'Không tìm thấy văn bản phù hợp. Thử bỏ bớt bộ lọc hoặc diễn đạt khác.'
+        : 'Sổ công văn chưa có dữ liệu. Quản trị viên cần nhập file Excel ở mục "Nhập Sổ & Cấp Quyền".');
+      return;
+    }
+    const offset = (res.page - 1) * res.pageSize;
+    body.innerHTML = items.map((d, i) => {
+      const received = d.direction === 'den' && d.thoi_gian_nhan && d.thoi_gian_nhan !== d.ngay_van_ban
+        ? `<span class="cell-sub">Nhận ${fmtDate(d.thoi_gian_nhan)}</span>` : '';
+      return `
+        <tr class="office-row" data-id="${Number(d.id)}" tabindex="0" aria-label="Xem chi tiết ${esc(d.so_ky_hieu || 'văn bản')}">
+          <td style="text-align: center;" class="cell-muted">${offset + i + 1}</td>
+          <td><span class="doc-number">${esc(d.so_ky_hieu || '--')}</span></td>
+          <td class="cell-date">${fmtDate(d.ngay_van_ban)}${received}</td>
+          <td>${dirBadge(d.direction)}</td>
+          <td>${d.the_loai ? `<span class="type-chip">${esc(d.the_loai)}</span>` : '<span class="cell-muted">--</span>'}</td>
+          <td class="cell-summary"><span class="clamp-2" title="${esc(d.trich_yeu || '')}">${esc(d.trich_yeu || '--')}</span></td>
+          <td class="cell-signer">${esc(d.nguoi_ky || '--')}</td>
+          <td><span class="source-id">${esc(d.source_id || '--')}</span></td>
+          <td class="sticky-action-col" style="text-align: center;">
+            <button type="button" class="action-icon-btn btn-icon-view" data-view-id="${Number(d.id)}" aria-label="Xem chi tiết">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  function showSearchInfo(html) {
+    const el = $('officeSearchInfo');
+    el.innerHTML = html;
+    el.classList.remove('hidden');
+  }
+
+  function hideSearchInfo() {
+    $('officeSearchInfo').classList.add('hidden');
+  }
+
+  function renderSearchInfo(res) {
+    if (res.mode !== 'search') { hideSearchInfo(); return; }
+    const chips = [];
+    const pf = (res.parsed && res.parsed.filters) || {};
+    if (pf.direction) chips.push(`Sổ ${DIRECTION_LABEL[pf.direction] ? DIRECTION_LABEL[pf.direction].toLowerCase() : ''}`);
+    if (pf.theLoai) chips.push(pf.theLoai);
+    if (pf.soKyHieu) chips.push(`Số ${pf.soKyHieu}`);
+    if (pf.sourceId) chips.push(`Mã ${pf.sourceId}`);
+    if (pf.dateLabel) chips.push(pf.dateLabel);
+    else if (pf.dateFrom || pf.dateTo) chips.push(`${pf.dateFrom ? fmtDate(pf.dateFrom) : '...'} - ${pf.dateTo ? fmtDate(pf.dateTo) : '...'}`);
+    if (pf.nguoiKy) chips.push(`Ký: ${pf.nguoiKy}`);
+    ((res.parsed && res.parsed.keywords) || []).slice(0, 6).forEach((k) => chips.push(`"${k}"`));
+
+    const headline = res.usedRelated
+      ? (res.total
+        ? `<span class="info-tone-warn">Không có văn bản khớp chính xác.</span> Gợi ý <b>${fmtNumber(res.total)}</b> văn bản gần giống, đồng chí xem thử có đúng không.`
+        : '<span class="info-tone-warn">Không tìm thấy văn bản phù hợp.</span> Thử bỏ bớt từ khóa hoặc bộ lọc.')
+      : `Tìm thấy <b>${fmtNumber(res.total)}</b> văn bản khớp câu hỏi.`;
+
+    const ai = res.aiUsed
+      ? '<span class="info-ai-badge" title="Câu hỏi được AI viết lại cho chuẩn (sai chính tả, viết tắt, không dấu)">AI đã hiểu lại câu hỏi</span>' : '';
+    const sortHint = state.sort && state.sort !== 'relevance'
+      ? '<button type="button" class="info-link" data-action="sort-relevance">Sắp xếp theo độ liên quan</button>' : '';
+
+    showSearchInfo(`
+      <div class="search-info-main">${headline} ${ai}</div>
+      ${chips.length ? `<div class="search-info-chips"><span class="cell-muted">Hệ thống hiểu:</span>${chips.map((c) => `<span class="info-chip">${esc(c)}</span>`).join('')}</div>` : ''}
+      ${sortHint}`);
+  }
+
+  function renderPagination(res) {
+    const total = res.total || 0;
+    const page = res.page || 1;
+    const pages = res.pages || 1;
+    const from = total ? (page - 1) * res.pageSize + 1 : 0;
+    const to = Math.min(page * res.pageSize, total);
+    $('officePaginationInfo').textContent = total ? `Hiển thị ${fmtNumber(from)}-${fmtNumber(to)} / ${fmtNumber(total)} văn bản` : '0 văn bản';
+
+    const box = $('officePaginationButtons');
+    if (pages <= 1) { box.innerHTML = ''; return; }
+    const btn = (p, label, opts = {}) =>
+      `<button type="button" class="page-btn ${opts.active ? 'active' : ''}" data-p="${p}" ${opts.disabled ? 'disabled' : ''} ${opts.title ? `title="${opts.title}" aria-label="${opts.title}"` : ''}>${label}</button>`;
+    const chevron = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="${d}"></polyline></svg>`;
+    let html = btn(page - 1, chevron('15 18 9 12 15 6'), { disabled: page === 1, title: 'Trang trước' });
+    const start = Math.max(1, Math.min(page - 2, pages - 4));
+    const end = Math.min(pages, start + 4);
+    if (start > 1) html += btn(1, '1') + (start > 2 ? '<span class="page-ellipsis">...</span>' : '');
+    for (let p = start; p <= end; p++) html += btn(p, String(p), { active: p === page });
+    if (end < pages) html += (end < pages - 1 ? '<span class="page-ellipsis">...</span>' : '') + btn(pages, String(pages));
+    html += btn(page + 1, chevron('9 18 15 12 9 6'), { disabled: page === pages, title: 'Trang tiếp' });
+    box.innerHTML = html;
+  }
+
+  function renderSortState(res) {
+    const activeSort = state.sort || (res.mode === 'search' ? 'relevance' : 'ngay');
+    const activeOrder = state.sort ? state.order : 'desc';
+    document.querySelectorAll('#officeTable th.sortable').forEach((th) => {
+      const on = th.dataset.sort === activeSort;
+      th.classList.toggle('sort-asc', on && activeOrder === 'asc');
+      th.classList.toggle('sort-desc', on && activeOrder === 'desc');
+      th.setAttribute('aria-sort', on ? (activeOrder === 'asc' ? 'ascending' : 'descending') : 'none');
+    });
+  }
+
+  function setDirection(direction) {
+    state.filters.direction = direction;
+    state.page = 1;
+    document.querySelectorAll('#officeDirectionTabs .segmented-btn').forEach((b) => {
+      const on = b.dataset.direction === direction;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    ['officeStatDen', 'officeStatDi'].forEach((id) => {
+      const el = $(id);
+      el.classList.toggle('active', el.dataset.direction === direction);
+      el.setAttribute('aria-pressed', el.dataset.direction === direction ? 'true' : 'false');
+    });
+    loadTable();
+  }
+
+  function resetFilters() {
+    state.filters = { direction: '', theLoai: '', dateFrom: '', dateTo: '', q: '' };
+    state.sort = null;
+    state.order = 'desc';
+    state.page = 1;
+    $('officeSearchInput').value = '';
+    $('officeTypeFilter').value = '';
+    $('officeDateFrom').value = '';
+    $('officeDateTo').value = '';
+    setDirection('');
+  }
+
+  function bindTableEvents() {
+    const onSearch = debounce(() => {
+      state.filters.q = $('officeSearchInput').value.trim();
+      state.page = 1;
+      state.sort = null;
+      loadTable();
+    }, 450);
+    $('officeSearchInput').addEventListener('input', onSearch);
+    $('officeSearchInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); state.filters.q = e.target.value.trim(); state.page = 1; loadTable(); }
+    });
+
+    $('officeDirectionTabs').addEventListener('click', (e) => {
+      const b = e.target.closest('.segmented-btn');
+      if (b) setDirection(b.dataset.direction || '');
+    });
+
+    ['officeStatDen', 'officeStatDi'].forEach((id) => {
+      const el = $(id);
+      const toggle = () => setDirection(state.filters.direction === el.dataset.direction ? '' : el.dataset.direction);
+      el.addEventListener('click', toggle);
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+    });
+
+    $('officeTypeFilter').addEventListener('change', (e) => { state.filters.theLoai = e.target.value; state.page = 1; loadTable(); });
+    $('officeDateFrom').addEventListener('change', (e) => { state.filters.dateFrom = e.target.value; state.page = 1; loadTable(); });
+    $('officeDateTo').addEventListener('change', (e) => { state.filters.dateTo = e.target.value; state.page = 1; loadTable(); });
+    $('btnOfficeReset').addEventListener('click', resetFilters);
+    $('officePageSize').addEventListener('change', (e) => { state.pageSize = parseInt(e.target.value, 10) || 20; state.page = 1; loadTable(); });
+
+    $('officePaginationButtons').addEventListener('click', (e) => {
+      const b = e.target.closest('.page-btn');
+      if (!b || b.disabled) return;
+      state.page = parseInt(b.dataset.p, 10) || 1;
+      loadTable();
+      $('officeTable').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    document.querySelectorAll('#officeTable th.sortable').forEach((th) => {
+      th.tabIndex = 0;
+      const sortBy = () => {
+        const key = th.dataset.sort;
+        if (state.sort === key) state.order = state.order === 'asc' ? 'desc' : 'asc';
+        else { state.sort = key; state.order = key === 'ngay' ? 'desc' : 'asc'; }
+        state.page = 1;
+        loadTable();
+      };
+      th.addEventListener('click', sortBy);
+      th.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(); } });
+    });
+
+    $('officeSearchInfo').addEventListener('click', (e) => {
+      if (e.target.closest('[data-action="sort-relevance"]')) { state.sort = null; state.page = 1; loadTable(); }
+    });
+
+    const body = $('officeTableBody');
+    body.addEventListener('click', (e) => {
+      const row = e.target.closest('tr.office-row');
+      if (row) openDocModal(parseInt(row.dataset.id, 10));
+    });
+    body.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const row = e.target.closest('tr.office-row');
+      if (row) openDocModal(parseInt(row.dataset.id, 10));
+    });
+  }
+
+  // ============================================================
+  // MODAL CHI TIẾT VĂN BẢN
+  // ============================================================
+  function field(label, value, opts = {}) {
+    if (value == null || value === '' || (Array.isArray(value) && !value.length)) return '';
+    const content = opts.html ? value : esc(value);
+    return `<div class="od-field ${opts.wide ? 'od-wide' : ''}"><span class="od-label">${esc(label)}</span><span class="od-value ${opts.mono ? 'mono' : ''}">${content}</span></div>`;
+  }
+
+  function renderDocBody(d) {
+    const isDen = d.direction === 'den';
+    const files = Array.isArray(d.file_names) && d.file_names.length
+      ? `<div class="od-files">${d.file_names.map((f) => `<span class="od-file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>${esc(f)}</span>`).join('')}</div>`
+      : '';
+    const internal = (d.y_kien_chuyen || d.y_kien_chi_dao)
+      ? `<div class="od-internal">
+           <div class="od-internal-head">Thông tin nội bộ <span>Chỉ quản trị viên thấy, không gửi qua Zalo</span></div>
+           ${field('Ý kiến chuyển', d.y_kien_chuyen, { wide: true })}
+           ${field('Ý kiến chỉ đạo', d.y_kien_chi_dao, { wide: true })}
+         </div>` : '';
+    const pages = [d.so_trang ? `${d.so_trang} trang` : '', d.so_ban ? `${d.so_ban} bản` : ''].filter(Boolean).join(' · ');
+
+    return `
+      <div class="od-summary">${esc(d.trich_yeu || 'Không có trích yếu')}</div>
+      <div class="od-grid">
+        ${field('Số / Ký hiệu', d.so_ky_hieu, { mono: true })}
+        ${field('Ngày văn bản', d.ngay_van_ban ? fmtDate(d.ngay_van_ban) : '')}
+        ${isDen ? field('Ngày nhận', d.thoi_gian_nhan ? fmtDate(d.thoi_gian_nhan) : '') : ''}
+        ${field('Thể loại', d.the_loai)}
+        ${field('Người ký', d.nguoi_ky)}
+        ${isDen ? field('Nơi gửi / Người gửi', d.nguoi_gui) : field('Người trình', d.nguoi_trinh)}
+        ${!isDen ? field('Số đăng ký', d.so_dang_ky) : ''}
+        ${!isDen ? field('Trạng thái', d.trang_thai_phat_hanh) : ''}
+        ${field('Độ khẩn', d.do_khan)}
+        ${isDen ? field('Hạn xử lý', d.han_xu_ly ? fmtDate(d.han_xu_ly) : '') : ''}
+        ${field('Sổ văn bản', d.so_van_ban)}
+        ${field('Số trang / bản', pages)}
+        ${!isDen ? field('Nơi nhận', d.noi_nhan, { wide: true }) : ''}
+        ${files ? field('File lưu tại Văn thư', files, { wide: true, html: true }) : ''}
+      </div>
+      ${internal}
+      <div class="od-contact">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        <div>Để nhận bản gốc, liên hệ <b>Văn thư ${esc(state.unitName)}</b> và cung cấp <b>Mã văn bản <span class="mono">${esc(d.source_id || '--')}</span></b>${d.so_ky_hieu ? ` (số ${esc(d.so_ky_hieu)})` : ''}.</div>
+      </div>`;
+  }
+
+  async function openDocModal(id) {
+    if (!Number.isFinite(id)) return;
+    const modal = $('officeDocModal');
+    state.lastFocus = document.activeElement;
+    $('officeDocCode').textContent = '...';
+    $('officeDocTitle').textContent = 'Đang tải văn bản';
+    $('officeDocDirBadge').innerHTML = '';
+    $('officeDocBody').innerHTML = '<div class="od-loading"><span class="spinner-dot"></span><span class="spinner-dot"></span><span class="spinner-dot"></span></div>';
+    modal.classList.add('active');
+    $('btnCloseOfficeDocModal').focus();
+    try {
+      const res = await apiRequest(`/api/office-docs/${id}`);
+      const d = res.doc;
+      if (res.unitName) setUnitName(res.unitName);
+      state.currentDoc = d;
+      $('officeDocCode').textContent = d.source_id ? `Mã ${d.source_id}` : '--';
+      $('officeDocTitle').textContent = d.so_ky_hieu || (d.the_loai ? d.the_loai : 'Chi tiết văn bản');
+      $('officeDocDirBadge').innerHTML = dirBadge(d.direction);
+      $('officeDocBody').innerHTML = renderDocBody(d);
+    } catch (e) {
+      $('officeDocBody').innerHTML = `<p class="cell-muted">Không tải được văn bản: ${esc(e.message)}</p>`;
+    }
+  }
+
+  function closeDocModal() {
+    $('officeDocModal').classList.remove('active');
+    state.currentDoc = null;
+    if (state.lastFocus && state.lastFocus.focus) state.lastFocus.focus();
+  }
+
+  function docToText(d) {
+    const lines = [
+      `${d.direction === 'den' ? 'Văn bản đến' : 'Văn bản đi'}: ${d.so_ky_hieu || '--'}`,
+      `Ngày: ${fmtDate(d.ngay_van_ban)}`,
+      d.the_loai ? `Thể loại: ${d.the_loai}` : '',
+      `Trích yếu: ${d.trich_yeu || '--'}`,
+      d.nguoi_ky ? `Người ký: ${d.nguoi_ky}` : '',
+      `Mã văn bản: ${d.source_id || '--'}`,
+      `Liên hệ Văn thư ${state.unitName} để nhận bản gốc.`,
+    ];
+    return lines.filter(Boolean).join('\n');
+  }
+
+  function bindModalEvents() {
+    const modal = $('officeDocModal');
+    $('btnCloseOfficeDocModal').addEventListener('click', closeDocModal);
+    $('btnCloseOfficeDocFooter').addEventListener('click', closeDocModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeDocModal(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('active')) closeDocModal();
+    });
+    $('btnCopyOfficeDoc').addEventListener('click', () => {
+      if (state.currentDoc) copyToClipboard(docToText(state.currentDoc), 'Đã sao chép thông tin văn bản.');
+    });
+  }
+
+  // ============================================================
+  // HỎI NHƯ TRÊN ZALO
+  // ============================================================
+  function appendBubble(role, text, metaHtml) {
+    const log = $('officeChatLog');
+    const el = document.createElement('div');
+    el.className = `chat-bubble chat-${role}`;
+    el.innerHTML = `<div class="chat-text">${esc(text)}</div>${metaHtml ? `<div class="chat-meta">${metaHtml}</div>` : ''}`;
+    log.appendChild(el);
+    log.scrollTop = log.scrollHeight;
+    return el;
+  }
+
+  async function sendChat(text) {
+    if (state.chatBusy || !text) return;
+    state.chatBusy = true;
+    const btn = $('btnOfficeChatSend');
+    btn.disabled = true;
+    appendBubble('user', text);
+    const typing = document.createElement('div');
+    typing.className = 'chat-bubble chat-bot chat-typing';
+    typing.innerHTML = '<span class="spinner-dot"></span><span class="spinner-dot"></span><span class="spinner-dot"></span>';
+    $('officeChatLog').appendChild(typing);
+    $('officeChatLog').scrollTop = $('officeChatLog').scrollHeight;
+    try {
+      const res = await apiRequest('/api/office-docs/test-query', { method: 'POST', body: JSON.stringify({ text }) });
+      typing.remove();
+      const meta = [`${fmtNumber(res.latencyMs)} ms`];
+      if (res.meta && res.meta.aiUsed) meta.push(res.meta.aiFromCache ? 'AI (bộ nhớ đệm)' : 'AI hiểu lại câu hỏi');
+      appendBubble('bot', res.answer || '(Không có trả lời)', meta.map((m) => `<span>${esc(m)}</span>`).join(''));
+    } catch (e) {
+      typing.remove();
+      appendBubble('bot', 'Lỗi: ' + e.message);
+    } finally {
+      state.chatBusy = false;
+      btn.disabled = false;
+      $('officeChatInput').focus();
+    }
+  }
+
+  function resetChatLog() {
+    $('officeChatLog').innerHTML = '';
+    appendBubble('bot', 'Chào đồng chí. Hãy nhập câu hỏi về sổ công văn đến/đi, ví dụ: "văn bản đến tuần này".');
+  }
+
+  function bindChatEvents() {
+    $('officeChatForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = $('officeChatInput');
+      const text = input.value.trim();
+      input.value = '';
+      sendChat(text);
+    });
+    $('btnOfficeChatReset').addEventListener('click', async () => {
+      try { await apiRequest('/api/office-docs/test-query', { method: 'POST', body: JSON.stringify({ text: '/moi' }) }); } catch (e) { /* bỏ qua */ }
+      resetChatLog();
+    });
+  }
+
+  // ============================================================
+  // NHẬP EXCEL (ADMIN)
+  // ============================================================
+  function readFileBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).replace(/^data:[^,]*,/, ''));
+      reader.onerror = () => reject(new Error('Không đọc được file.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function selectImportFile(file) {
+    state.importPreviewOk = false;
+    $('btnOfficeCommit').disabled = true;
+    $('officeImportReport').classList.add('hidden');
+    if (!file) return;
+    if (!/\.(xls|xlsx)$/i.test(file.name)) {
+      showToast('Chỉ nhận file .xls hoặc .xlsx.', 'warning');
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      showToast('File vượt quá 3MB. Hãy xuất theo từng năm hoặc từng quý.', 'warning');
+      return;
+    }
+    state.importFile = file;
+    $('officeFileName').textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
+    $('officeDropzone').classList.add('has-file');
+    $('btnOfficePreview').disabled = false;
+  }
+
+  function renderImportReport(r) {
+    const el = $('officeImportReport');
+    const dirText = r.direction === 'den' ? 'Sổ văn bản đến' : 'Sổ văn bản đi';
+    const stat = (label, value, tone) => `<div class="ir-stat ${tone || ''}"><span class="ir-value">${fmtNumber(value)}</span><span class="ir-label">${label}</span></div>`;
+    const skipped = r.skipped || {};
+    const changes = r.dryRun
+      ? `${stat('Sẽ thêm mới', r.inserted, 'tone-good')}${stat('Sẽ cập nhật', r.updated, 'tone-info')}${stat('Không đổi', r.unchanged)}`
+      : `${stat('Đã thêm mới', r.inserted, 'tone-good')}${stat('Đã cập nhật', r.updated, 'tone-info')}${stat('Không đổi', r.unchanged)}`;
+    const errors = (r.errors || []).length
+      ? `<details class="ir-errors"><summary>${fmtNumber(r.errorCount)} dòng lỗi, bấm để xem</summary><ul>${r.errors.map((e) => `<li>${esc(typeof e === 'string' ? e : `Dòng ${e.row || '?'}: ${e.message || e.error || JSON.stringify(e)}`)}</li>`).join('')}</ul></details>` : '';
+    const sample = (r.sample || []).length
+      ? `<div class="ir-sample"><div class="panel-subhead">Xem trước 5 dòng đầu</div>${r.sample.map((s) => `<div class="ir-sample-row"><span class="doc-number">${esc(s.so_ky_hieu || '--')}</span><span class="cell-muted">${fmtDate(s.ngay_van_ban)}</span><span class="clamp-1">${esc(s.trich_yeu || '')}</span></div>`).join('')}</div>` : '';
+
+    el.innerHTML = `
+      <div class="ir-head ${r.dryRun ? 'is-preview' : 'is-done'}">
+        <b>${r.dryRun ? 'Kết quả kiểm tra (chưa ghi)' : 'Đã ghi vào hệ thống'}</b>
+        <span>${dirText}${r.reportDate ? ` · chốt ngày ${fmtDate(r.reportDate)}` : ''} · ${fmtNumber(r.totalRows)} dòng trong file</span>
+      </div>
+      <div class="ir-stats">
+        ${stat('Hợp lệ', r.accepted)}
+        ${changes}
+        ${stat('Bỏ qua (mật)', skipped.secret, 'tone-warn')}
+        ${stat('Bỏ qua (chưa phát hành)', skipped.unpublished, 'tone-warn')}
+      </div>
+      ${errors}
+      ${sample}`;
+    el.classList.remove('hidden');
+  }
+
+  async function runImport(dryRun) {
+    if (!state.importFile) return;
+    const btn = dryRun ? $('btnOfficePreview') : $('btnOfficeCommit');
+    if (!dryRun) {
+      const ok = await showConfirmDialog({
+        title: 'Ghi sổ công văn',
+        message: `Ghi dữ liệu từ file <b>${esc(state.importFile.name)}</b> vào hệ thống? Văn bản trùng Mã sẽ được cập nhật, không tạo bản sao.`,
+        type: 'info',
+        confirmText: 'Ghi vào hệ thống',
+        cancelText: 'Để sau',
+      });
+      if (!ok) return;
+    }
+    setBusy(btn, true, dryRun ? 'Đang kiểm tra...' : 'Đang ghi...');
+    try {
+      const contentBase64 = await readFileBase64(state.importFile);
+      const res = await apiRequest('/api/office-docs/import', {
+        method: 'POST',
+        body: JSON.stringify({ fileName: state.importFile.name, contentBase64, direction: $('officeImportDirection').value, dryRun }),
+      });
+      renderImportReport(res);
+      if (dryRun) {
+        state.importPreviewOk = res.accepted > 0;
+        $('btnOfficeCommit').disabled = !state.importPreviewOk;
+        if (!state.importPreviewOk) showToast('File không có văn bản hợp lệ để ghi.', 'warning');
+      } else {
+        showToast(`Đã nhập sổ: ${fmtNumber(res.inserted)} mới, ${fmtNumber(res.updated)} cập nhật.`, 'success');
+        state.importFile = null;
+        state.importPreviewOk = false;
+        $('officeFileInput').value = '';
+        $('officeFileName').textContent = 'Kéo thả file vào đây hoặc bấm để chọn';
+        $('officeDropzone').classList.remove('has-file');
+        $('btnOfficePreview').disabled = true;
+        $('btnOfficeCommit').disabled = true;
+        loadImports();
+      }
+    } catch (e) {
+      showToast(e.message, 'error');
+    } finally {
+      setBusy(btn, false);
+      if (!dryRun) btn.disabled = true;
+      else btn.disabled = !state.importFile;
+    }
+  }
+
+  function bindImportEvents() {
+    const zone = $('officeDropzone');
+    $('officeFileInput').addEventListener('change', (e) => selectImportFile(e.target.files[0]));
+    ['dragenter', 'dragover'].forEach((ev) => zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.add('drag-over'); }));
+    ['dragleave', 'drop'].forEach((ev) => zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.remove('drag-over'); }));
+    zone.addEventListener('drop', (e) => selectImportFile(e.dataTransfer.files[0]));
+    zone.tabIndex = 0;
+    zone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('officeFileInput').click(); } });
+    $('officeImportDirection').addEventListener('change', () => { state.importPreviewOk = false; $('btnOfficeCommit').disabled = true; });
+    $('btnOfficePreview').addEventListener('click', () => runImport(true));
+    $('btnOfficeCommit').addEventListener('click', () => runImport(false));
+  }
+
+  async function loadImports() {
+    const body = $('officeImportsBody');
+    try {
+      const res = await apiRequest('/api/office-docs/imports');
+      const rows = res.imports || [];
+      body.innerHTML = rows.length ? rows.map((r) => `
+        <tr>
+          <td class="cell-date">${fmtDateTime(r.created_at)}</td>
+          <td>${dirBadge(r.direction)}</td>
+          <td class="clamp-cell" title="${esc(r.file_name || '')}">${esc(r.file_name || '--')}</td>
+          <td>${fmtDate(r.report_date)}</td>
+          <td class="num tone-good">${fmtNumber(r.inserted)}</td>
+          <td class="num">${fmtNumber(r.updated)}</td>
+          <td class="num cell-muted">${fmtNumber(r.unchanged)}</td>
+          <td class="num">${fmtNumber((r.skipped_secret || 0) + (r.skipped_unpublished || 0))}</td>
+          <td>${esc(r.imported_by_name || '--')}</td>
+        </tr>`).join('') : emptyRow(9, 'Chưa có lần nhập nào.');
+    } catch (e) {
+      body.innerHTML = emptyRow(9, 'Không tải được lịch sử nhập: ' + e.message);
+    }
+  }
+
+  // ============================================================
+  // MÃ KÍCH HOẠT + QUYỀN ZALO (ADMIN)
+  // ============================================================
+  function codeStatus(c) {
+    if (c.used_at) return `<span class="status-badge badge-active">Đã dùng</span>${c.used_by_name ? `<span class="cell-sub">${esc(c.used_by_name)}</span>` : ''}`;
+    if (c.is_active) return '<span class="status-badge status-pending">Chờ kích hoạt</span>';
+    return '<span class="status-badge badge-expired">Hết hạn / thu hồi</span>';
+  }
+
+  async function loadCodes() {
+    const body = $('officeCodesBody');
+    try {
+      const res = await apiRequest('/api/zalo-activation-codes');
+      const rows = res.codes || [];
+      body.innerHTML = rows.length ? rows.map((c) => `
+        <tr>
+          <td><b>${esc(c.staff_label || '--')}</b></td>
+          <td>${esc(c.created_by_name || '--')}</td>
+          <td class="cell-date">${fmtDateTime(c.used_at || c.expires_at)}</td>
+          <td>${codeStatus(c)}</td>
+          <td style="text-align: right;">${c.is_active ? `<button type="button" class="btn-text-danger" data-revoke="${Number(c.id)}" data-label="${esc(c.staff_label || '')}">Thu hồi</button>` : ''}</td>
+        </tr>`).join('') : emptyRow(5, 'Chưa có mã nào.');
+    } catch (e) {
+      body.innerHTML = emptyRow(5, 'Không tải được danh sách mã: ' + e.message);
+    }
+  }
+
+  function revealCode(created) {
+    const el = $('officeCodeReveal');
+    const command = `/dangky ${created.code}`;
+    el.innerHTML = `
+      <div class="code-reveal-head">
+        <span>Mã cho <b>${esc(created.staffLabel)}</b>, hết hạn ${fmtDateTime(created.expiresAt)}</span>
+        <button type="button" class="btn-close-inline" data-action="hide-code" aria-label="Ẩn mã">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="code-reveal-value">
+        <code>${esc(command)}</code>
+        <button type="button" class="btn btn-primary" data-action="copy-code">Sao chép</button>
+      </div>
+      <p class="code-reveal-note">Mã chỉ hiển thị một lần. Gửi riêng cho cán bộ, cán bộ nhắn đúng nội dung trên cho bot Zalo để được cấp quyền.</p>`;
+    el.dataset.command = command;
+    el.classList.remove('hidden');
+  }
+
+  function bindCodeEvents() {
+    $('officeCodeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = $('officeCodeStaff');
+      const staffLabel = input.value.trim();
+      if (!staffLabel) return;
+      const btn = $('btnOfficeCreateCode');
+      setBusy(btn, true, 'Đang tạo...');
+      try {
+        const created = await apiRequest('/api/zalo-activation-codes', { method: 'POST', body: JSON.stringify({ staffLabel }) });
+        revealCode(created);
+        input.value = '';
+        loadCodes();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        setBusy(btn, false);
+      }
+    });
+
+    $('officeCodeReveal').addEventListener('click', (e) => {
+      const el = $('officeCodeReveal');
+      if (e.target.closest('[data-action="copy-code"]')) copyToClipboard(el.dataset.command, 'Đã sao chép lệnh kích hoạt.');
+      if (e.target.closest('[data-action="hide-code"]')) { el.classList.add('hidden'); el.innerHTML = ''; delete el.dataset.command; }
+    });
+
+    $('officeCodesBody').addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-revoke]');
+      if (!b) return;
+      const ok = await showConfirmDialog({
+        title: 'Thu hồi mã kích hoạt',
+        message: `Thu hồi mã đã cấp cho <b>${esc(b.dataset.label || 'cán bộ')}</b>? Mã sẽ không dùng được nữa.`,
+        type: 'warning',
+        confirmText: 'Thu hồi',
+      });
+      if (!ok) return;
+      try {
+        const res = await apiRequest(`/api/zalo-activation-codes/${b.dataset.revoke}/revoke`, { method: 'POST' });
+        showToast(res.message || 'Đã thu hồi mã.', 'success');
+        loadCodes();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
+
+  function renderZaloUsers() {
+    const body = $('officeZaloBody');
+    const q = $('officeZaloSearch').value.trim().toLowerCase();
+    const rows = state.zaloUsers.filter((u) => !q
+      || String(u.display_name || '').toLowerCase().includes(q)
+      || String(u.staff_label || '').toLowerCase().includes(q)
+      || String(u.zalo_id || '').includes(q));
+    if (!rows.length) {
+      body.innerHTML = emptyRow(5, state.zaloUsers.length ? 'Không có tài khoản phù hợp.' : 'Chưa có ai nhắn tin cho bot.');
+      return;
+    }
+    body.innerHTML = rows.map((u) => `
+      <tr>
+        <td><b>${esc(u.display_name || 'Người dùng Zalo')}</b>${u.is_blocked ? ' <span class="status-badge badge-expired">Đã chặn</span>' : ''}</td>
+        <td>${esc(u.staff_label || '--')}</td>
+        <td><span class="source-id">${esc(u.zalo_id)}</span></td>
+        <td class="cell-date">${fmtDateTime(u.last_active)}</td>
+        <td style="text-align: center;">
+          <label class="switch" title="${u.can_lookup_office ? 'Đang được tra cứu' : 'Chưa được tra cứu'}">
+            <input type="checkbox" data-zalo-id="${esc(u.zalo_id)}" ${u.can_lookup_office ? 'checked' : ''} aria-label="Quyền tra cứu của ${esc(u.display_name || u.zalo_id)}">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+          </label>
+        </td>
+      </tr>`).join('');
+  }
+
+  async function loadZaloUsers() {
+    try {
+      const res = await apiRequest('/api/zalo-users');
+      state.zaloUsers = res.users || [];
+      renderZaloUsers();
+    } catch (e) {
+      $('officeZaloBody').innerHTML = emptyRow(5, 'Không tải được danh sách: ' + e.message);
+    }
+  }
+
+  function bindZaloEvents() {
+    $('officeZaloSearch').addEventListener('input', debounce(renderZaloUsers, 200));
+    $('officeZaloBody').addEventListener('change', async (e) => {
+      const input = e.target.closest('input[data-zalo-id]');
+      if (!input) return;
+      const zaloId = input.dataset.zaloId;
+      const allowed = input.checked;
+      const user = state.zaloUsers.find((u) => u.zalo_id === zaloId) || {};
+      const name = esc(user.display_name || zaloId);
+      const ok = await showConfirmDialog({
+        title: allowed ? 'Cấp quyền tra cứu' : 'Thu hồi quyền tra cứu',
+        message: allowed
+          ? `Cho phép <b>${name}</b> tra cứu sổ công văn qua Zalo?`
+          : `Thu hồi quyền tra cứu sổ công văn của <b>${name}</b>? Bộ nhớ hội thoại của người này cũng được xóa.`,
+        type: allowed ? 'info' : 'warning',
+        confirmText: allowed ? 'Cấp quyền' : 'Thu hồi',
+      });
+      if (!ok) { input.checked = !allowed; return; }
+      input.disabled = true;
+      try {
+        const res = await apiRequest(`/api/zalo-users/${encodeURIComponent(zaloId)}/office-permission`, {
+          method: 'POST',
+          body: JSON.stringify({ allowed }),
+        });
+        user.can_lookup_office = allowed;
+        showToast(res.message, 'success');
+      } catch (err) {
+        input.checked = !allowed;
+        showToast(err.message, 'error');
+      } finally {
+        input.disabled = false;
+      }
+    });
+  }
+
+  // ============================================================
+  // KHỞI TẠO
+  // ============================================================
+  bindTableEvents();
+  bindModalEvents();
+  bindChatEvents();
+  bindImportEvents();
+  bindCodeEvents();
+  bindZaloEvents();
+
+  document.addEventListener('admin:login', (e) => {
+    const prevUserId = state.user && state.user.id;
+    state.user = (e.detail && e.detail.user) || null;
+    applyRoleVisibility();
+    loadFeatures();
+    if (prevUserId && state.user && prevUserId !== state.user.id) {
+      resetChatLog();
+      $('officeCodeReveal').classList.add('hidden');
+      $('officeCodeReveal').innerHTML = '';
+    }
+  });
+
+  document.addEventListener('admin:viewchange', (e) => {
+    const viewId = e.detail && e.detail.viewId;
+    if (viewId === 'view-office') {
+      loadOverview();
+      loadTable();
+    } else if (viewId === 'view-office-admin') {
+      if (!isAdmin()) { App.switchView('view-office'); return; }
+      loadCodes();
+      loadZaloUsers();
+      loadImports();
+    }
+  });
+})();
