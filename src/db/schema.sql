@@ -164,6 +164,9 @@ CREATE TABLE IF NOT EXISTS office_documents (
 CREATE INDEX IF NOT EXISTS idx_office_docs_dir_date ON office_documents(direction, ngay_van_ban DESC);
 CREATE INDEX IF NOT EXISTS idx_office_docs_the_loai ON office_documents(the_loai);
 CREATE INDEX IF NOT EXISTS idx_office_docs_so_ky_hieu ON office_documents(LOWER(so_ky_hieu));
+-- Ghi vết thêm/sửa tay trên web (NULL = dữ liệu từ file Excel; lần nhập Excel sau ghi đè sẽ đặt lại NULL)
+ALTER TABLE office_documents ADD COLUMN IF NOT EXISTS edited_by_name VARCHAR(100);
+ALTER TABLE office_documents ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP WITH TIME ZONE;
 
 -- 9. Quyền tra cứu công văn của người dùng Zalo
 ALTER TABLE zalo_users ADD COLUMN IF NOT EXISTS can_lookup_office BOOLEAN NOT NULL DEFAULT FALSE;

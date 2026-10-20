@@ -26,8 +26,18 @@ const SELECT_COLUMNS = `
   to_char(thoi_gian_nhan, 'YYYY-MM-DD') AS thoi_gian_nhan,
   to_char(han_xu_ly, 'YYYY-MM-DD') AS han_xu_ly,
   so_trang, so_ban, COALESCE(cardinality(file_names), 0) AS file_count, search_norm,
-  to_char(updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD HH24:MI') AS updated_at
+  to_char(updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD HH24:MI') AS updated_at,
+  edited_by_name, to_char(edited_at AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD HH24:MI') AS edited_at
 `;
+
+/** Các cột ghi khi thêm / sửa tay (không có import_id) */
+const EDIT_COLUMNS = UPSERT_COLUMNS.filter((c) => c !== 'import_id');
+
+class DuplicateDocumentError extends Error {}
+
+function nowLocalStamp() {
+  return new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 16).replace('T', ' ');
+}
 
 // ------------------------------------------------------------
 // Dự phòng bộ nhớ
@@ -134,7 +144,8 @@ async function saveImport({ parsed, fileName, user, dryRun = false }) {
           .join(', ');
         await client.query(
           `INSERT INTO office_documents (${UPSERT_COLUMNS.join(',')}) VALUES ${tuples.join(',')}
-           ON CONFLICT (direction, source_id) DO UPDATE SET ${updates}, updated_at = NOW()`,
+           ON CONFLICT (direction, source_id) DO UPDATE SET ${updates}, updated_at = NOW(),
+             edited_by_name = NULL, edited_at = NULL`,
           params
         );
       }
@@ -154,12 +165,82 @@ async function saveImport({ parsed, fileName, user, dryRun = false }) {
   local.imports.unshift({ id: importId, ...importRow, created_at: new Date().toISOString() });
   for (const rec of toWrite) {
     const idx = local.docs.findIndex((d) => d.direction === direction && d.source_id === rec.source_id);
-    const row = { ...rec, import_id: importId, updated_at: new Date().toISOString().slice(0, 16).replace('T', ' ') };
+    const row = { ...rec, import_id: importId, edited_by_name: null, edited_at: null, updated_at: new Date().toISOString().slice(0, 16).replace('T', ' ') };
     if (idx >= 0) local.docs[idx] = { ...local.docs[idx], ...row };
     else local.docs.push({ id: local.nextId++, ...row });
   }
   summary.importId = importId;
   return summary;
+}
+
+// ------------------------------------------------------------
+// Thêm / sửa / xóa tay (trang Quản lý văn bản, chỉ admin)
+// `rec` đã qua doc-editor.validateDocInput
+// ------------------------------------------------------------
+
+function editorName(user) {
+  return String(user?.fullName || user?.username || 'Quản trị viên').slice(0, 100);
+}
+
+/** @returns {Promise<number>} id mới; ném DuplicateDocumentError nếu trùng Mã trong cùng sổ */
+async function createDocument(rec, user) {
+  const name = editorName(user);
+  if (await isPg()) {
+    const params = EDIT_COLUMNS.map((c) => (rec[c] === undefined ? null : rec[c]));
+    params.push(name);
+    const res = await db.pool.query(
+      `INSERT INTO office_documents (${EDIT_COLUMNS.join(',')}, edited_by_name, edited_at)
+       VALUES (${EDIT_COLUMNS.map((_, i) => `$${i + 1}`).join(',')}, $${params.length}, NOW())
+       ON CONFLICT (direction, source_id) DO NOTHING RETURNING id`,
+      params
+    );
+    if (!res.rows.length) throw new DuplicateDocumentError('Mã văn bản đã có trong sổ.');
+    return res.rows[0].id;
+  }
+  if (local.docs.some((d) => d.direction === rec.direction && d.source_id === rec.source_id)) {
+    throw new DuplicateDocumentError('Mã văn bản đã có trong sổ.');
+  }
+  const stamp = nowLocalStamp();
+  const id = local.nextId++;
+  local.docs.push({ id, ...rec, import_id: null, edited_by_name: name, edited_at: stamp, updated_at: stamp });
+  return id;
+}
+
+/** Sửa mọi trường trừ Loại sổ và Mã văn bản. @returns {Promise<boolean>} false nếu không tìm thấy */
+async function updateDocument(id, rec, user) {
+  const name = editorName(user);
+  const cols = EDIT_COLUMNS.filter((c) => c !== 'direction' && c !== 'source_id');
+  if (await isPg()) {
+    const params = cols.map((c) => (rec[c] === undefined ? null : rec[c]));
+    params.push(name, id);
+    const res = await db.pool.query(
+      `UPDATE office_documents SET ${cols.map((c, i) => `${c} = $${i + 1}`).join(', ')},
+         edited_by_name = $${params.length - 1}, edited_at = NOW(), updated_at = NOW()
+       WHERE id = $${params.length} RETURNING id`,
+      params
+    );
+    return res.rows.length > 0;
+  }
+  const doc = local.docs.find((d) => d.id === id);
+  if (!doc) return false;
+  const stamp = nowLocalStamp();
+  for (const c of cols) doc[c] = rec[c] === undefined ? null : rec[c];
+  Object.assign(doc, { edited_by_name: name, edited_at: stamp, updated_at: stamp });
+  return true;
+}
+
+/** @returns {Promise<object|null>} bản ghi đã xóa (để ghi log) hoặc null */
+async function deleteDocument(id) {
+  if (await isPg()) {
+    const res = await db.pool.query(
+      'DELETE FROM office_documents WHERE id = $1 RETURNING id, direction, source_id, so_ky_hieu', [id]
+    );
+    return res.rows[0] || null;
+  }
+  const idx = local.docs.findIndex((d) => d.id === id);
+  if (idx < 0) return null;
+  const [doc] = local.docs.splice(idx, 1);
+  return { id: doc.id, direction: doc.direction, source_id: doc.source_id, so_ky_hieu: doc.so_ky_hieu };
 }
 
 /**
@@ -558,6 +639,10 @@ function _resetLocal() {
 
 module.exports = {
   saveImport,
+  createDocument,
+  updateDocument,
+  deleteDocument,
+  DuplicateDocumentError,
   fetchCandidates,
   getDocumentsByIds,
   listDocuments,

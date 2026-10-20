@@ -257,6 +257,76 @@ async function main() {
     assert.ok(!/Ý kiến|VP n\/c tham mưu/.test(text), 'file xuất không được chứa ý kiến chuyển/chỉ đạo');
   });
 
+  console.log('[Office] Thêm / sửa / xóa văn bản (admin)');
+  const { validateDocInput } = require('../src/office/doc-editor');
+  const admin = { id: 1, username: 'admin', fullName: 'Quản trị thử' };
+  const findBy = async (query) => (await list(query)).items;
+  await test('kiểm tra dữ liệu: bắt buộc, ngày sai, mã sai; bỏ trường của sổ kia', () => {
+    const bad = validateDocInput({ direction: 'xoa', source_id: "1'; DROP", ngay_van_ban: '2026-02-31' });
+    assert.strictEqual(bad.ok, false);
+    assert.deepStrictEqual(Object.keys(bad.errors).sort(), ['direction', 'ngay_van_ban', 'so_ky_hieu', 'source_id', 'trich_yeu']);
+    const ok = validateDocInput({
+      direction: 'di', so_ky_hieu: ' 300-CV/ĐU ', trich_yeu: 'Về việc thử nghiệm', ngay_van_ban: '2026-10-19',
+      nguoi_gui: 'không thuộc sổ đi', y_kien_chuyen: 'nội bộ', so_trang: '3', file_names: 'a.pdf\n\na.pdf\nb.docx', do_mat: 'Mật',
+    });
+    assert.strictEqual(ok.ok, true);
+    const r = ok.record;
+    assert.ok(/^TAY-[0-9A-F]{8}$/.test(r.source_id));
+    assert.strictEqual(r.so_ky_hieu, '300-CV/ĐU');
+    assert.strictEqual(r.nguoi_gui, null);
+    assert.strictEqual(r.y_kien_chuyen, null);
+    assert.strictEqual(r.so_trang, 3);
+    assert.deepStrictEqual(r.file_names, ['a.pdf', 'b.docx']);
+    assert.strictEqual(r.do_mat, 'Thường');
+    assert.strictEqual(r.trang_thai_phat_hanh, 'Đã phát hành');
+    assert.strictEqual(r.row_hash, null);
+  });
+  await test('thêm tay: tìm được ngay, trùng Mã thì báo lỗi', async () => {
+    const rec = validateDocInput({ direction: 'den', source_id: 'TAY-TEST1', so_ky_hieu: '77-TB/HU', trich_yeu: 'Thông báo lịch tiếp công dân', ngay_van_ban: '19/10/2026', thoi_gian_nhan: '2026-10-20' }).record;
+    const id = await store.createDocument(rec, admin);
+    const [doc] = await store.getDocumentsByIds([id]);
+    assert.strictEqual(doc.edited_by_name, 'Quản trị thử');
+    assert.ok(doc.edited_at);
+    assert.deepStrictEqual((await findBy({ keyword: 'tiep cong dan' })).map((d) => d.source_id), ['TAY-TEST1']);
+    await assert.rejects(store.createDocument(rec, admin), store.DuplicateDocumentError);
+  });
+  await test('ô tìm chung khớp số ký hiệu (có "/"), mã văn bản, người ký', async () => {
+    assert.deepStrictEqual((await findBy({ keyword: '866-CV/TU' })).map((d) => d.source_id), ['90000002']);
+    assert.deepStrictEqual((await findBy({ keyword: '90000002' })).map((d) => d.so_ky_hieu), ['866-CV/TU']);
+    assert.ok((await findBy({ keyword: 'tran thi binh' })).length >= 1);
+  });
+  await test('sửa tay: đổi nội dung, không đổi được loại sổ và mã', async () => {
+    const [row] = await findBy({ sourceId: '90000002' });
+    const [orig] = await store.getDocumentsByIds([row.id]);
+    assert.ok(orig.file_names.length > 0);
+    const v = validateDocInput({ ...orig, direction: 'di', source_id: 'KHAC', trich_yeu: 'Trích yếu đã chỉnh sửa tay' }, { existing: orig });
+    assert.strictEqual(v.ok, true);
+    assert.strictEqual(await store.updateDocument(orig.id, v.record, admin), true);
+    const [doc] = await store.getDocumentsByIds([orig.id]);
+    assert.strictEqual(doc.direction, 'den');
+    assert.strictEqual(doc.source_id, '90000002');
+    assert.strictEqual(doc.trich_yeu, 'Trích yếu đã chỉnh sửa tay');
+    assert.strictEqual(doc.edited_by_name, 'Quản trị thử');
+    assert.strictEqual((await findBy({ keyword: 'chinh sua tay' })).length, 1);
+    assert.strictEqual(await store.updateDocument(999999, v.record, admin), false);
+  });
+  await test('nhập lại Excel ghi đè bản sửa tay cùng Mã, giữ văn bản thêm tay', async () => {
+    const parsed = parseRegisterWorkbook(fixture('so-van-ban-den.xls'));
+    const sum = await store.saveImport({ parsed, fileName: 'so-van-ban-den.xls', user: admin });
+    assert.strictEqual(sum.updated, 1, 'chỉ văn bản sửa tay bị coi là thay đổi');
+    const [doc] = await findBy({ sourceId: '90000002' });
+    assert.notStrictEqual(doc.trich_yeu, 'Trích yếu đã chỉnh sửa tay');
+    assert.strictEqual(doc.edited_by_name, null);
+    assert.strictEqual((await findBy({ sourceId: 'TAY-TEST1' })).length, 1);
+  });
+  await test('xóa văn bản; xóa lần hai trả về không tìm thấy', async () => {
+    const [doc] = await findBy({ sourceId: 'TAY-TEST1' });
+    const removed = await store.deleteDocument(doc.id);
+    assert.strictEqual(removed.source_id, 'TAY-TEST1');
+    assert.strictEqual((await findBy({ sourceId: 'TAY-TEST1' })).length, 0);
+    assert.strictEqual(await store.deleteDocument(doc.id), null);
+  });
+
   console.log('[Office] Lớp AI (kiểm tra đầu ra, không gọi mạng)');
   await test('chặn giá trị ngoài danh sách trắng', () => {
     const v = validateAiOutput({ pham_vi: true, huong: 'xoa', the_loai: 'DROP TABLE', so_ky_hieu: "1'; --", tu_ngay: '2026-13-40', so: -5, tu_khoa: 'tham nhũng' });

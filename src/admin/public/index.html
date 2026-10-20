@@ -182,22 +182,57 @@
       <nav class="sidebar-nav">
         <div class="nav-section-title">Sổ Công Văn</div>
 
+        <button class="nav-item nav-admin-only" data-view="view-office-dashboard" id="navItemOfficeDashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <rect x="3" y="3" width="7" height="9" rx="1.5"></rect>
+            <rect x="14" y="3" width="7" height="5" rx="1.5"></rect>
+            <rect x="14" y="12" width="7" height="9" rx="1.5"></rect>
+            <rect x="3" y="16" width="7" height="5" rx="1.5"></rect>
+          </svg>
+          <span>Tổng Quan</span>
+        </button>
+
         <button class="nav-item active" data-view="view-office" id="navItemOffice">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-            <path d="M21 8v13H3V8"></path>
-            <path d="M1 3h22v5H1z"></path>
-            <path d="M10 12h4"></path>
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
           <span>Tra Cứu Công Văn</span>
         </button>
 
-        <button class="nav-item nav-admin-only" data-view="view-office-admin" id="navItemOfficeAdmin">
+        <button class="nav-item" data-view="view-office-chat" id="navItemOfficeChat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span>Hỏi Đáp Như Zalo</span>
+        </button>
+
+        <div class="nav-section-title nav-admin-only">Quản Trị Sổ</div>
+
+        <button class="nav-item nav-admin-only" data-view="view-office-manage" id="navItemOfficeManage">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <path d="M9.5 17.5l.5-2 4.5-4.5 1.5 1.5-4.5 4.5z"></path>
+          </svg>
+          <span>Quản Lý Văn Bản</span>
+        </button>
+
+        <button class="nav-item nav-admin-only" data-view="view-office-import" id="navItemOfficeImport">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="17 8 12 3 7 8"></polyline>
             <line x1="12" y1="3" x2="12" y2="15"></line>
           </svg>
-          <span>Nhập Sổ & Cấp Quyền</span>
+          <span>Nhập Sổ Excel</span>
+        </button>
+
+        <button class="nav-item nav-admin-only" data-view="view-office-zalo" id="navItemOfficeZalo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>Cấp Quyền Zalo</span>
         </button>
 
         <div class="nav-section-title nav-regulation" id="navRegulationSectionTitle">Hỏi Đáp Quy Định</div>
@@ -330,12 +365,12 @@
       <div class="app-content">
 
         <!-- ============================================================
-             MÀN HÌNH: TRA CỨU SỔ CÔNG VĂN (#view-office) - mặc định cho mọi vai trò
+             MÀN HÌNH: TỔNG QUAN SỔ CÔNG VĂN (#view-office-dashboard) - chỉ admin
              ============================================================ -->
-        <section id="view-office" class="view-section active">
+        <section id="view-office-dashboard" class="view-section">
 
-          <div class="office-hero">
-            <div class="office-stat office-stat-den" id="officeStatDen" role="button" tabindex="0" data-direction="den" aria-label="Lọc sổ văn bản đến">
+          <div class="office-hero dashboard-hero">
+            <div class="office-stat office-stat-den" id="officeStatDen" role="button" tabindex="0" data-direction="den" aria-label="Xem sổ văn bản đến trong Tra cứu">
               <div class="office-stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                   <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
@@ -346,10 +381,11 @@
                 <span class="office-stat-label">Sổ văn bản đến</span>
                 <span class="office-stat-value" id="officeTotalDen">--</span>
                 <span class="office-stat-meta" id="officeMetaDen">Chưa có dữ liệu</span>
+                <span class="office-stat-cta">Xem sổ đến<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
               </div>
             </div>
 
-            <div class="office-stat office-stat-di" id="officeStatDi" role="button" tabindex="0" data-direction="di" aria-label="Lọc sổ văn bản đi">
+            <div class="office-stat office-stat-di" id="officeStatDi" role="button" tabindex="0" data-direction="di" aria-label="Xem sổ văn bản đi trong Tra cứu">
               <div class="office-stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                   <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -360,6 +396,7 @@
                 <span class="office-stat-label">Sổ văn bản đi</span>
                 <span class="office-stat-value" id="officeTotalDi">--</span>
                 <span class="office-stat-meta" id="officeMetaDi">Chưa có dữ liệu</span>
+                <span class="office-stat-cta">Xem sổ đi<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
               </div>
             </div>
 
@@ -375,6 +412,12 @@
               </div>
             </div>
           </div>
+        </section>
+
+        <!-- ============================================================
+             MÀN HÌNH: TRA CỨU SỔ CÔNG VĂN (#view-office) - mọi vai trò
+             ============================================================ -->
+        <section id="view-office" class="view-section active">
 
           <div class="filter-toolbar office-toolbar">
             <div class="office-toolbar-row">
@@ -582,7 +625,13 @@
             </div>
           </div>
 
-          <div class="office-chat-card" id="officeChatCard">
+        </section>
+
+        <!-- ============================================================
+             MÀN HÌNH: HỎI ĐÁP NHƯ ZALO (#view-office-chat) - mọi vai trò
+             ============================================================ -->
+        <section id="view-office-chat" class="view-section">
+          <div class="office-chat-card office-chat-page" id="officeChatCard">
             <div class="office-chat-head">
               <div>
                 <h2 class="office-chat-title">Hỏi như trên Zalo</h2>
@@ -593,6 +642,13 @@
             <div class="office-chat-log" id="officeChatLog" aria-live="polite">
               <div class="chat-bubble chat-bot">Chào đồng chí. Hãy nhập câu hỏi về sổ công văn đến/đi, ví dụ: "văn bản đến tuần này".</div>
             </div>
+            <div class="chat-suggestions" id="officeChatSuggestions">
+              <span class="chat-suggestions-label">Thử hỏi:</span>
+              <button type="button" class="chat-suggestion" data-q="văn bản đến tuần này">văn bản đến tuần này</button>
+              <button type="button" class="chat-suggestion" data-q="quyết định tháng 10">quyết định tháng 10</button>
+              <button type="button" class="chat-suggestion" data-q="bao nhiêu công văn đi năm nay">bao nhiêu công văn đi năm nay</button>
+              <button type="button" class="chat-suggestion" data-q="văn bản về nhà đất">văn bản về nhà đất</button>
+            </div>
             <form class="office-chat-form" id="officeChatForm">
               <input type="text" id="officeChatInput" class="form-control" maxlength="300" placeholder="Nhập câu hỏi..." aria-label="Câu hỏi" autocomplete="off">
               <button type="submit" class="btn btn-primary" id="btnOfficeChatSend">Gửi</button>
@@ -601,10 +657,71 @@
         </section>
 
         <!-- ============================================================
-             MÀN HÌNH: NHẬP SỔ & CẤP QUYỀN ZALO (#view-office-admin) - chỉ admin
+             MÀN HÌNH: QUẢN LÝ VĂN BẢN (#view-office-manage) - chỉ admin
              ============================================================ -->
-        <section id="view-office-admin" class="view-section">
-          <div class="office-admin-grid">
+        <section id="view-office-manage" class="view-section">
+          <div class="filter-toolbar office-toolbar">
+            <div class="office-toolbar-row">
+              <div class="segmented" role="tablist" aria-label="Chọn sổ" id="manageDirectionTabs">
+                <button type="button" class="segmented-btn active" data-direction="" role="tab" aria-selected="true">Tất cả</button>
+                <button type="button" class="segmented-btn" data-direction="den" role="tab" aria-selected="false">Văn bản đến</button>
+                <button type="button" class="segmented-btn" data-direction="di" role="tab" aria-selected="false">Văn bản đi</button>
+              </div>
+              <div class="search-input-wrap manage-search-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="search" id="manageSearchInput" class="search-input" maxlength="100" placeholder="Tìm số ký hiệu, trích yếu, mã văn bản, người ký" aria-label="Tìm văn bản cần sửa" autocomplete="off">
+              </div>
+              <div class="office-toolbar-actions">
+                <button type="button" class="btn btn-primary" id="btnManageAdd">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span>Thêm văn bản</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-responsive">
+              <table class="data-table office-table manage-table" id="manageTable">
+                <thead>
+                  <tr>
+                    <th style="width: 56px; text-align: center;">STT</th>
+                    <th style="width: 150px;">Số / Ký hiệu</th>
+                    <th style="width: 120px;">Ngày</th>
+                    <th style="width: 84px;">Sổ</th>
+                    <th>Trích yếu</th>
+                    <th style="width: 116px;">Mã VB</th>
+                    <th style="width: 170px;">Nguồn dữ liệu</th>
+                    <th class="sticky-action-col" style="width: 120px; text-align: center;">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="manageTableBody">
+                  <tr><td colspan="8" class="table-empty"><p>Đang tải...</p></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination-bar">
+              <div class="pagination-left">
+                <span id="managePaginationInfo">--</span>
+                <select id="managePageSize" class="page-size-select" aria-label="Số dòng mỗi trang">
+                  <option value="20">20 dòng / trang</option>
+                  <option value="50">50 dòng / trang</option>
+                  <option value="100">100 dòng / trang</option>
+                </select>
+              </div>
+              <div class="pagination-right" id="managePaginationButtons"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             MÀN HÌNH: NHẬP SỔ EXCEL (#view-office-import) - chỉ admin
+             ============================================================ -->
+        <section id="view-office-import" class="view-section">
+          <div class="office-stack">
 
             <div class="panel-card">
               <div class="panel-head">
@@ -641,7 +758,43 @@
             <div class="panel-card">
               <div class="panel-head">
                 <div>
-                  <h2 class="panel-title">Cấp quyền tra cứu qua Zalo</h2>
+                  <h2 class="panel-title">Lịch sử nhập sổ</h2>
+                  <span class="panel-sub">30 lần nhập gần nhất.</span>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table compact-table">
+                  <thead>
+                    <tr><th>Thời gian</th><th>Sổ</th><th>File</th><th>Chốt dữ liệu</th><th>Mới</th><th>Cập nhật</th><th>Không đổi</th><th>Bỏ qua</th><th>Người nhập</th></tr>
+                  </thead>
+                  <tbody id="officeImportsBody"><tr><td colspan="9" class="table-empty"><p>Chưa có lần nhập nào.</p></td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             MÀN HÌNH: CẤP QUYỀN ZALO (#view-office-zalo) - chỉ admin, 2 tab
+             ============================================================ -->
+        <section id="view-office-zalo" class="view-section">
+          <div class="office-tabs" role="tablist" aria-label="Cấp quyền Zalo" id="zaloTabs">
+            <button type="button" class="office-tab-btn active" role="tab" id="zaloTabCodes" data-panel="zaloPanelCodes" aria-controls="zaloPanelCodes" aria-selected="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+              <span>Mã kích hoạt</span>
+            </button>
+            <button type="button" class="office-tab-btn" role="tab" id="zaloTabUsers" data-panel="zaloPanelUsers" aria-controls="zaloPanelUsers" aria-selected="false" tabindex="-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              <span>Tài khoản Zalo</span>
+              <span class="tab-count hidden" id="zaloUsersCount"></span>
+            </button>
+          </div>
+
+          <div class="office-tab-panel" id="zaloPanelCodes" role="tabpanel" aria-labelledby="zaloTabCodes">
+            <div class="panel-card">
+              <div class="panel-head">
+                <div>
+                  <h2 class="panel-title">Cấp mã kích hoạt</h2>
                   <span class="panel-sub">Tạo mã dùng một lần (hiệu lực 24 giờ). Cán bộ nhắn <b>/dangky MÃ</b> cho bot Zalo để được cấp quyền.</span>
                 </div>
               </div>
@@ -661,8 +814,10 @@
                 </table>
               </div>
             </div>
+          </div>
 
-            <div class="panel-card panel-span-2">
+          <div class="office-tab-panel" id="zaloPanelUsers" role="tabpanel" aria-labelledby="zaloTabUsers" hidden>
+            <div class="panel-card">
               <div class="panel-head">
                 <div>
                   <h2 class="panel-title">Tài khoản Zalo</h2>
@@ -682,23 +837,6 @@
                     <tr><th>Tên Zalo</th><th>Cán bộ</th><th>Zalo ID</th><th>Hoạt động gần nhất</th><th style="text-align: center;">Quyền tra cứu</th></tr>
                   </thead>
                   <tbody id="officeZaloBody"><tr><td colspan="5" class="table-empty"><p>Đang tải...</p></td></tr></tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="panel-card panel-span-2">
-              <div class="panel-head">
-                <div>
-                  <h2 class="panel-title">Lịch sử nhập sổ</h2>
-                  <span class="panel-sub">30 lần nhập gần nhất.</span>
-                </div>
-              </div>
-              <div class="table-responsive">
-                <table class="data-table compact-table">
-                  <thead>
-                    <tr><th>Thời gian</th><th>Sổ</th><th>File</th><th>Chốt dữ liệu</th><th>Mới</th><th>Cập nhật</th><th>Không đổi</th><th>Bỏ qua</th><th>Người nhập</th></tr>
-                  </thead>
-                  <tbody id="officeImportsBody"><tr><td colspan="9" class="table-empty"><p>Chưa có lần nhập nào.</p></td></tr></tbody>
                 </table>
               </div>
             </div>
@@ -1641,6 +1779,146 @@ Hướng dẫn này quy định về thể thức...
       </div>
     </div>
   </div>
+
+  <!-- Modal: Thêm / sửa văn bản trong sổ (#officeEditModal) - chỉ admin -->
+  <div id="officeEditModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="officeEditTitle">
+    <div class="modal-container modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2 class="modal-title" id="officeEditTitle">Thêm văn bản</h2>
+          <span id="officeEditBadge"></span>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseOfficeEdit" aria-label="Đóng">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <form class="modal-body edit-form" id="officeEditForm" novalidate autocomplete="off">
+        <div class="edit-error hidden" id="officeEditError" role="alert"></div>
+
+        <section class="edit-section">
+          <h3 class="edit-section-title">Thông tin văn bản</h3>
+          <div class="edit-grid">
+            <div class="edit-field">
+              <span class="form-label">Loại sổ <span class="req">*</span></span>
+              <div class="dir-choice" role="radiogroup" aria-label="Loại sổ">
+                <label><input type="radio" name="direction" value="den" checked><span>Văn bản đến</span></label>
+                <label><input type="radio" name="direction" value="di"><span>Văn bản đi</span></label>
+              </div>
+            </div>
+            <label class="edit-field">
+              <span class="form-label">Mã văn bản</span>
+              <input type="text" name="source_id" class="form-control mono" maxlength="50" placeholder="Bỏ trống để hệ thống tự cấp">
+            </label>
+            <label class="edit-field">
+              <span class="form-label">Số, ký hiệu <span class="req">*</span></span>
+              <input type="text" name="so_ky_hieu" class="form-control" maxlength="100" placeholder="VD: 866-CV/TU" required>
+            </label>
+            <label class="edit-field">
+              <span class="form-label">Ngày văn bản <span class="req">*</span></span>
+              <input type="date" name="ngay_van_ban" class="form-control" required>
+            </label>
+            <label class="edit-field span-2">
+              <span class="form-label">Trích yếu nội dung <span class="req">*</span></span>
+              <textarea name="trich_yeu" class="form-control" rows="3" maxlength="2000" required></textarea>
+            </label>
+            <label class="edit-field">
+              <span class="form-label">Thể loại</span>
+              <input type="text" name="the_loai" class="form-control" list="dlOfficeTypes" maxlength="100" placeholder="Công văn, Quyết định...">
+            </label>
+            <label class="edit-field">
+              <span class="form-label">Người ký</span>
+              <input type="text" name="nguoi_ky" class="form-control" maxlength="255">
+            </label>
+            <label class="edit-field">
+              <span class="form-label">Sổ văn bản</span>
+              <input type="text" name="so_van_ban" class="form-control" list="dlOfficeBooks" maxlength="255">
+            </label>
+            <label class="edit-field">
+              <span class="form-label">Độ khẩn</span>
+              <input type="text" name="do_khan" class="form-control" list="dlOfficeUrgencies" maxlength="50" placeholder="Thường">
+            </label>
+          </div>
+        </section>
+
+        <section class="edit-section" data-dir="den">
+          <h3 class="edit-section-title">Thông tin sổ đến</h3>
+          <div class="edit-grid">
+            <label class="edit-field">
+              <span class="form-label">Ngày đến</span>
+              <input type="date" name="thoi_gian_nhan" class="form-control">
+            </label>
+            <label class="edit-field">
+              <span class="form-label">Hạn xử lý</span>
+              <input type="date" name="han_xu_ly" class="form-control">
+            </label>
+            <label class="edit-field span-2">
+              <span class="form-label">Nơi gửi / Người gửi</span>
+              <input type="text" name="nguoi_gui" class="form-control" maxlength="255">
+            </label>
+            <label class="edit-field">
+              <span class="form-label">Ý kiến chuyển <span class="label-tag">Nội bộ</span></span>
+              <textarea name="y_kien_chuyen" class="form-control" rows="2" maxlength="2000"></textarea>
+            </label>
+            <label class="edit-field">
+              <span class="form-label">Ý kiến chỉ đạo <span class="label-tag">Nội bộ</span></span>
+              <textarea name="y_kien_chi_dao" class="form-control" rows="2" maxlength="2000"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="edit-section" data-dir="di" hidden>
+          <h3 class="edit-section-title">Thông tin sổ đi</h3>
+          <div class="edit-grid">
+            <label class="edit-field">
+              <span class="form-label">Số đăng ký</span>
+              <input type="number" name="so_dang_ky" class="form-control" min="0" step="1">
+            </label>
+            <label class="edit-field">
+              <span class="form-label">Người trình</span>
+              <input type="text" name="nguoi_trinh" class="form-control" maxlength="255">
+            </label>
+            <label class="edit-field span-2">
+              <span class="form-label">Nơi nhận</span>
+              <textarea name="noi_nhan" class="form-control" rows="2" maxlength="2000"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="edit-section">
+          <h3 class="edit-section-title">Lưu trữ tại Văn thư</h3>
+          <div class="edit-grid">
+            <label class="edit-field">
+              <span class="form-label">Số trang</span>
+              <input type="number" name="so_trang" class="form-control" min="0" step="1">
+            </label>
+            <label class="edit-field">
+              <span class="form-label">Số bản</span>
+              <input type="number" name="so_ban" class="form-control" min="0" step="1">
+            </label>
+            <label class="edit-field span-2">
+              <span class="form-label">Tên file lưu</span>
+              <textarea name="file_names" class="form-control" rows="2" placeholder="Mỗi dòng một tên file"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <div class="edit-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <span>File Excel là nguồn chuẩn: nếu lần nhập sau có văn bản cùng Mã, dữ liệu trong file sẽ thay bản sửa tay. Ý kiến chuyển / chỉ đạo không gửi qua Zalo và không có trong file xuất.</span>
+        </div>
+      </form>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btnCancelOfficeEdit">Hủy</button>
+        <button type="submit" form="officeEditForm" class="btn btn-primary" id="btnSaveOfficeEdit">Lưu văn bản</button>
+      </div>
+    </div>
+  </div>
+  <datalist id="dlOfficeTypes"></datalist>
+  <datalist id="dlOfficeBooks"></datalist>
+  <datalist id="dlOfficeUrgencies"></datalist>
 
   <!-- Modal 2: Chi Tiết Nhật Ký Hội Thoại (#logDetailModal - Rộng 780px) -->
   <div id="logDetailModal" class="modal-overlay">

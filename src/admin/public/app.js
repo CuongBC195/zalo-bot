@@ -401,7 +401,8 @@
 
     // office.js lắng nghe để phân luồng giao diện theo vai trò / cờ tính năng
     document.dispatchEvent(new CustomEvent('admin:login', { detail: { user } }));
-    switchView('view-office');
+    // Quản trị vào Tổng quan, cán bộ vào thẳng Tra cứu
+    switchView(user.role === 'user' ? 'view-office' : 'view-office-dashboard');
     loadInitialData();
   }
 
@@ -481,13 +482,29 @@
   const pageSubtitle = document.getElementById('pageSubtitle');
 
   const VIEW_TITLES = {
+    'view-office-dashboard': {
+      title: 'Tổng Quan Sổ Công Văn',
+      subtitle: 'Số văn bản trong sổ đến / đi và ngày chốt dữ liệu gần nhất',
+    },
     'view-office': {
       title: 'Tra Cứu Sổ Công Văn',
       subtitle: 'Sổ văn bản đến / đi của Văn phòng Đảng ủy. Cần bản gốc, liên hệ Văn thư.',
     },
-    'view-office-admin': {
-      title: 'Nhập Sổ & Cấp Quyền Tra Cứu',
-      subtitle: 'Nhập file Excel sổ công văn, cấp mã kích hoạt và quyền tra cứu qua Zalo',
+    'view-office-chat': {
+      title: 'Hỏi Đáp Như Trên Zalo',
+      subtitle: 'Gõ câu hỏi tự nhiên, bot trả lời đúng như khi cán bộ nhắn tin qua Zalo',
+    },
+    'view-office-manage': {
+      title: 'Quản Lý Văn Bản',
+      subtitle: 'Thêm, sửa, xóa từng văn bản trong sổ. File Excel nhập sau vẫn là nguồn chuẩn.',
+    },
+    'view-office-import': {
+      title: 'Nhập Sổ Từ Excel',
+      subtitle: 'Nạp file "Danh sách văn bản" xuất từ phần mềm quản lý văn bản',
+    },
+    'view-office-zalo': {
+      title: 'Cấp Quyền Tra Cứu Qua Zalo',
+      subtitle: 'Cấp mã kích hoạt và bật / tắt quyền tra cứu cho từng tài khoản Zalo',
     },
     'view-documents': {
       title: 'Kho Văn Bản Quy Định',

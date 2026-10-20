@@ -2,7 +2,7 @@
  * API quản trị luồng Tra cứu Sổ công văn.
  * Gắn sau authMiddleware. Phân quyền:
  *  - Mọi tài khoản đăng nhập: xem/tìm sổ (vai trò 'user' không thấy Ý kiến chuyển/chỉ đạo), thử câu hỏi.
- *  - admin/superadmin: nhập Excel, xem lịch sử nhập, cấp mã kích hoạt Zalo, cấp/thu quyền.
+ *  - admin/superadmin: nhập Excel, thêm/sửa/xóa từng văn bản, xem lịch sử nhập, cấp mã kích hoạt Zalo, cấp/thu quyền.
  */
 
 const express = require('express');
@@ -16,6 +16,7 @@ const { rankCandidates, buildCandidateQuery, paginateRanked, SORTABLE } = requir
 const aiRewriter = require('../office/ai-rewriter');
 const XLSX = require('xlsx');
 const { readColumnFilters } = require('../office/column-filters');
+const { validateDocInput } = require('../office/doc-editor');
 
 const router = express.Router();
 const adminOnly = requireRole('superadmin', 'admin');
@@ -160,6 +161,7 @@ function describeFilters(f) {
   const range = (a, b) => `${a ? vnDate(a) : '...'} - ${b ? vnDate(b) : '...'}`;
   const parts = [];
   if (f.text) parts.push(`Tìm: "${f.text}"`);
+  if (c.keyword) parts.push(`Từ khóa: ${c.keyword}`);
   if (f.theLoai) parts.push(`Thể loại: ${f.theLoai}`);
   if (c.soKyHieu) parts.push(`Số, ký hiệu: ${c.soKyHieu}`);
   if (c.sourceId) parts.push(`Mã VB: ${c.sourceId}`);
@@ -236,6 +238,68 @@ router.get('/office-docs/:id', async (req, res) => {
     res.json({ ok: true, doc: sanitizeDoc(doc, req.user), unitName: config.office.unitName });
   } catch (err) {
     res.status(500).json({ ok: false, error: 'Không tải được văn bản.' });
+  }
+});
+
+// ------------------------------------------------------------
+// Thêm / sửa / xóa từng văn bản (admin). Excel vẫn là nguồn chuẩn: lần nhập sau ghi đè văn bản cùng Mã.
+// ------------------------------------------------------------
+
+function invalidInput(res, errors) {
+  const first = Object.values(errors)[0] || 'Dữ liệu không hợp lệ.';
+  return res.status(400).json({ ok: false, error: first, fields: errors });
+}
+
+router.post('/office-docs', adminOnly, async (req, res) => {
+  const v = validateDocInput(req.body);
+  if (!v.ok) return invalidInput(res, v.errors);
+  try {
+    const id = await store.createDocument(v.record, req.user);
+    office.invalidateOverview();
+    console.log(`[Office API] create doc: user=${req.user.username} id=${id} source=${v.record.source_id}`);
+    const [doc] = await store.getDocumentsByIds([id]);
+    res.status(201).json({ ok: true, doc: sanitizeDoc(doc, req.user), message: 'Đã thêm văn bản vào sổ.' });
+  } catch (err) {
+    if (err instanceof store.DuplicateDocumentError) {
+      return res.status(409).json({ ok: false, error: `Mã văn bản ${v.record.source_id} đã có trong sổ này.`, fields: { source_id: 'Mã đã tồn tại.' } });
+    }
+    console.error('[Office API] create doc:', err.message);
+    res.status(500).json({ ok: false, error: 'Không thêm được văn bản.' });
+  }
+});
+
+router.put('/office-docs/:id', adminOnly, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'Mã không hợp lệ.' });
+  try {
+    const [existing] = await store.getDocumentsByIds([id]);
+    if (!existing) return res.status(404).json({ ok: false, error: 'Không tìm thấy văn bản.' });
+    const v = validateDocInput(req.body, { existing });
+    if (!v.ok) return invalidInput(res, v.errors);
+    const updated = await store.updateDocument(id, v.record, req.user);
+    if (!updated) return res.status(404).json({ ok: false, error: 'Không tìm thấy văn bản.' });
+    office.invalidateOverview();
+    console.log(`[Office API] update doc: user=${req.user.username} id=${id}`);
+    const [doc] = await store.getDocumentsByIds([id]);
+    res.json({ ok: true, doc: sanitizeDoc(doc, req.user), message: 'Đã lưu thay đổi.' });
+  } catch (err) {
+    console.error('[Office API] update doc:', err.message);
+    res.status(500).json({ ok: false, error: 'Không lưu được văn bản.' });
+  }
+});
+
+router.delete('/office-docs/:id', adminOnly, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'Mã không hợp lệ.' });
+  try {
+    const removed = await store.deleteDocument(id);
+    if (!removed) return res.status(404).json({ ok: false, error: 'Không tìm thấy văn bản.' });
+    office.invalidateOverview();
+    console.log(`[Office API] delete doc: user=${req.user.username} id=${id} source=${removed.direction}/${removed.source_id}`);
+    res.json({ ok: true, message: `Đã xóa văn bản ${removed.so_ky_hieu || removed.source_id}.` });
+  } catch (err) {
+    console.error('[Office API] delete doc:', err.message);
+    res.status(500).json({ ok: false, error: 'Không xóa được văn bản.' });
   }
 });
 

@@ -1,8 +1,10 @@
 /**
- * Module giao diện "Sổ Công Văn" (tra cứu, nhập Excel, cấp quyền Zalo).
+ * Module giao diện "Sổ Công Văn" (tổng quan, tra cứu, hỏi đáp, quản lý văn bản, nhập Excel, cấp quyền Zalo).
  * Phụ thuộc window.AdminApp do app.js cung cấp; lắng nghe sự kiện:
  *  - admin:login      -> phân luồng giao diện theo vai trò và cờ tính năng
- *  - admin:viewchange -> tải dữ liệu khi mở view-office / view-office-admin
+ *  - admin:viewchange -> tải dữ liệu khi mở từng trang của Sổ công văn:
+ *      view-office-dashboard (admin) | view-office | view-office-chat
+ *      view-office-manage | view-office-import | view-office-zalo (admin)
  */
 (function () {
   'use strict';
@@ -29,6 +31,8 @@
   const COLUMN_ROW_KEYS = ['soKyHieu', 'docDateFrom', 'docDateTo', 'direction', 'theLoai', 'trichYeu', 'nguoiKy', 'sourceId'];
   const FILTER_ROW_PREF = 'office.filterRow';
   const emptyFilters = () => Object.fromEntries(FILTER_KEYS.map((k) => [k, '']));
+  /** Các trang chỉ admin mở được (cán bộ bị đưa về Tra cứu) */
+  const ADMIN_VIEWS = ['view-office-dashboard', 'view-office-manage', 'view-office-import', 'view-office-zalo'];
 
   const state = {
     user: null,
@@ -48,6 +52,10 @@
     zaloUsers: [],
     chatBusy: false,
     exporting: false,
+    manage: { direction: '', keyword: '', page: 1, pageSize: 20, seq: 0 },
+    editing: null,      // bản ghi đang sửa (null = thêm mới)
+    editFocus: null,
+    saving: false,
   };
 
   const isAdmin = () => !!state.user && (state.user.role === 'admin' || state.user.role === 'superadmin');
@@ -180,7 +188,7 @@
     }
   }
 
-  /** Đổ giá trị thật trong sổ vào mọi ô chọn có data-options (hàng lọc + khung nâng cao) */
+  /** Đổ giá trị thật trong sổ vào mọi ô chọn có data-options (hàng lọc + khung nâng cao) và gợi ý của form sửa */
   function renderSelectOptions(types, options) {
     const lists = { types, books: options.books || [], urgencies: options.urgencies || [], statuses: options.statuses || [] };
     document.querySelectorAll('select[data-options]').forEach((sel) => {
@@ -197,6 +205,13 @@
       sel.value = state.filters[key] || '';
       if (sel.value !== (state.filters[key] || '')) state.filters[key] = '';
     });
+    const fillList = (id, items, defaults = []) => {
+      const names = [...new Set([...items.map((t) => (typeof t === 'string' ? t : t.name)), ...defaults])];
+      $(id).innerHTML = names.map((n) => `<option value="${esc(n)}"></option>`).join('');
+    };
+    fillList('dlOfficeTypes', lists.types);
+    fillList('dlOfficeBooks', lists.books);
+    fillList('dlOfficeUrgencies', lists.urgencies, ['Thường', 'Khẩn', 'Thượng khẩn', 'Hỏa tốc']);
   }
 
   function buildQuery({ paged = true } = {}) {
@@ -241,7 +256,7 @@
       const hasFilter = Object.values(state.filters).some(Boolean);
       body.innerHTML = emptyRow(9, hasFilter
         ? 'Không tìm thấy văn bản phù hợp. Thử bỏ bớt bộ lọc hoặc diễn đạt khác.'
-        : 'Sổ công văn chưa có dữ liệu. Quản trị viên cần nhập file Excel ở mục "Nhập Sổ & Cấp Quyền".');
+        : 'Sổ công văn chưa có dữ liệu. Quản trị viên cần nhập file Excel ở mục "Nhập Sổ Excel".');
       return;
     }
     const offset = (res.page - 1) * res.pageSize;
@@ -308,14 +323,18 @@
   }
 
   function renderPagination(res) {
+    renderPager(res, $('officePaginationInfo'), $('officePaginationButtons'));
+  }
+
+  /** Thanh phân trang dùng chung (Tra cứu + Quản lý văn bản) */
+  function renderPager(res, infoEl, box) {
     const total = res.total || 0;
     const page = res.page || 1;
     const pages = res.pages || 1;
     const from = total ? (page - 1) * res.pageSize + 1 : 0;
     const to = Math.min(page * res.pageSize, total);
-    $('officePaginationInfo').textContent = total ? `Hiển thị ${fmtNumber(from)}-${fmtNumber(to)} / ${fmtNumber(total)} văn bản` : '0 văn bản';
+    infoEl.textContent = total ? `Hiển thị ${fmtNumber(from)}-${fmtNumber(to)} / ${fmtNumber(total)} văn bản` : '0 văn bản';
 
-    const box = $('officePaginationButtons');
     if (pages <= 1) { box.innerHTML = ''; return; }
     const btn = (p, label, opts = {}) =>
       `<button type="button" class="page-btn ${opts.active ? 'active' : ''}" data-p="${p}" ${opts.disabled ? 'disabled' : ''} ${opts.title ? `title="${opts.title}" aria-label="${opts.title}"` : ''}>${label}</button>`;
@@ -359,11 +378,6 @@
       const on = b.dataset.direction === f.direction;
       b.classList.toggle('active', on);
       b.setAttribute('aria-selected', on ? 'true' : 'false');
-    });
-    ['officeStatDen', 'officeStatDi'].forEach((id) => {
-      const el = $(id);
-      el.classList.toggle('active', el.dataset.direction === f.direction);
-      el.setAttribute('aria-pressed', el.dataset.direction === f.direction ? 'true' : 'false');
     });
 
     const advCount = FILTER_KEYS.filter((k) => k !== 'q' && k !== 'direction' && f[k]).length;
@@ -488,11 +502,17 @@
       if (b) setDirection(b.dataset.direction || '');
     });
 
+    // Thẻ sổ trên trang Tổng quan: mở Tra cứu với đúng sổ đó
     ['officeStatDen', 'officeStatDi'].forEach((id) => {
       const el = $(id);
-      const toggle = () => setDirection(state.filters.direction === el.dataset.direction ? '' : el.dataset.direction);
-      el.addEventListener('click', toggle);
-      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+      const open = () => {
+        state.filters = { ...emptyFilters(), direction: el.dataset.direction };
+        state.sort = null;
+        state.page = 1;
+        App.switchView('view-office');
+      };
+      el.addEventListener('click', open);
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
     });
 
     // Hàng lọc theo cột: ô chữ áp dụng sau 400ms ngừng gõ, ô chọn/ngày áp dụng ngay
@@ -739,6 +759,10 @@
     $('btnOfficeChatReset').addEventListener('click', async () => {
       try { await apiRequest('/api/office-docs/test-query', { method: 'POST', body: JSON.stringify({ text: '/moi' }) }); } catch (e) { /* bỏ qua */ }
       resetChatLog();
+    });
+    $('officeChatSuggestions').addEventListener('click', (e) => {
+      const b = e.target.closest('.chat-suggestion');
+      if (b) sendChat(b.dataset.q);
     });
   }
 
@@ -1004,6 +1028,9 @@
     try {
       const res = await apiRequest('/api/zalo-users');
       state.zaloUsers = res.users || [];
+      const count = $('zaloUsersCount');
+      count.textContent = fmtNumber(state.zaloUsers.length);
+      count.classList.toggle('hidden', !state.zaloUsers.length);
       renderZaloUsers();
     } catch (e) {
       $('officeZaloBody').innerHTML = emptyRow(5, 'Không tải được danh sách: ' + e.message);
@@ -1046,6 +1073,291 @@
   }
 
   // ============================================================
+  // TAB (trang Cấp quyền Zalo): ARIA tabs, phím mũi tên để chuyển
+  // ============================================================
+  function bindTabs(listId) {
+    const list = $(listId);
+    const tabs = [...list.querySelectorAll('[role="tab"]')];
+    const select = (tab, focus) => {
+      tabs.forEach((t) => {
+        const on = t === tab;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.tabIndex = on ? 0 : -1;
+        $(t.dataset.panel).hidden = !on;
+      });
+      if (focus) tab.focus();
+    };
+    list.addEventListener('click', (e) => { const t = e.target.closest('[role="tab"]'); if (t) select(t); });
+    list.addEventListener('keydown', (e) => {
+      const i = tabs.indexOf(document.activeElement);
+      if (i < 0 || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+      e.preventDefault();
+      const next = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+      select(tabs[next], true);
+    });
+  }
+
+  // ============================================================
+  // QUẢN LÝ VĂN BẢN (ADMIN): danh sách + thêm / sửa / xóa
+  // ============================================================
+  const EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>';
+  const DELETE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
+
+  async function loadManage() {
+    const m = state.manage;
+    const seq = ++m.seq;
+    const body = $('manageTableBody');
+    body.classList.add('is-loading');
+    const p = new URLSearchParams({ page: m.page, pageSize: m.pageSize });
+    if (m.direction) p.set('direction', m.direction);
+    if (m.keyword) p.set('keyword', m.keyword);
+    try {
+      const res = await apiRequest('/api/office-docs?' + p.toString());
+      if (seq !== m.seq) return;
+      // Xóa hết dòng ở trang cuối thì lùi về trang trước
+      if (!res.items.length && m.page > 1 && res.total > 0) { m.page = res.pages; loadManage(); return; }
+      renderManage(res);
+      renderPager(res, $('managePaginationInfo'), $('managePaginationButtons'));
+    } catch (e) {
+      if (seq !== m.seq) return;
+      body.innerHTML = emptyRow(8, 'Không tải được danh sách: ' + e.message);
+    } finally {
+      if (seq === m.seq) body.classList.remove('is-loading');
+    }
+  }
+
+  function sourceCell(d) {
+    if (d.edited_by_name) {
+      return `<span class="source-chip is-manual">Sửa tay</span><span class="cell-sub">${esc(d.edited_by_name)} · ${fmtDateTime(d.edited_at)}</span>`;
+    }
+    return `<span class="source-chip">Từ file Excel</span><span class="cell-sub">${fmtDateTime(d.updated_at)}</span>`;
+  }
+
+  function renderManage(res) {
+    const body = $('manageTableBody');
+    const items = res.items || [];
+    if (!items.length) {
+      body.innerHTML = emptyRow(8, state.manage.keyword || state.manage.direction
+        ? 'Không có văn bản phù hợp.'
+        : 'Sổ chưa có văn bản. Bấm "Thêm văn bản" hoặc nhập file Excel.');
+      return;
+    }
+    const offset = (res.page - 1) * res.pageSize;
+    body.innerHTML = items.map((d, i) => `
+      <tr data-id="${Number(d.id)}">
+        <td style="text-align: center;" class="cell-muted">${offset + i + 1}</td>
+        <td><span class="doc-number">${esc(d.so_ky_hieu || '--')}</span></td>
+        <td class="cell-date">${fmtDate(d.ngay_van_ban)}</td>
+        <td>${dirBadge(d.direction)}</td>
+        <td class="cell-summary"><span class="clamp-2" title="${esc(d.trich_yeu || '')}">${esc(d.trich_yeu || '--')}</span></td>
+        <td><span class="source-id">${esc(d.source_id || '--')}</span></td>
+        <td class="cell-source">${sourceCell(d)}</td>
+        <td class="sticky-action-col">
+          <div class="row-actions">
+            <button type="button" class="action-icon-btn btn-icon-edit" data-edit="${Number(d.id)}" aria-label="Sửa ${esc(d.so_ky_hieu || 'văn bản')}" title="Sửa">${EDIT_ICON}</button>
+            <button type="button" class="action-icon-btn btn-icon-delete" data-delete="${Number(d.id)}" data-label="${esc(d.so_ky_hieu || d.source_id || '')}" aria-label="Xóa ${esc(d.so_ky_hieu || 'văn bản')}" title="Xóa">${DELETE_ICON}</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  // ---- Form thêm / sửa ----
+  const editForm = () => $('officeEditForm');
+
+  function setEditDirection(dir) {
+    editForm().querySelectorAll('[data-dir]').forEach((s) => { s.hidden = s.dataset.dir !== dir; });
+  }
+
+  function clearEditErrors() {
+    $('officeEditError').classList.add('hidden');
+    $('officeEditError').textContent = '';
+    editForm().querySelectorAll('.is-invalid').forEach((el) => { el.classList.remove('is-invalid'); el.removeAttribute('aria-invalid'); });
+  }
+
+  function showEditError(message, fieldNames = []) {
+    const box = $('officeEditError');
+    box.textContent = message;
+    box.classList.remove('hidden');
+    let first = null;
+    fieldNames.forEach((name) => {
+      const el = editForm().elements[name];
+      const target = el && el.length && !el.tagName ? el[0] : el;
+      if (!target) return;
+      target.classList.add('is-invalid');
+      target.setAttribute('aria-invalid', 'true');
+      if (!first) first = target;
+    });
+    (first || box).focus && (first || box).focus();
+  }
+
+  async function openEditModal(id) {
+    const form = editForm();
+    state.editFocus = document.activeElement;
+    form.reset();
+    clearEditErrors();
+    state.editing = null;
+    const isEdit = Number.isFinite(id);
+    $('officeEditTitle').textContent = isEdit ? 'Sửa văn bản' : 'Thêm văn bản vào sổ';
+    $('officeEditBadge').innerHTML = '';
+    form.querySelectorAll('input[name="direction"]').forEach((r) => { r.disabled = false; });
+    form.elements.source_id.readOnly = false;
+    $('btnSaveOfficeEdit').disabled = isEdit;
+    $('officeEditModal').classList.add('active');
+
+    if (!isEdit) {
+      const dir = state.manage.direction || 'den';
+      form.querySelector(`input[name="direction"][value="${dir}"]`).checked = true;
+      setEditDirection(dir);
+      form.elements.so_ky_hieu.focus();
+      return;
+    }
+    try {
+      const res = await apiRequest(`/api/office-docs/${id}`);
+      const d = res.doc;
+      state.editing = d;
+      $('officeEditTitle').textContent = `Sửa văn bản ${d.so_ky_hieu || ''}`.trim();
+      $('officeEditBadge').innerHTML = dirBadge(d.direction);
+      form.querySelector(`input[name="direction"][value="${d.direction}"]`).checked = true;
+      form.querySelectorAll('input[name="direction"]').forEach((r) => { r.disabled = true; });
+      form.elements.source_id.readOnly = true;
+      setEditDirection(d.direction);
+      [...form.elements].forEach((el) => {
+        if (!el.name || el.name === 'direction') return;
+        if (el.name === 'file_names') el.value = (d.file_names || []).join('\n');
+        else el.value = d[el.name] == null ? '' : d[el.name];
+      });
+      $('btnSaveOfficeEdit').disabled = false;
+      form.elements.so_ky_hieu.focus();
+    } catch (e) {
+      showEditError('Không tải được văn bản: ' + e.message);
+    }
+  }
+
+  function closeEditModal() {
+    if (state.saving) return;
+    $('officeEditModal').classList.remove('active');
+    state.editing = null;
+    if (state.editFocus && state.editFocus.focus) state.editFocus.focus();
+  }
+
+  function readEditForm() {
+    const form = editForm();
+    const data = {};
+    [...form.elements].forEach((el) => {
+      if (!el.name || el.disabled && el.name !== 'direction') return;
+      if (el.type === 'radio') { if (el.checked) data[el.name] = el.value; return; }
+      data[el.name] = el.value.trim();
+    });
+    if (state.editing) data.direction = state.editing.direction;
+    return data;
+  }
+
+  async function saveEdit(e) {
+    e.preventDefault();
+    if (state.saving) return;
+    clearEditErrors();
+    const data = readEditForm();
+    const missing = [['so_ky_hieu', 'Số, ký hiệu'], ['ngay_van_ban', 'Ngày văn bản'], ['trich_yeu', 'Trích yếu']].filter(([k]) => !data[k]);
+    if (missing.length) {
+      showEditError(`Vui lòng nhập: ${missing.map(([, l]) => l).join(', ')}.`, missing.map(([k]) => k));
+      return;
+    }
+    if (data.direction === 'den' && data.thoi_gian_nhan && data.thoi_gian_nhan < data.ngay_van_ban) {
+      showEditError('Ngày đến không được trước ngày văn bản.', ['thoi_gian_nhan']);
+      return;
+    }
+    const btn = $('btnSaveOfficeEdit');
+    state.saving = true;
+    setBusy(btn, true, 'Đang lưu...');
+    try {
+      const res = state.editing
+        ? await apiRequest(`/api/office-docs/${state.editing.id}`, { method: 'PUT', body: JSON.stringify(data) })
+        : await apiRequest('/api/office-docs', { method: 'POST', body: JSON.stringify(data) });
+      state.saving = false;
+      closeEditModal();
+      showToast(res.message || 'Đã lưu.', 'success');
+      if (!state.editing) state.manage.page = 1;
+      loadManage();
+    } catch (err) {
+      showEditError(err.message);
+    } finally {
+      state.saving = false;
+      setBusy(btn, false);
+    }
+  }
+
+  async function deleteDoc(btn) {
+    const label = btn.dataset.label || 'văn bản này';
+    const ok = await showConfirmDialog({
+      title: 'Xóa văn bản khỏi sổ',
+      message: `Xóa <b>${esc(label)}</b> khỏi sổ công văn? Cán bộ sẽ không tra cứu được nữa. Nếu văn bản có trong file Excel, lần nhập sau sẽ thêm lại.`,
+      type: 'danger',
+      confirmText: 'Xóa văn bản',
+      cancelText: 'Giữ lại',
+    });
+    if (!ok) return;
+    btn.disabled = true;
+    try {
+      const res = await apiRequest(`/api/office-docs/${btn.dataset.delete}`, { method: 'DELETE' });
+      showToast(res.message || 'Đã xóa văn bản.', 'success');
+      loadManage();
+    } catch (err) {
+      btn.disabled = false;
+      showToast(err.message, 'error');
+    }
+  }
+
+  function bindManageEvents() {
+    const m = state.manage;
+    $('manageDirectionTabs').addEventListener('click', (e) => {
+      const b = e.target.closest('.segmented-btn');
+      if (!b) return;
+      m.direction = b.dataset.direction || '';
+      m.page = 1;
+      document.querySelectorAll('#manageDirectionTabs .segmented-btn').forEach((x) => {
+        x.classList.toggle('active', x === b);
+        x.setAttribute('aria-selected', x === b ? 'true' : 'false');
+      });
+      loadManage();
+    });
+    $('manageSearchInput').addEventListener('input', debounce((e) => {
+      m.keyword = e.target.value.trim();
+      m.page = 1;
+      loadManage();
+    }, 350));
+    $('managePageSize').addEventListener('change', (e) => { m.pageSize = parseInt(e.target.value, 10) || 20; m.page = 1; loadManage(); });
+    $('managePaginationButtons').addEventListener('click', (e) => {
+      const b = e.target.closest('.page-btn');
+      if (!b || b.disabled) return;
+      m.page = parseInt(b.dataset.p, 10) || 1;
+      loadManage();
+    });
+    $('btnManageAdd').addEventListener('click', () => openEditModal(null));
+    $('manageTableBody').addEventListener('click', (e) => {
+      const edit = e.target.closest('[data-edit]');
+      if (edit) { openEditModal(parseInt(edit.dataset.edit, 10)); return; }
+      const del = e.target.closest('[data-delete]');
+      if (del) deleteDoc(del);
+    });
+
+    const form = editForm();
+    form.addEventListener('submit', saveEdit);
+    form.addEventListener('change', (e) => {
+      if (e.target.name === 'direction') setEditDirection(e.target.value);
+    });
+    form.addEventListener('input', (e) => {
+      if (e.target.classList.contains('is-invalid')) { e.target.classList.remove('is-invalid'); e.target.removeAttribute('aria-invalid'); }
+    });
+    $('btnCloseOfficeEdit').addEventListener('click', closeEditModal);
+    $('btnCancelOfficeEdit').addEventListener('click', closeEditModal);
+    // Không đóng khi bấm ra ngoài (tránh mất dữ liệu đang nhập); Esc vẫn đóng
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && $('officeEditModal').classList.contains('active')) closeEditModal();
+    });
+  }
+
+  // ============================================================
   // KHỞI TẠO
   // ============================================================
   bindTableEvents();
@@ -1054,6 +1366,8 @@
   bindImportEvents();
   bindCodeEvents();
   bindZaloEvents();
+  bindTabs('zaloTabs');
+  bindManageEvents();
 
   document.addEventListener('admin:login', (e) => {
     const prevUserId = state.user && state.user.id;
@@ -1064,19 +1378,38 @@
       resetChatLog();
       $('officeCodeReveal').classList.add('hidden');
       $('officeCodeReveal').innerHTML = '';
+      $('officeEditModal').classList.remove('active');
     }
   });
 
   document.addEventListener('admin:viewchange', (e) => {
     const viewId = e.detail && e.detail.viewId;
-    if (viewId === 'view-office') {
-      loadOverview();
-      loadTable();
-    } else if (viewId === 'view-office-admin') {
-      if (!isAdmin()) { App.switchView('view-office'); return; }
-      loadCodes();
-      loadZaloUsers();
-      loadImports();
+    if (ADMIN_VIEWS.includes(viewId) && !isAdmin()) { App.switchView('view-office'); return; }
+    switch (viewId) {
+      case 'view-office-dashboard':
+        loadOverview();
+        break;
+      case 'view-office':
+        loadOverview();
+        syncFilterInputs();
+        loadTable();
+        break;
+      case 'view-office-chat':
+        setTimeout(() => $('officeChatInput').focus(), 0);
+        break;
+      case 'view-office-manage':
+        loadOverview();
+        loadManage();
+        break;
+      case 'view-office-import':
+        loadImports();
+        break;
+      case 'view-office-zalo':
+        loadCodes();
+        loadZaloUsers();
+        break;
+      default:
+        break;
     }
   });
 })();

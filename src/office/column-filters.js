@@ -18,6 +18,8 @@ const TEXT_FILTERS = {
   trichYeu: ['trich_yeu'],
   nguoiKy: ['nguoi_ky'],
   nguoiGui: ['nguoi_gui', 'nguoi_trinh'],
+  // Ô tìm chung của trang Quản lý văn bản: số ký hiệu, trích yếu, người ký/gửi/trình, nơi nhận, mã văn bản
+  keyword: ['so_ky_hieu', 'search_norm', 'source_id'],
 };
 
 /** Lọc đúng giá trị (chọn từ danh sách) */
