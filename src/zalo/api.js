@@ -69,6 +69,10 @@ class NativeZaloBot {
     });
   }
 
+  async sendChatAction(chatId, action) {
+    return this._request('sendChatAction', { chat_id: String(chatId), action });
+  }
+
   async setWebHook(url, options = {}) {
     return this._request('setWebhook', {
       url,
@@ -126,6 +130,16 @@ class ZaloAPI {
     }
 
     return lastResult;
+  }
+
+  /** Hiện "đang soạn tin" (tối đa ~5 giây hoặc đến khi bot gửi tin). Không ném lỗi. */
+  async sendChatAction(chatId, action = 'typing') {
+    try {
+      return { ok: true, result: await this.bot.sendChatAction(String(chatId), action) };
+    } catch (err) {
+      this._logError('sendChatAction', err);
+      return null;
+    }
   }
 
   async _sendMessageChunk(chatId, text) {

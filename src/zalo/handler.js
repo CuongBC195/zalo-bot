@@ -70,6 +70,11 @@ async function handleZaloUpdate(api, update) {
 
   console.log(`[Zalo] Nhận tin nhắn từ ${senderName} (${chatId}): "${maskSecrets(text)}"`);
 
+  // "Đang soạn tin..." chạy song song với tra cứu, không chờ
+  const typing = typeof api.sendChatAction === 'function'
+    ? api.sendChatAction(chatId, 'typing').catch(() => null)
+    : Promise.resolve(null);
+
   // Kiểm tra người dùng có bị khóa tương tác không
   const isBlocked = await db.isZaloUserBlocked(from.id);
   if (isBlocked) {
@@ -90,7 +95,8 @@ async function handleZaloUpdate(api, update) {
   const { reply, intent, retrievedDocs } = routed;
   const latencyMs = Date.now() - startTime;
 
-  // Gửi phản hồi lại Zalo
+  // Gửi phản hồi lại Zalo (đợi trạng thái soạn tin đi trước, tối đa 1,5 giây, để nó không hiện sau câu trả lời)
+  await Promise.race([typing, new Promise((r) => setTimeout(r, 1500))]);
   await api.sendMessage(chatId, reply);
   console.log(`[Zalo] Đã phản hồi thành công cho ${senderName} (${latencyMs}ms)`);
 
