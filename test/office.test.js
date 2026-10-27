@@ -478,23 +478,45 @@ async function main() {
         delete process.env.DB_REQUIRED;
       }
     });
-    await test('schema chỉ chạy lại khi file đổi hoặc force', async () => {
+    await test('schema chỉ chạy lại khi file đổi hoặc force; khởi động đồng thời không chạy trùng', async () => {
       const orig = { pool: db.pool, check: db.checkConnection };
       let stored = null;
       let schemaRuns = 0;
+      let lock = Promise.resolve();
+      const query = async (sql, params) => {
+        if (/SELECT value FROM app_meta/.test(sql)) return { rows: stored ? [{ value: stored }] : [] };
+        if (/INSERT INTO app_meta/.test(sql)) stored = params[0];
+        if (/CREATE TABLE IF NOT EXISTS office_documents/.test(sql)) {
+          schemaRuns++;
+          await new Promise((r) => setTimeout(r, 5));
+        }
+        return { rows: [] };
+      };
       db.checkConnection = async () => true;
       db.pool = {
-        query: async (sql, params) => {
-          if (/SELECT value FROM app_meta/.test(sql)) return { rows: stored ? [{ value: stored }] : [] };
-          if (/INSERT INTO app_meta/.test(sql)) stored = params[0];
-          if (/CREATE TABLE IF NOT EXISTS office_documents/.test(sql)) schemaRuns++;
-          return { rows: [] };
+        query,
+        connect: async () => {
+          let unlock = null;
+          return {
+            query: async (sql, params) => {
+              if (/pg_advisory_xact_lock/.test(sql)) {
+                const prev = lock;
+                lock = new Promise((r) => { unlock = r; });
+                await prev;
+                return { rows: [] };
+              }
+              if (/^(COMMIT|ROLLBACK)$/.test(sql) && unlock) unlock();
+              return query(sql, params);
+            },
+            release: () => {},
+          };
         },
       };
       try {
+        await Promise.all([db.initSchema(), db.initSchema()]);
+        assert.strictEqual(schemaRuns, 1, 'hai instance cùng lúc chỉ được chạy schema một lần');
         await db.initSchema();
-        await db.initSchema();
-        assert.strictEqual(schemaRuns, 1, 'lần hai không được chạy lại schema');
+        assert.strictEqual(schemaRuns, 1, 'lần sau không được chạy lại schema');
         await db.initSchema({ force: true });
         assert.strictEqual(schemaRuns, 2);
         stored = 'hash-cu';

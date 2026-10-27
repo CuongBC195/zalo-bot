@@ -147,20 +147,38 @@ class DatabaseService {
       if (fs.existsSync(schemaPath)) {
         const sql = fs.readFileSync(schemaPath, 'utf8');
         const hash = crypto.createHash('sha1').update(sql).digest('hex');
-        let current = null;
-        if (!force) {
-          current = await this.pool.query(`SELECT value FROM app_meta WHERE key = 'schema_hash'`)
-            .then((r) => r.rows[0]?.value || null)
-            .catch(() => null); // chưa có bảng app_meta -> chạy schema
-        }
+        const readHash = (q) => q(`SELECT value FROM app_meta WHERE key = 'schema_hash'`)
+          .then((r) => r.rows[0]?.value || null)
+          .catch(() => null); // chưa có bảng app_meta -> chạy schema
+        const current = force ? null : await readHash((s) => this.pool.query(s));
         if (current !== hash) {
-          await this.pool.query(sql);
-          await this.pool.query(
-            `INSERT INTO app_meta (key, value, updated_at) VALUES ('schema_hash', $1, NOW())
-             ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-            [hash]
-          );
-          console.log('[Postgres] Da khoi tao schema bang (documents, articles, users, zalo_users, query_logs).');
+          // Nhiều instance Vercel khởi động cùng lúc: khóa để chạy lần lượt (tránh deadlock
+          // do DROP/CREATE TRIGGER), instance đến sau đọc lại dấu rồi bỏ qua.
+          const client = await this.pool.connect();
+          let ran = false;
+          try {
+            await client.query('BEGIN');
+            await client.query('SELECT pg_advisory_xact_lock(7240531)');
+            await client.query('SAVEPOINT read_hash');
+            const latest = force ? null : await readHash((s) => client.query(s));
+            if (latest === null) await client.query('ROLLBACK TO SAVEPOINT read_hash'); // lỗi đọc làm hỏng transaction
+            if (latest !== hash) {
+              await client.query(sql);
+              await client.query(
+                `INSERT INTO app_meta (key, value, updated_at) VALUES ('schema_hash', $1, NOW())
+                 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+                [hash]
+              );
+              ran = true;
+            }
+            await client.query('COMMIT');
+          } catch (err) {
+            await client.query('ROLLBACK').catch(() => {});
+            throw err;
+          } finally {
+            client.release();
+          }
+          if (ran) console.log('[Postgres] Da khoi tao schema bang (documents, articles, users, zalo_users, query_logs).');
         }
       } else {
         console.warn('[Postgres] Khong tim thay tap tin schema.sql tai runtime, bo qua initSchema.');
