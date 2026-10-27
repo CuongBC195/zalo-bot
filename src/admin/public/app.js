@@ -603,7 +603,73 @@
   if (btnToggleSidebar) {
     btnToggleSidebar.addEventListener('click', () => {
       document.body.classList.toggle('sidebar-collapsed');
+      hideSidebarTip();
     });
+  }
+
+  // Tooltip nổi khi sidebar thu gọn (sidebar overflow:hidden nên không dùng ::after được)
+  const sidebarEl = document.querySelector('.app-sidebar');
+  let sidebarTip = null;
+  const TIP_TARGETS = '.nav-item, .sidebar-icon-btn, .user-compact';
+
+  function sidebarTipText(el) {
+    if (el.classList.contains('nav-item')) {
+      const label = el.querySelector('span:not(.nav-maint-badge)');
+      return { text: label ? label.textContent.trim() : '', note: el.querySelector('.nav-maint-badge') ? 'Bảo trì' : '' };
+    }
+    if (el.classList.contains('user-compact')) {
+      const name = document.getElementById('currentUserName');
+      const role = document.getElementById('currentUserRoleBadge');
+      return { text: [name && name.textContent, role && role.textContent].filter(Boolean).join(' · '), note: '' };
+    }
+    return { text: el.getAttribute('data-tooltip') || '', note: '' };
+  }
+
+  function showSidebarTip(el) {
+    if (!document.body.classList.contains('sidebar-collapsed')) return;
+    const { text, note } = sidebarTipText(el);
+    if (!text) return;
+    if (!sidebarTip) {
+      sidebarTip = document.createElement('div');
+      sidebarTip.className = 'sidebar-tip';
+      sidebarTip.setAttribute('role', 'tooltip');
+      document.body.appendChild(sidebarTip);
+    }
+    sidebarTip.textContent = text;
+    if (note) {
+      const n = document.createElement('span');
+      n.className = 'sidebar-tip-note';
+      n.textContent = note;
+      sidebarTip.appendChild(n);
+    }
+    const r = el.getBoundingClientRect();
+    const sr = sidebarEl.getBoundingClientRect();
+    sidebarTip.style.left = `${sr.right + 10}px`;
+    sidebarTip.style.top = `${r.top + r.height / 2}px`;
+    requestAnimationFrame(() => sidebarTip && sidebarTip.classList.add('is-visible'));
+  }
+
+  function hideSidebarTip() {
+    if (sidebarTip) sidebarTip.classList.remove('is-visible');
+  }
+
+  if (sidebarEl) {
+    sidebarEl.addEventListener('mouseover', (e) => {
+      const el = e.target.closest(TIP_TARGETS);
+      if (el && sidebarEl.contains(el)) showSidebarTip(el);
+    });
+    sidebarEl.addEventListener('mouseout', (e) => {
+      const el = e.target.closest(TIP_TARGETS);
+      if (el && !el.contains(e.relatedTarget)) hideSidebarTip();
+    });
+    sidebarEl.addEventListener('focusin', (e) => {
+      const el = e.target.closest(TIP_TARGETS);
+      if (el) showSidebarTip(el);
+    });
+    sidebarEl.addEventListener('focusout', hideSidebarTip);
+    sidebarEl.addEventListener('click', hideSidebarTip);
+    const nav = sidebarEl.querySelector('.sidebar-nav');
+    if (nav) nav.addEventListener('scroll', hideSidebarTip, { passive: true });
   }
 
   async function checkDbStatus() {
