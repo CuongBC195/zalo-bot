@@ -198,6 +198,28 @@ app.get('/api/webhook', (req, res) => {
   });
 });
 
+// Vercel Cron gọi mỗi ngày (vercel.json): đọc nhẹ một bảng thật để Supabase gói Free
+// không tạm dừng project vì 7 ngày không có hoạt động (dịp nghỉ dài).
+// Có CRON_SECRET thì bắt buộc header "Authorization: Bearer <CRON_SECRET>" (Vercel tự gửi).
+app.get('/api/cron/keepalive', async (req, res) => {
+  const secret = process.env.CRON_SECRET || '';
+  if (secret) {
+    const received = Buffer.from(String(req.headers.authorization || ''));
+    const target = Buffer.from(`Bearer ${secret}`);
+    if (received.length !== target.length || !crypto.timingSafeEqual(received, target)) {
+      return res.status(401).json({ ok: false });
+    }
+  }
+  if (!db.pool) return res.status(503).json({ ok: false });
+  try {
+    await db.pool.query('SELECT 1 FROM office_documents LIMIT 1');
+    res.json({ ok: true });
+  } catch (err) {
+    console.warn('[Cron] Keepalive lỗi:', err.message);
+    res.status(503).json({ ok: false });
+  }
+});
+
 app.get('/api/webhook/status', async (req, res) => {
   try {
     const api = getZaloApi();
@@ -808,7 +830,7 @@ app.post('/api/seed-db', requireRole('superadmin', 'admin'), async (req, res) =>
       return res.status(400).json({ ok: false, error: 'Chưa kết nối được PostgreSQL. Vui lòng kiểm tra DATABASE_URL trong .env.' });
     }
 
-    await db.initSchema();
+    await db.initSchema({ force: true });
     const chunks = rag.loader.loadAll();
     await db.seedFromFiles(chunks);
     await rag.reload();

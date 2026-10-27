@@ -35,6 +35,14 @@ const EDIT_COLUMNS = UPSERT_COLUMNS.filter((c) => c !== 'import_id');
 
 class DuplicateDocumentError extends Error {}
 
+/** Không kết nối được Postgres trong khi môi trường bắt buộc phải có (Vercel) */
+class DbUnavailableError extends Error {
+  constructor() {
+    super('Không kết nối được cơ sở dữ liệu, vui lòng thử lại sau.');
+    this.name = 'DbUnavailableError';
+  }
+}
+
 function nowLocalStamp() {
   return new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 16).replace('T', ' ');
 }
@@ -56,7 +64,9 @@ function sha256(text) {
 }
 
 async function isPg() {
-  return db.checkConnection();
+  if (await db.checkConnection()) return true;
+  if (db.isRequired()) throw new DbUnavailableError();
+  return false;
 }
 
 function localToRow(doc) {
@@ -878,6 +888,7 @@ module.exports = {
   updateDocument,
   deleteDocument,
   DuplicateDocumentError,
+  DbUnavailableError,
   fetchCandidates,
   getDocumentsByIds,
   listDocuments,

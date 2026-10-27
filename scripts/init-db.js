@@ -8,7 +8,7 @@ const db = require('../src/db');
 
 async function run() {
   console.log('🐘 Đang kết nối PostgreSQL để khởi tạo bảng schema...');
-  const ok = await db.initSchema();
+  const ok = await db.initSchema({ force: true });
   if (ok) {
     console.log('✅ Khởi tạo cơ sở dữ liệu PostgreSQL thành công!');
     process.exit(0);

@@ -463,6 +463,65 @@ async function main() {
     assert.ok(/quá nhiều lần/.test((await z('/dangky ZZZZ-ZZZZ')).reply));
   });
 
+  if (!PG_URL) {
+    console.log('[Hệ thống] Mất kết nối DB + schema + keepalive');
+    await test('Vercel mất DB: báo gián đoạn, không trả lời sai "chưa đăng ký"', async () => {
+      const { handleZaloUpdate } = require('../src/zalo/handler');
+      const sent = [];
+      const api = { sendMessage: async (chatId, text) => { sent.push(text); } };
+      process.env.DB_REQUIRED = 'true';
+      try {
+        const r = await handleZaloUpdate(api, { message: { message_id: 'busy-1', text: 'cv 253', from: { id: 'Z-busy' }, chat: { id: 'c' } } });
+        assert.strictEqual(r.intent, 'db_unavailable');
+        assert.ok(/gián đoạn/.test(sent[0]));
+      } finally {
+        delete process.env.DB_REQUIRED;
+      }
+    });
+    await test('schema chỉ chạy lại khi file đổi hoặc force', async () => {
+      const orig = { pool: db.pool, check: db.checkConnection };
+      let stored = null;
+      let schemaRuns = 0;
+      db.checkConnection = async () => true;
+      db.pool = {
+        query: async (sql, params) => {
+          if (/SELECT value FROM app_meta/.test(sql)) return { rows: stored ? [{ value: stored }] : [] };
+          if (/INSERT INTO app_meta/.test(sql)) stored = params[0];
+          if (/CREATE TABLE IF NOT EXISTS office_documents/.test(sql)) schemaRuns++;
+          return { rows: [] };
+        },
+      };
+      try {
+        await db.initSchema();
+        await db.initSchema();
+        assert.strictEqual(schemaRuns, 1, 'lần hai không được chạy lại schema');
+        await db.initSchema({ force: true });
+        assert.strictEqual(schemaRuns, 2);
+        stored = 'hash-cu';
+        await db.initSchema();
+        assert.strictEqual(schemaRuns, 3, 'schema đổi thì phải chạy lại');
+      } finally {
+        db.pool = orig.pool;
+        db.checkConnection = orig.check;
+      }
+    });
+    await test('keepalive: sai CRON_SECRET bị chặn', async () => {
+      const app = require('../src/admin/server');
+      const server = app.listen(0);
+      const url = `http://127.0.0.1:${server.address().port}/api/cron/keepalive`;
+      process.env.CRON_SECRET = 'test-secret-1234567890';
+      try {
+        assert.strictEqual((await fetch(url)).status, 401);
+        assert.strictEqual((await fetch(url, { headers: { Authorization: 'Bearer sai' } })).status, 401);
+        const ok = await fetch(url, { headers: { Authorization: 'Bearer test-secret-1234567890' } });
+        assert.strictEqual(ok.status, 503, 'đúng secret nhưng DB thử nghiệm không kết nối được');
+      } finally {
+        delete process.env.CRON_SECRET;
+        server.close();
+      }
+    });
+  }
+
   console.log(`\n[Office] ${passed} kiểm thử đạt${process.exitCode ? ', CÓ LỖI' : ''}.`);
 }
 

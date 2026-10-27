@@ -79,7 +79,15 @@ async function handleZaloUpdate(api, update) {
   }
 
   const startTime = Date.now();
-  const { reply, intent, retrievedDocs } = await routeMessage({ text, chatId, zaloId: from.id, senderName });
+  let routed;
+  try {
+    routed = await routeMessage({ text, chatId, zaloId: from.id, senderName });
+  } catch (err) {
+    if (!(err instanceof officeStore.DbUnavailableError)) throw err;
+    console.warn('[Zalo] Mất kết nối cơ sở dữ liệu, trả lời tạm gián đoạn.');
+    routed = { reply: responder.formatBusy(), intent: 'db_unavailable', retrievedDocs: [] };
+  }
+  const { reply, intent, retrievedDocs } = routed;
   const latencyMs = Date.now() - startTime;
 
   // Gửi phản hồi lại Zalo

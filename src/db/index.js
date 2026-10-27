@@ -7,6 +7,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { extractDocNumbers, extractDocSignatures } = require('../rag/abbreviations');
 
 class DatabaseService {
@@ -88,28 +89,56 @@ class DatabaseService {
     }
   }
 
+  /**
+   * Bắt buộc có Postgres: trên Vercel bộ nhớ tạm trống, rơi về đó sẽ trả lời sai
+   * ("chưa đăng ký", "không tìm thấy") thay vì báo hệ thống bận.
+   */
+  isRequired() {
+    return process.env.VERCEL === '1' || process.env.DB_REQUIRED === 'true';
+  }
+
+  async _ping() {
+    const client = await this.pool.connect();
+    try {
+      await client.query('SELECT 1');
+      client.release();
+    } catch (err) {
+      client.release(err); // kết nối hỏng: hủy, không trả lại pool
+      throw err;
+    }
+  }
+
   async checkConnection(force = false) {
     if (!this.pool) return false;
     const now = Date.now();
-    const cacheTtl = this.isConnected ? 30000 : 15000;
+    const cacheTtl = this.isConnected ? 30000 : (this.isRequired() ? 5000 : 15000);
     if (!force && this._lastCheck && (now - this._lastCheck < cacheTtl)) {
       return this.isConnected;
     }
 
     this._lastCheck = now;
     try {
-      const client = await this.pool.connect();
-      await client.query('SELECT NOW()');
-      client.release();
+      await this._ping();
       this.isConnected = true;
-      return true;
     } catch (err) {
-      this.isConnected = false;
-      return false;
+      // Thử lại một lần: mạng chập chờn hoặc pooler vừa đóng kết nối cũ
+      try {
+        await this._ping();
+        this.isConnected = true;
+      } catch (err2) {
+        console.warn('[Postgres] Mất kết nối:', err2.message);
+        this.isConnected = false;
+      }
     }
+    return this.isConnected;
   }
 
-  async initSchema() {
+  /**
+   * Chạy schema.sql. Bỏ qua khi file không đổi so với lần chạy trước (dấu lưu ở app_meta),
+   * để mỗi lần Vercel khởi động lại không phải chạy toàn bộ lệnh tạo bảng.
+   * @param {{ force?: boolean }} opts force: luôn chạy lại
+   */
+  async initSchema({ force = false } = {}) {
     const isOk = await this.checkConnection();
     if (!isOk) return false;
 
@@ -117,8 +146,22 @@ class DatabaseService {
       const schemaPath = path.join(__dirname, 'schema.sql');
       if (fs.existsSync(schemaPath)) {
         const sql = fs.readFileSync(schemaPath, 'utf8');
-        await this.pool.query(sql);
-        console.log('[Postgres] Da khoi tao schema bang (documents, articles, users, zalo_users, query_logs).');
+        const hash = crypto.createHash('sha1').update(sql).digest('hex');
+        let current = null;
+        if (!force) {
+          current = await this.pool.query(`SELECT value FROM app_meta WHERE key = 'schema_hash'`)
+            .then((r) => r.rows[0]?.value || null)
+            .catch(() => null); // chưa có bảng app_meta -> chạy schema
+        }
+        if (current !== hash) {
+          await this.pool.query(sql);
+          await this.pool.query(
+            `INSERT INTO app_meta (key, value, updated_at) VALUES ('schema_hash', $1, NOW())
+             ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+            [hash]
+          );
+          console.log('[Postgres] Da khoi tao schema bang (documents, articles, users, zalo_users, query_logs).');
+        }
       } else {
         console.warn('[Postgres] Khong tim thay tap tin schema.sql tai runtime, bo qua initSchema.');
       }

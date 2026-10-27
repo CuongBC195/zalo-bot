@@ -12,5 +12,11 @@
       "source": "/(.*)",
       "destination": "/api/index.js"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/keepalive",
+      "schedule": "0 1 * * *"
+    }
   ]
 }

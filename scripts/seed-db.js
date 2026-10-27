@@ -15,7 +15,7 @@ async function run() {
     process.exit(1);
   }
 
-  await db.initSchema();
+  await db.initSchema({ force: true });
 
   const loader = new DocumentLoader();
   const chunks = loader.loadAll();

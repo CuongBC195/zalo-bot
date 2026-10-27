@@ -179,6 +179,10 @@ function formatMaintenance() {
   return 'Chức năng hỏi đáp quy định đang bảo trì. Hiện trợ lý hỗ trợ tra cứu sổ công văn đến/đi.';
 }
 
+function formatBusy() {
+  return 'Hệ thống tra cứu đang tạm gián đoạn kết nối dữ liệu. Đồng chí vui lòng gửi lại câu hỏi sau ít phút.';
+}
+
 module.exports = {
   formatList,
   formatRelated,
@@ -193,5 +197,6 @@ module.exports = {
   formatUnregistered,
   formatActivation,
   formatMaintenance,
+  formatBusy,
   describeScope,
 };

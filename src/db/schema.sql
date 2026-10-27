@@ -196,3 +196,10 @@ CREATE TABLE IF NOT EXISTS zalo_sessions (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+
+-- 12. Dấu phiên bản schema: file không đổi thì cold start bỏ qua chạy lại toàn bộ (nhanh hơn)
+CREATE TABLE IF NOT EXISTS app_meta (
+    key VARCHAR(50) PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
