@@ -423,6 +423,32 @@ async function main() {
     assert.strictEqual(l.meta.subIntent, 'more');
     assert.ok(/1229-QĐ\/TU/.test(l.answer));
   });
+  await test('tìm theo cụm: âm tiết rải rác không tính là khớp', async () => {
+    const noise = validateDocInput({
+      direction: 'di', so_ky_hieu: '999-CV/ĐU', ngay_van_ban: '2025-03-10',
+      trich_yeu: 'Về việc tham mưu bố trí phòng làm việc, chống ngập, những kinh phí làng nghề',
+    }).record;
+    await store.createDocument(noise, admin);
+    const r = await search(parseQuery('phòng chống tham nhũng lãng phí', { now: NOW }), {});
+    assert.deepStrictEqual(r.matches.map((d) => d.so_ky_hieu).sort(), ['1229-QĐ/TU', '75-BC/ĐU']);
+  });
+  await test('nhắn thêm điều kiện là tự lọc tiếp, không cần hỏi lại', async () => {
+    await ask('phòng chống tham nhũng', 's3');
+    const a = await ask('văn bản đến', 's3');
+    assert.ok(/Tìm thấy 1 văn bản đến, nội dung "phòng chống tham nhũng"/.test(a.answer), a.answer);
+    assert.ok(/1229-QĐ\/TU/.test(a.answer));
+    await ask('phòng chống tham nhũng', 's4');
+    assert.strictEqual((await ask('tháng 10', 's4')).meta.total, 2);
+    const c = await ask('năm 2025', 's4');
+    assert.strictEqual(c.meta.subIntent, 'not_found', 'ngày trần không ra thì báo không có, không liệt kê cả năm');
+    assert.ok(/phòng chống tham nhũng/.test(c.answer));
+  });
+  await test('lọc tiếp ra 0 mà câu tự đứng được thì tìm mới', async () => {
+    await ask('nhà đất dôi dư', 's5');
+    const r = await ask('văn bản đi tháng 10', 's5');
+    assert.strictEqual(r.meta.total, 3);
+    assert.ok(!/nội dung/.test(r.answer.split('\n')[0]));
+  });
   await test('Zalo: chưa có quyền -> hướng dẫn; mã đúng -> tra cứu; mã dùng lại bị từ chối', async () => {
     const z = (text, zaloId = 'Z-1') => routeMessage({ text, chatId: 'c', zaloId, senderName: 'Test' });
     assert.strictEqual((await z('cv 253')).intent, 'office_unregistered');

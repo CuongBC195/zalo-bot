@@ -135,7 +135,7 @@ function formatHelp() {
     '- "văn bản do đồng chí Hải ký"\n' +
     '- "bao nhiêu văn bản đi quý 3"\n\n' +
     'Sau khi có kết quả: nhắn "1", "2"... để xem chi tiết; "xem thêm" để xem tiếp; ' +
-    '"còn tháng 9 thì sao" để đổi điều kiện; "/moi" để tìm mới.\n\n' +
+    '"tháng 10/2025", "văn bản đến"... để lọc tiếp kết quả vừa tìm; "/moi" để tìm mới.\n\n' +
     `Bot chỉ cung cấp thông tin sổ. Để nhận file văn bản, đồng chí liên hệ Văn thư ${unit()}.`
   );
 }

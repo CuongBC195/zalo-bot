@@ -11,6 +11,7 @@
 const config = require('../config');
 const store = require('./store');
 const { parseQuery } = require('./query-parser');
+const { normText, isWeakWord } = require('./normalize');
 const { search } = require('./search');
 const aiRewriter = require('./ai-rewriter');
 const responder = require('./responder');
@@ -54,7 +55,15 @@ const docCodes = (docs) => docs.map((x) => x.so_ky_hieu || x.source_id).filter(B
 function shouldRetryWithAi(parsed) {
   if (!config.office.aiRewrite) return false;
   if (parsed.filters.sourceId) return false; // tra theo Mã: không cần AI
+  if (parsed.reusedKeywords) return false; // lọc tiếp chủ đề cũ: AI không biết chủ đề nên dễ trả sai
   return true;
+}
+
+/** Chủ đề có dấu để hiển thị: lấy lại từ gốc người dùng gõ ứng với từng từ khóa */
+function topicOf(text, keywords) {
+  if (!keywords.length) return null;
+  const tokens = String(text).toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  return keywords.map((k) => tokens.find((t) => normText(t) === k) || k).join(' ').slice(0, 100);
 }
 
 /**
@@ -124,6 +133,19 @@ async function handleOfficeMessage({ text, sessionId, now = new Date() }) {
 
   let found = await search(parsed, { limit, maxIds: MAX_SESSION_IDS });
 
+  // Lọc tiếp mà ra 0 và câu vừa nhắn tự đứng được ("văn bản đến tháng 10") -> coi là câu hỏi mới.
+  // Ngày trần ("năm 2025") luôn là lọc tiếp: báo không có kèm chủ đề, không liệt kê cả năm.
+  if (parsed.isRefinement && found.total === 0 && !found.related.length) {
+    const fresh = parseQuery(text, { now });
+    const ff = fresh.filters;
+    const standalone = ff.direction || ff.theLoai || ff.nguoiKy || fresh.keywords.some((k) => !isWeakWord(k));
+    const retry = standalone ? await search(fresh, { limit, maxIds: MAX_SESSION_IDS }) : null;
+    if (retry && retry.total > 0) {
+      parsed = fresh;
+      found = retry;
+    }
+  }
+
   if (found.total === 0 && !aiUsed && shouldRetryWithAi(parsed)) {
     const ai = await tryAi();
     if (ai) {
@@ -142,9 +164,15 @@ async function handleOfficeMessage({ text, sessionId, now = new Date() }) {
     return result(responder.formatOutOfScope(), 'out_of_scope', { meta });
   }
 
+  // Lọc tiếp cùng chủ đề: ghi rõ chủ đề trên tiêu đề để người dùng thấy bot vẫn nhớ
+  const sameTopic = !!parsed.reusedKeywords;
+  const topic = sameTopic ? (session?.topic || parsed.keywords.join(' ')) : topicOf(text, parsed.keywords || []);
+  const keywordsText = sameTopic ? topic : undefined;
+
   await store.saveSession(sessionId, {
     filters: parsed.filters,
     keywords: parsed.keywords,
+    topic,
     resultIds: found.resultIds,
     offset: 0,
     total: found.total,
@@ -155,21 +183,21 @@ async function handleOfficeMessage({ text, sessionId, now = new Date() }) {
   }).catch(() => {});
 
   if (parsed.intent === 'count') {
-    return result(responder.formatCount({ total: found.total, counts: found.counts, filters: parsed.filters }), 'count', { meta });
+    return result(responder.formatCount({ total: found.total, counts: found.counts, filters: parsed.filters, keywordsText }), 'count', { meta });
   }
   if (found.total > 0) {
     return result(
-      responder.formatList({ docs: found.matches, total: found.total, offset: 0, filters: parsed.filters, overview }),
+      responder.formatList({ docs: found.matches, total: found.total, offset: 0, filters: parsed.filters, keywordsText, overview }),
       'search', { meta, retrievedDocs: docCodes(found.matches) }
     );
   }
   if (found.related.length) {
     return result(
-      responder.formatRelated({ docs: found.related, query: text, overview }),
+      responder.formatRelated({ docs: found.related, query: sameTopic ? `${topic} (${text})` : text, overview }),
       'related', { meta, retrievedDocs: docCodes(found.related) }
     );
   }
-  return result(responder.formatNotFound({ query: text, filters: parsed.filters }), 'not_found', { meta });
+  return result(responder.formatNotFound({ query: text, filters: parsed.filters, keywordsText }), 'not_found', { meta });
 }
 
 module.exports = { handleOfficeMessage, invalidateOverview, getOverviewCached };

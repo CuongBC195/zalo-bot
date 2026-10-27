@@ -4,7 +4,7 @@
  */
 
 const store = require('./store');
-const { normText, stripDiacritics, trigramSimilarity, isWeakWord } = require('./normalize');
+const { normText, stripDiacritics, trigramSimilarity, isWeakWord, STOPWORDS } = require('./normalize');
 const { findTypeByName, findTypeByAbbr } = require('./vocab');
 
 const MATCH_THRESHOLD = 0.75;
@@ -97,14 +97,34 @@ function tokenMatch(keyword, docTokens) {
   return best;
 }
 
+/** Cặp từ khóa liền kề (bỏ cặp toàn từ nhập nhằng): ["phong","chong"], ["chong","tham"]... */
+function keywordPairs(keywords) {
+  const pairs = [];
+  for (let i = 1; i < keywords.length; i++) {
+    if (isWeakWord(keywords[i - 1]) && isWeakWord(keywords[i])) continue;
+    pairs.push([keywords[i - 1], keywords[i]]);
+  }
+  return pairs;
+}
+
+/** Cặp từ có đứng liền nhau trong văn bản không (seq đã bỏ hư từ) */
+function hasPair(seq, [a, b]) {
+  for (let i = 1; i < seq.length; i++) {
+    if (tokenMatch(a, [seq[i - 1]]) >= 0.85 && tokenMatch(b, [seq[i]]) >= 0.85) return true;
+  }
+  return false;
+}
+
 /**
  * Điểm 0..1(+thưởng cụm). Từ nhập nhằng (weak) có trọng số thấp.
- * strongHit: có ít nhất một từ khóa mạnh khớp.
+ * Có từ 2 từ khóa: 60% điểm dựa trên cặp từ liền kề, để âm tiết rải rác không được tính là khớp.
+ * strongHit: có ít nhất một từ khóa mạnh khớp. phrase: tỉ lệ cặp khớp (null nếu không có cặp).
  */
 function keywordScore(doc, keywords) {
-  if (!keywords.length) return { score: 1, strongHit: true, hasStrong: false };
+  if (!keywords.length) return { score: 1, strongHit: true, hasStrong: false, phrase: null };
   const norm = doc.search_norm || normText([doc.so_ky_hieu, doc.trich_yeu, doc.the_loai].join(' '));
-  const docTokens = new Set(norm.split(/[\s/-]+/).filter(Boolean));
+  const seq = norm.split(/[\s/-]+/).filter(Boolean);
+  const docTokens = new Set(seq);
   let sum = 0;
   let weightSum = 0;
   let strongHit = false;
@@ -118,8 +138,15 @@ function keywordScore(doc, keywords) {
     weightSum += w;
   }
   let score = weightSum ? sum / weightSum : 0;
+  const pairs = keywordPairs(keywords);
+  let phrase = null;
+  if (pairs.length) {
+    const content = seq.filter((t) => !STOPWORDS.has(t)); // "tham nhũng và lãng phí" vẫn liền cặp
+    phrase = pairs.filter((p) => hasPair(content, p)).length / pairs.length;
+    score = score * 0.4 + phrase * 0.6;
+  }
   if (keywords.length >= 2 && ` ${norm} `.includes(` ${keywords.join(' ')} `)) score += 0.15;
-  return { score, strongHit: hasStrong ? strongHit : true, hasStrong };
+  return { score, strongHit: hasStrong ? strongHit : true, hasStrong, phrase };
 }
 
 // ------------------------------------------------------------
@@ -129,7 +156,12 @@ function keywordScore(doc, keywords) {
 function buildCandidateQuery(parsed) {
   const f = parsed.filters;
   const strong = parsed.keywords.filter((k) => !isWeakWord(k));
-  let prefixes = strong.map((k) => k.slice(0, Math.min(k.length, 3)));
+  // Có cặp từ: lọc thô theo cặp (ít ứng viên hơn hẳn tiền tố 3 ký tự).
+  // Đánh đổi: gõ sai ở mọi cặp -> không có ứng viên, rơi về AI/không tìm thấy; nếu hay gặp thì chuyển sang pg_trgm.
+  const pairs = keywordPairs(parsed.keywords);
+  let prefixes = pairs.length
+    ? pairs.map((p) => p.join(' '))
+    : strong.map((k) => k.slice(0, Math.min(k.length, 3)));
   if (!prefixes.length && f.nguoiKy) prefixes = f.nguoiKy.split(' ').filter((t) => t.length >= 2);
   if (f.soKyHieu && f.number !== null && f.number !== undefined) prefixes = [`${f.number}-`];
   return {
@@ -158,7 +190,9 @@ function rankCandidates(candidates, parsed) {
     if (parsed.genericCongVan && kyHieuTypeAbbr(doc.so_ky_hieu) === 'CV') score += 0.05;
 
     const softAll = soft.passed === soft.total;
-    const kwOk = !kw.hasStrong || (kw.strongHit && kw.score >= MATCH_THRESHOLD);
+    const kwOk = kw.phrase !== null
+      ? kw.strongHit && kw.phrase >= 0.5
+      : !kw.hasStrong || (kw.strongHit && kw.score >= MATCH_THRESHOLD);
     if (softAll && kwOk) {
       matches.push({ ...doc, _score: score });
       continue;

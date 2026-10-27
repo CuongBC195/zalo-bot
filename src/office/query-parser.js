@@ -179,6 +179,8 @@ function parseQuery(text, { now = new Date(), session = null } = {}) {
     genericCongVan: false,
     detailIndex: null,
     isFollowUp: false,
+    isRefinement: false,
+    reusedKeywords: false,
     confidence: 'low',
   };
   if (!raw) { result.intent = 'empty'; return result; }
@@ -305,8 +307,16 @@ function parseQuery(text, { now = new Date(), session = null } = {}) {
   result.keywords = keywordTokens(rest.replace(/\s+/g, ' ').trim());
 
   // --- 11. Câu nối tiếp: giữ bộ lọc cũ, chỉ thay phần vừa nói ---
-  if (session && session.filters && FOLLOWUP_RE.test(base)) {
+  // Chỉ nhắn điều kiện ("tháng 10/2025", "văn bản đến", "quyết định"), không có nội dung mới
+  // -> tự hiểu là lọc thêm trên lần tìm trước, không hỏi lại.
+  const nf = result.filters;
+  const onlyConditions = !result.keywords.some((k) => !isWeakWord(k))
+    && !nf.soKyHieu && nf.number === null && !nf.sourceId
+    && !!(nf.dateFrom || nf.direction || nf.theLoai || nf.nguoiKy);
+  if (session && session.filters && (FOLLOWUP_RE.test(base) || onlyConditions)) {
     result.isFollowUp = true;
+    result.isRefinement = true;
+    if (onlyConditions) result.keywords = [];
     result.keywords = result.keywords.filter((k) => !['con', 'the', 'vay', 'sao', 'nao'].includes(k));
     const prev = session.filters;
     const f = result.filters;
@@ -315,7 +325,10 @@ function parseQuery(text, { now = new Date(), session = null } = {}) {
     }
     // Đổi khoảng thời gian thì phải đổi cả nhãn
     if (result.filters.dateFrom && !dr.from && prev.dateLabel) result.filters.dateLabel = prev.dateLabel;
-    if (!result.keywords.length && Array.isArray(session.keywords)) result.keywords = session.keywords.slice();
+    if (!result.keywords.length && Array.isArray(session.keywords) && session.keywords.length) {
+      result.keywords = session.keywords.slice();
+      result.reusedKeywords = true;
+    }
     if (session.intent === 'count' && result.intent === 'search') result.intent = 'count';
   }
 
