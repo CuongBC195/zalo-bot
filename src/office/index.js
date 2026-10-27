@@ -168,9 +168,11 @@ async function handleOfficeMessage({ text, sessionId, now = new Date() }) {
   const sameTopic = !!parsed.reusedKeywords;
   const topic = sameTopic ? (session?.topic || parsed.keywords.join(' ')) : topicOf(text, parsed.keywords || []);
   const keywordsText = sameTopic ? topic : undefined;
+  // Thể loại chỉ đoán từ trích yếu mà kết quả có văn bản khác loại -> bỏ khỏi tiêu đề và phiên
+  const shownFilters = found.typeRelaxed ? { ...parsed.filters, theLoai: null } : parsed.filters;
 
   await store.saveSession(sessionId, {
-    filters: parsed.filters,
+    filters: shownFilters,
     keywords: parsed.keywords,
     topic,
     resultIds: found.resultIds,
@@ -187,7 +189,7 @@ async function handleOfficeMessage({ text, sessionId, now = new Date() }) {
   }
   if (found.total > 0) {
     return result(
-      responder.formatList({ docs: found.matches, total: found.total, offset: 0, filters: parsed.filters, keywordsText, overview }),
+      responder.formatList({ docs: found.matches, total: found.total, offset: 0, filters: shownFilters, keywordsText, overview }),
       'search', { meta, retrievedDocs: docCodes(found.matches) }
     );
   }

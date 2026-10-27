@@ -131,6 +131,11 @@ async function main() {
   await test('chào hỏi / làm mới', () => {
     assert.strictEqual(parseQuery('xin chào').intent, 'help');
     assert.strictEqual(parseQuery('/moi').intent, 'reset');
+    assert.strictEqual(parseQuery('hướng dẫn').intent, 'help');
+    assert.strictEqual(parseQuery('hướng dẫn sử dụng').intent, 'help');
+    const hd = parseQuery('hướng dẫn phát thẻ đảng viên');
+    assert.strictEqual(hd.intent, 'search');
+    assert.strictEqual(hd.filters.theLoai, 'Hướng dẫn');
   });
   await test('từ khóa giữ âm tiết nhập nhằng (nhà, số), bỏ hư từ', () => {
     assert.deepStrictEqual(parseQuery('công văn về nhà đất').keywords, ['nha', 'dat']);
@@ -431,6 +436,36 @@ async function main() {
     await store.createDocument(noise, admin);
     const r = await search(parseQuery('phòng chống tham nhũng lãng phí', { now: NOW }), {});
     assert.deepStrictEqual(r.matches.map((d) => d.so_ky_hieu).sort(), ['1229-QĐ/TU', '75-BC/ĐU']);
+  });
+  await test('trích yếu chứa chữ thể loại ("dự thảo Hướng dẫn") vẫn ra đúng công văn', async () => {
+    const cv = validateDocInput({
+      direction: 'di', so_ky_hieu: '250-CV/ĐU', ngay_van_ban: '2024-10-12', the_loai: 'Công văn',
+      trich_yeu: 'Về việc thống nhất dự thảo Hướng dẫn về tổ chức thực hiện công tác bảo vệ, chăm sóc sức khỏe cán bộ',
+    }).record;
+    const hd = validateDocInput({
+      direction: 'den', so_ky_hieu: '12-HD/BTCTU', ngay_van_ban: '2024-09-25', the_loai: 'Hướng dẫn',
+      trich_yeu: 'Hướng dẫn thực hiện chế độ gặp gỡ, trao đổi, quản lý, đào tạo, rèn luyện cán bộ',
+    }).record;
+    await store.createDocument(cv, admin);
+    await store.createDocument(hd, admin);
+    for (const q of [
+      'Về việc thống nhất dự thảo Hướng dẫn về tổ chức thực hiện công tác bảo vệ, chăm sóc sức khỏe cán bộ',
+      'hướng dẫn tổ chức thực hiện công tác bảo vệ, chăm sóc sức khỏe cán bộ',
+      'chăm sóc sức khỏe cán bộ',
+    ]) {
+      const r = await search(parseQuery(q, { now: NOW }), {});
+      assert.ok(r.matches.length >= 1, `"${q}": không có kết quả khớp`);
+      assert.strictEqual(r.matches[0].so_ky_hieu, '250-CV/ĐU', `"${q}": đầu danh sách là ${r.matches[0].so_ky_hieu}`);
+    }
+    // Hỏi đúng loại thì vẫn lọc theo loại
+    const h = await search(parseQuery('hướng dẫn đào tạo cán bộ', { now: NOW }), {});
+    assert.strictEqual(h.matches[0].so_ky_hieu, '12-HD/BTCTU');
+    // Qua bot: tiêu đề không ghi "thể loại Hướng dẫn" khi kết quả là công văn; số ký hiệu giữ dấu
+    const a = await ask('hướng dẫn tổ chức thực hiện công tác bảo vệ, chăm sóc sức khỏe cán bộ', 's-hd');
+    assert.strictEqual(a.meta.subIntent, 'search', a.answer);
+    assert.ok(!/thể loại Hướng dẫn/.test(a.answer.split('\n')[0]), a.answer);
+    const b = await ask('250-CV/ĐU', 's-hd2');
+    assert.ok(/số 250-CV\/ĐU/.test(b.answer.split('\n')[0]), b.answer);
   });
   await test('nhắn thêm điều kiện là tự lọc tiếp, không cần hỏi lại', async () => {
     await ask('phòng chống tham nhũng', 's3');

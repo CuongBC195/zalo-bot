@@ -70,14 +70,30 @@ function matchSigner(doc, nguoiKy) {
   return tokens.length > 0 && tokens.every((t) => signer.includes(` ${t} `));
 }
 
-/** Bộ lọc mềm: trả về { total, passed } để tính độ gần đúng khi không có kết quả khớp hoàn toàn */
-function softFilterResult(doc, f) {
+function docNorm(doc) {
+  return doc.search_norm || normText([doc.so_ky_hieu, doc.trich_yeu, doc.the_loai].join(' '));
+}
+
+/**
+ * Bộ lọc mềm: trả về { total, passed, typeByText } để tính độ gần đúng khi không có kết quả khớp hoàn toàn.
+ * relaxTypePhrase: thể loại chỉ đoán từ câu chữ -> văn bản khác loại nhưng trích yếu chứa cụm đó
+ * ("Về việc thống nhất dự thảo Hướng dẫn...") vẫn tính là qua.
+ */
+function softFilterResult(doc, f, relaxTypePhrase = null) {
   const checks = [];
-  if (f.theLoai) checks.push(matchTheLoai(doc, f.theLoai));
+  let typeByText = false;
+  if (f.theLoai) {
+    let ok = matchTheLoai(doc, f.theLoai);
+    if (!ok && relaxTypePhrase && ` ${docNorm(doc)} `.includes(` ${relaxTypePhrase} `)) {
+      ok = true;
+      typeByText = true;
+    }
+    checks.push(ok);
+  }
   if (f.soKyHieu) checks.push(normKyHieu(doc.so_ky_hieu) === normKyHieu(f.soKyHieu));
   if (f.number !== null && f.number !== undefined) checks.push(matchNumber(doc, f.number));
   if (f.nguoiKy) checks.push(matchSigner(doc, f.nguoiKy));
-  return { total: checks.length, passed: checks.filter(Boolean).length };
+  return { total: checks.length, passed: checks.filter(Boolean).length, typeByText };
 }
 
 // ------------------------------------------------------------
@@ -122,7 +138,7 @@ function hasPair(seq, [a, b]) {
  */
 function keywordScore(doc, keywords) {
   if (!keywords.length) return { score: 1, strongHit: true, hasStrong: false, phrase: null };
-  const norm = doc.search_norm || normText([doc.so_ky_hieu, doc.trich_yeu, doc.the_loai].join(' '));
+  const norm = docNorm(doc);
   const seq = norm.split(/[\s/-]+/).filter(Boolean);
   const docTokens = new Set(seq);
   let sum = 0;
@@ -182,19 +198,23 @@ function rankCandidates(candidates, parsed) {
   const f = parsed.filters;
   const matches = [];
   const related = [];
+  // Chỉ nới lỏng khi có nội dung cụ thể; đếm ("bao nhiêu kế hoạch") vẫn lọc chặt theo loại
+  const relaxType = parsed.typePhrase && parsed.intent !== 'count' && parsed.keywords.some((k) => !isWeakWord(k))
+    ? parsed.typePhrase : null;
   for (const doc of candidates) {
     if (!passesHardFilters(doc, f)) continue;
-    const soft = softFilterResult(doc, f);
+    const soft = softFilterResult(doc, f, relaxType);
     const kw = keywordScore(doc, parsed.keywords);
     let score = kw.score;
     if (parsed.genericCongVan && kyHieuTypeAbbr(doc.so_ky_hieu) === 'CV') score += 0.05;
+    if (relaxType && !soft.typeByText) score += 0.05; // đúng loại đứng trước khi ngang điểm
 
     const softAll = soft.passed === soft.total;
     const kwOk = kw.phrase !== null
       ? kw.strongHit && kw.phrase >= 0.5
       : !kw.hasStrong || (kw.strongHit && kw.score >= MATCH_THRESHOLD);
     if (softAll && kwOk) {
-      matches.push({ ...doc, _score: score });
+      matches.push({ ...doc, _score: score, _typeByText: soft.typeByText });
       continue;
     }
     const softRatio = soft.total ? soft.passed / soft.total : null;
@@ -229,6 +249,8 @@ async function search(parsed, { limit = 5, offset = 0, maxIds = 50 } = {}) {
     related: matches.length ? [] : related.slice(0, limit),
     resultIds: (matches.length ? matches : related).slice(0, maxIds).map((d) => d.id),
     usedRelated: !matches.length && related.length > 0,
+    // Có kết quả khác loại (khớp nhờ trích yếu) -> không được ghi "thể loại X" trên tiêu đề
+    typeRelaxed: matches.some((d) => d._typeByText),
   };
   if (parsed.intent === 'count') out.counts = countBreakdown(matches);
   return out;

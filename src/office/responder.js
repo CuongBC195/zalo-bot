@@ -5,6 +5,7 @@
 
 const config = require('../config');
 const { fmtVn } = require('./query-parser');
+const { normKyHieu } = require('./search');
 
 const DIR_LABEL = { den: 'đến', di: 'đi' };
 const TRICH_YEU_MAX = 180;
@@ -59,10 +60,14 @@ function listItem(doc, index) {
 function formatList({ docs, total, offset = 0, filters, keywordsText, overview, title }) {
   const from = offset + 1;
   const to = offset + docs.length;
+  // filters.soKyHieu đã bỏ dấu để so khớp; hiển thị theo sổ ("250-CV/ĐU" thay vì "250-CV/DU")
+  const shown = filters && filters.soKyHieu && docs[0] && normKyHieu(docs[0].so_ky_hieu) === normKyHieu(filters.soKyHieu)
+    ? { ...filters, soKyHieu: docs[0].so_ky_hieu }
+    : filters;
   const header = title
     || (total > docs.length
-      ? `Tìm thấy ${total} ${describeScope(filters, keywordsText)}. Hiển thị ${from}-${to}:`
-      : `Tìm thấy ${total} ${describeScope(filters, keywordsText)}:`);
+      ? `Tìm thấy ${total} ${describeScope(shown, keywordsText)}. Hiển thị ${from}-${to}:`
+      : `Tìm thấy ${total} ${describeScope(shown, keywordsText)}:`);
   const body = docs.map((doc, i) => listItem(doc, offset + i + 1)).join('\n\n');
   return `${header}\n\n${body}\n\n${footer(overview, { withHint: true })}`;
 }

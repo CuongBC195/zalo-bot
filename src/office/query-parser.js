@@ -159,7 +159,7 @@ const TYPE_PHRASES = DOC_TYPES
 const TYPE_ALT = TYPE_PHRASES.map((x) => x.phrase).join('|');
 
 const COUNT_RE = new RegExp(`\\b(bao nhieu|so luong|thong ke|tong so|tong cong|dem so)\\b|\\bmay\\s+(?:van ban|vb|cv|${TYPE_ALT})\\b`);
-const HELP_RE = /^(?:\/?(?:help|start|huongdan|huong dan)|chao|xin chao|chao ban|chao bot|hello|hi|alo|bot oi|ban la ai|cach dung|cach hoi|huong dan su dung|lam sao de hoi|hoi gi duoc)\b/;
+const HELP_RE = /^(?:\/?(?:help|start|huongdan)|huong dan$|chao|xin chao|chao ban|chao bot|hello|hi|alo|bot oi|ban la ai|cach dung|cach hoi|huong dan su dung|lam sao de hoi|hoi gi duoc)\b/;
 const MORE_RE = /^(?:xem them|them nua|xem tiep|tiep theo|tiep di|tiep|trang sau|trang tiep|con nua khong|con nua|con khong|nua|danh sach|xem danh sach|liet ke|liet ke ra|xem het|xem)$/;
 const RESET_RE = /^(?:\/moi|\/reset|tim moi|lam moi|bat dau lai|xoa bo loc|hoi cau khac)$/;
 const DETAIL_RE = /^(?:xem\s+)?(?:chi tiet\s+)?(?:so|cai|van ban|vb|muc|dong|ket qua)?\s*(?:thu\s+)?(\d{1,2}|mot|nhat|hai|ba|bon|tu|nam)$/;
@@ -181,6 +181,7 @@ function parseQuery(text, { now = new Date(), session = null } = {}) {
     isFollowUp: false,
     isRefinement: false,
     reusedKeywords: false,
+    typePhrase: null,          // cụm thể loại đoán từ câu chữ ("huong dan"), có thể chỉ là một phần trích yếu
     confidence: 'low',
   };
   if (!raw) { result.intent = 'empty'; return result; }
@@ -280,6 +281,7 @@ function parseQuery(text, { now = new Date(), session = null } = {}) {
     }
     if (best) {
       result.filters.theLoai = best.type.name;
+      result.typePhrase = best.phrase;
       rest = rest.replace(` ${best.phrase} `, ' ');
     }
   }
@@ -316,6 +318,7 @@ function parseQuery(text, { now = new Date(), session = null } = {}) {
   if (session && session.filters && (FOLLOWUP_RE.test(base) || onlyConditions)) {
     result.isFollowUp = true;
     result.isRefinement = true;
+    result.typePhrase = null; // lọc tiếp: thể loại là điều kiện người dùng nói rõ, lọc chặt
     if (onlyConditions) result.keywords = [];
     result.keywords = result.keywords.filter((k) => !['con', 'the', 'vay', 'sao', 'nao'].includes(k));
     const prev = session.filters;
