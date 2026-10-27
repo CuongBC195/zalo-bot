@@ -341,6 +341,10 @@
         ...options,
       });
 
+      if (res.status === 401 && endpoint === '/api/auth/login') {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Tên đăng nhập hoặc mật khẩu không chính xác.');
+      }
       if (res.status === 401) {
         showLoginScreen();
         throw new Error('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
@@ -378,6 +382,9 @@
     loginScreen.classList.remove('hidden');
     mainApp.classList.add('hidden');
     loginPassword.value = '';
+    loginPassword.type = 'password';
+    const toggle = document.getElementById('loginTogglePassword');
+    if (toggle) { toggle.setAttribute('aria-pressed', 'false'); toggle.setAttribute('aria-label', 'Hiện mật khẩu'); }
     loginError.classList.add('hidden');
   }
 
@@ -419,17 +426,44 @@
     }
   }
 
+  const btnLoginSubmit = document.getElementById('btnLoginSubmit');
+  const loginTogglePassword = document.getElementById('loginTogglePassword');
+  const loginCapsHint = document.getElementById('loginCapsHint');
+
+  if (loginTogglePassword) {
+    loginTogglePassword.addEventListener('click', () => {
+      const show = loginPassword.type === 'password';
+      loginPassword.type = show ? 'text' : 'password';
+      loginTogglePassword.setAttribute('aria-pressed', String(show));
+      loginTogglePassword.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+      loginPassword.focus();
+    });
+  }
+
+  const updateCaps = (e) => {
+    if (loginCapsHint && typeof e.getModifierState === 'function') {
+      loginCapsHint.classList.toggle('hidden', !e.getModifierState('CapsLock'));
+    }
+  };
+  loginPassword.addEventListener('keydown', updateCaps);
+  loginPassword.addEventListener('keyup', updateCaps);
+  loginPassword.addEventListener('blur', () => loginCapsHint && loginCapsHint.classList.add('hidden'));
+
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     loginError.classList.add('hidden');
     const u = loginUsername.value.trim();
     const p = loginPassword.value;
-    if (!u || !p) return;
+    if (!u || !p) {
+      loginError.textContent = !u ? 'Vui lòng nhập tên đăng nhập.' : 'Vui lòng nhập mật khẩu.';
+      loginError.classList.remove('hidden');
+      (!u ? loginUsername : loginPassword).focus();
+      return;
+    }
 
     try {
-      const btn = document.getElementById('btnLoginSubmit');
-      btn.disabled = true;
-      btn.innerHTML = 'Đang xác thực...';
+      btnLoginSubmit.disabled = true;
+      btnLoginSubmit.classList.add('is-loading');
 
       const res = await apiRequest('/api/auth/login', {
         method: 'POST',
@@ -437,23 +471,16 @@
       });
 
       if (res.ok && res.user) {
-        showToast('Đăng nhập thành công vào Hệ Thống Tri Thức Đảng!', 'success');
+        showToast('Đăng nhập thành công.', 'success');
         showMainApp(res.user);
       }
     } catch (err) {
       loginError.textContent = err.message || 'Tên đăng nhập hoặc mật khẩu không chính xác.';
       loginError.classList.remove('hidden');
+      loginPassword.select();
     } finally {
-      const btn = document.getElementById('btnLoginSubmit');
-      btn.disabled = false;
-      btn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-          <polyline points="10 17 15 12 10 7"></polyline>
-          <line x1="15" y1="12" x2="3" y2="12"></line>
-        </svg>
-        Xác Thực & Đăng Nhập
-      `;
+      btnLoginSubmit.disabled = false;
+      btnLoginSubmit.classList.remove('is-loading');
     }
   });
 
@@ -587,10 +614,10 @@
       const res = await apiRequest('/api/stats');
       if (res && res.isDbConnected) {
         badge.className = 'db-status-badge status-online';
-        text.textContent = 'PostgreSQL: Đã kết nối';
+        text.textContent = 'Cơ sở dữ liệu: đã kết nối';
       } else {
         badge.className = 'db-status-badge status-offline';
-        text.textContent = 'Local Fallback (Bộ Nhớ RAM)';
+        text.textContent = 'Mất kết nối cơ sở dữ liệu';
       }
     } catch (e) {
       badge.className = 'db-status-badge status-offline';
@@ -608,16 +635,16 @@
       const res = await apiRequest('/api/webhook/status');
       if (res && res.ok && res.info) {
         webhookStatusBadge.className = 'db-status-badge status-online';
-        webhookStatusText.textContent = 'Zalo Webhook: Hoạt động';
+        webhookStatusText.textContent = 'Zalo: đang hoạt động';
         webhookStatusBadge.setAttribute('data-webhook-url', res.info.url || 'Đã liên kết');
       } else {
         webhookStatusBadge.className = 'db-status-badge status-offline';
-        webhookStatusText.textContent = 'Zalo: Polling / Chưa cấu hình';
+        webhookStatusText.textContent = 'Zalo: chưa nối webhook';
         webhookStatusBadge.setAttribute('data-webhook-url', '');
       }
     } catch (e) {
       webhookStatusBadge.className = 'db-status-badge status-offline';
-      webhookStatusText.textContent = 'Zalo: Ngoại tuyến';
+      webhookStatusText.textContent = 'Zalo: mất kết nối';
     }
   }
 
