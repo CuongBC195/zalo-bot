@@ -179,6 +179,15 @@ function describeFilters(f) {
   return parts.join('; ');
 }
 
+function sanitizeExcelCell(val) {
+  if (val === null || val === undefined) return '';
+  if (typeof val !== 'string') return val;
+  if (/^[=+\-@\t\r]/.test(val)) {
+    return `'${val}`;
+  }
+  return val;
+}
+
 function buildExportWorkbook(items, f) {
   const now = new Date(Date.now() + 7 * 3600 * 1000).toISOString(); // giờ Việt Nam
   const stamp = `${now.slice(8, 10)}/${now.slice(5, 7)}/${now.slice(0, 4)} ${now.slice(11, 16)}`;
@@ -189,10 +198,7 @@ function buildExportWorkbook(items, f) {
     [`Cần bản gốc, liên hệ Văn thư ${config.office.unitName} và cung cấp Mã văn bản.`],
     [],
     EXPORT_COLUMNS.map(([h]) => h),
-    ...items.map((d, i) => EXPORT_COLUMNS.map(([, , get]) => {
-      const v = get(d, i);
-      return v === null || v === undefined ? '' : v;
-    })),
+    ...items.map((d, i) => EXPORT_COLUMNS.map(([, , get]) => sanitizeExcelCell(get(d, i)))),
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = EXPORT_COLUMNS.map(([, wch]) => ({ wch }));

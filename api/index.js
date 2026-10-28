@@ -26,8 +26,7 @@ module.exports = (req, res) => {
   if (bootError) {
     return res.status(500).json({
       ok: false,
-      error: 'Vercel Serverless Boot Error: ' + bootError.message,
-      stack: bootError.stack,
+      error: 'Lỗi khởi tạo hệ thống máy chủ. Vui lòng thử lại sau.',
     });
   }
 
@@ -44,8 +43,7 @@ module.exports = (req, res) => {
         if (!res.headersSent) {
           res.status(500).json({
             ok: false,
-            error: 'Serverless Runtime Error: ' + err.message,
-            stack: err.stack,
+            error: 'Lỗi xử lý yêu cầu trên máy chủ.',
           });
         }
         resolve();

@@ -1,66 +1,208 @@
 /**
  * Authentication & Security Middleware
- * Quản lý phiên đăng nhập JWT cho Web Admin
+ * Quản lý phiên đăng nhập JWT có trạng thái (Stateful Session + Device/IP Binding) cho Web Admin
  */
 
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const db = require('../db');
 
-let JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  JWT_SECRET = crypto.randomBytes(48).toString('hex');
-  console.warn('[Security] Chưa cấu hình JWT_SECRET trong .env, đang dùng khóa ngẫu nhiên tạm thời.');
+const FALLBACK_RANDOM_SECRET = crypto.randomBytes(48).toString('hex');
+let warnedMissingSecret = false;
+
+function getJwtSecret() {
+  if (process.env.JWT_SECRET && process.env.JWT_SECRET.trim().length >= 16) {
+    return process.env.JWT_SECRET.trim();
+  }
+  const isProd = Boolean(process.env.VERCEL || process.env.NODE_ENV === 'production');
+  if (!warnedMissingSecret) {
+    warnedMissingSecret = true;
+    console.warn(
+      isProd
+        ? '[Security WARNING] Chưa cấu hình JWT_SECRET trên Production. Hãy thiết lập JWT_SECRET (>= 32 bytes) trong biến môi trường.'
+        : '[Security] Chưa cấu hình JWT_SECRET trong .env, đang dùng khóa tạm thời cho môi trường phát triển.'
+    );
+  }
+  // Nếu trên Serverless chưa cấu hình JWT_SECRET, dẫn xuất khóa ổn định từ bí mật sẵn có để không lệch giữa các instance
+  const seed = process.env.ADMIN_PASSWORD_HASH || process.env.ADMIN_PASSWORD || process.env.CRON_SECRET || process.env.DATABASE_URL;
+  if (isProd && seed) {
+    return crypto.createHmac('sha256', 'zalo-bot-jwt-fallback-v1').update(seed).digest('hex');
+  }
+  return FALLBACK_RANDOM_SECRET;
 }
 
-const TOKEN_EXPIRY = '7d';
+const SESSION_TTL_HOURS = Math.max(1, parseInt(process.env.SESSION_TTL_HOURS || '12', 10) || 12);
+const SESSION_TTL_MS = SESSION_TTL_HOURS * 3600 * 1000;
+const TOKEN_EXPIRY = `${SESSION_TTL_HOURS}h`;
 
-function generateToken(user) {
-  return jwt.sign(
-    {
-      id: user.id,
-      username: user.username,
-      fullName: user.full_name || user.username,
-      role: user.role || 'admin',
-    },
-    JWT_SECRET,
-    { expiresIn: TOKEN_EXPIRY }
+function sha256Short(input) {
+  return crypto.createHash('sha256').update(String(input || '')).digest('hex').slice(0, 32);
+}
+
+/**
+ * Lấy IP thực của client một cách an toàn:
+ * - Chỉ tin cậy header proxy (x-real-ip / phần tử cuối của x-forwarded-for) khi chạy trên Vercel hoặc bật TRUST_PROXY=true.
+ * - Ngăn chặn tấn công giả mạo phần tử đầu của X-Forwarded-For để vượt Rate Limiter.
+ */
+function getClientIp(req) {
+  const trustProxy = Boolean(process.env.VERCEL === '1' || process.env.VERCEL === 'true' || process.env.TRUST_PROXY === 'true');
+  let rawIp = '';
+
+  if (trustProxy) {
+    const realIp = req.headers?.['x-real-ip'];
+    const xff = req.headers?.['x-forwarded-for'];
+    if (typeof realIp === 'string' && realIp.trim()) {
+      rawIp = realIp.trim();
+    } else if (typeof xff === 'string' && xff.trim()) {
+      const parts = xff.split(',').map((s) => s.trim()).filter(Boolean);
+      rawIp = parts[parts.length - 1] || '';
+    }
+  }
+
+  if (!rawIp) {
+    rawIp = req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown';
+  }
+
+  // Chuẩn hóa IPv4-mapped IPv6 và loopback trên môi trường local
+  if (rawIp === '::1' || rawIp === '::ffff:127.0.0.1') {
+    return '127.0.0.1';
+  }
+  if (rawIp.startsWith('::ffff:')) {
+    return rawIp.slice(7);
+  }
+  return rawIp;
+}
+
+/**
+ * Tính toán dấu vân tay ngữ cảnh phiên đăng nhập (Thiết bị/Trình duyệt + Mạng IP)
+ */
+function computeContextHashes(req) {
+  const ua = String(req.headers?.['user-agent'] || '').trim();
+  const chUa = String(req.headers?.['sec-ch-ua'] || '').trim();
+  const chPlatform = String(req.headers?.['sec-ch-ua-platform'] || '').trim();
+  const deviceKey = String(req.headers?.['x-device-key'] || '').trim();
+
+  const uaHash = sha256Short(`${ua}|${chUa}|${chPlatform}|${deviceKey}`);
+  const ipHash = sha256Short(getClientIp(req));
+  return { uaHash, ipHash };
+}
+
+function isSecureRequest(req) {
+  return Boolean(
+    process.env.NODE_ENV === 'production' ||
+    process.env.VERCEL ||
+    req.secure ||
+    req.headers?.['x-forwarded-proto'] === 'https'
   );
+}
+
+function getCookieOptions(req, maxAge = SESSION_TTL_MS) {
+  return {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: isSecureRequest(req),
+    path: '/',
+    maxAge,
+  };
+}
+
+function generateToken(user, ctx = {}) {
+  const payload = {
+    sid: ctx.sessionId || crypto.randomBytes(24).toString('hex'),
+    id: user.id,
+    username: user.username,
+    fullName: user.full_name || user.fullName || user.username,
+    role: user.role || 'admin',
+  };
+  if (ctx.uaHash) payload.uah = ctx.uaHash;
+  if (ctx.ipHash) payload.iph = ctx.ipHash;
+
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: TOKEN_EXPIRY });
+}
+
+async function createSessionToken(user, req) {
+  const sessionId = crypto.randomBytes(24).toString('hex');
+  const { uaHash, ipHash } = computeContextHashes(req);
+
+  await db.createUserSession({
+    sessionId,
+    userId: user.id,
+    uaHash,
+    ipHash,
+    ttlMs: SESSION_TTL_MS,
+  });
+
+  const token = generateToken(user, { sessionId, uaHash, ipHash });
+  return { token, sessionId, maxAge: SESSION_TTL_MS };
 }
 
 function verifyToken(token) {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    return jwt.verify(token, getJwtSecret());
   } catch (err) {
     return null;
   }
 }
 
-function authMiddleware(req, res, next) {
+function extractToken(req) {
+  const authHeader = req.headers?.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.split(' ')[1];
+  }
+  if (req.cookies && req.cookies.token) {
+    return req.cookies.token;
+  }
+  return null;
+}
+
+async function authMiddleware(req, res, next) {
   // Bỏ qua xác thực cho các route công khai
   const publicPaths = ['/api/auth/login', '/api/auth/status'];
   if (publicPaths.includes(req.path)) {
     return next();
   }
 
-  // Lấy token từ Header Authorization hoặc Cookie
-  let token = null;
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1];
-  } else if (req.cookies && req.cookies.token) {
-    token = req.cookies.token;
-  }
-
+  const token = extractToken(req);
   if (!token) {
     return res.status(401).json({ ok: false, error: 'Chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.' });
   }
 
   const decoded = verifyToken(token);
-  if (!decoded) {
+  if (!decoded || !decoded.sid) {
+    res.clearCookie('token', { path: '/' });
     return res.status(401).json({ ok: false, error: 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.' });
   }
 
-  req.user = decoded;
+  // Kiểm tra trạng thái phiên trên Server/DB (chống dùng lại cookie sau khi logout/đổi mật khẩu/khóa tài khoản)
+  const session = await db.getValidUserSession(decoded.sid);
+  if (!session) {
+    res.clearCookie('token', { path: '/' });
+    return res.status(401).json({ ok: false, error: 'Phiên làm việc đã hết hạn hoặc bị thu hồi. Vui lòng đăng nhập lại.' });
+  }
+
+  // Kiểm tra ràng buộc Thiết bị (User-Agent + Device Key) và Mạng (IP)
+  const { uaHash, ipHash } = computeContextHashes(req);
+  const uaMismatch = session.ua_hash !== uaHash || (decoded.uah && decoded.uah !== uaHash);
+  const strictIp = process.env.STRICT_SESSION_IP !== 'false';
+  const ipMismatch = strictIp && (session.ip_hash !== ipHash || (decoded.iph && decoded.iph !== ipHash));
+
+  if (uaMismatch || ipMismatch) {
+    await db.revokeUserSession(decoded.sid);
+    res.clearCookie('token', { path: '/' });
+    return res.status(401).json({
+      ok: false,
+      error: 'Phát hiện phiên đăng nhập từ thiết bị hoặc mạng khác. Phiên làm việc đã bị thu hồi để bảo mật.',
+    });
+  }
+
+  req.sessionId = session.session_id;
+  req.user = {
+    id: session.user_id,
+    username: session.username,
+    fullName: session.full_name || session.username,
+    email: session.email,
+    role: session.role || 'user',
+  };
   next();
 }
 
@@ -86,8 +228,15 @@ function requireRole(...roles) {
 }
 
 module.exports = {
+  SESSION_TTL_MS,
+  getClientIp,
+  computeContextHashes,
+  isSecureRequest,
+  getCookieOptions,
   generateToken,
+  createSessionToken,
   verifyToken,
+  extractToken,
   authMiddleware,
   requireRole,
 };

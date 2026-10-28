@@ -3,18 +3,36 @@
 -- Tích hợp Quản lý Văn bản, Quản lý Người dùng & Nhật ký Audit
 -- ============================================================
 
--- 1. Bảng lưu trữ tài khoản Quản trị viên (Admin Users)
+-- 1. Bảng lưu trữ tài khoản Quản trị viên & Cán bộ (Web Users)
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(100),
     email VARCHAR(100),
-    role VARCHAR(20) NOT NULL DEFAULT 'admin', -- 'superadmin', 'admin', 'viewer'
+    role VARCHAR(20) NOT NULL DEFAULT 'admin', -- 'superadmin', 'admin', 'user'
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    failed_login_count INTEGER NOT NULL DEFAULT 0,
+    locked_until TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_login TIMESTAMP WITH TIME ZONE
 );
+ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP WITH TIME ZONE;
+
+-- 1b. Bảng lưu trữ phiên đăng nhập Web (User Sessions - gắn kết trình duyệt/IP & thu hồi phiên tức thì)
+CREATE TABLE IF NOT EXISTS user_sessions (
+    session_id VARCHAR(64) PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ua_hash VARCHAR(64) NOT NULL,
+    ip_hash VARCHAR(64) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_active_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    revoked_at TIMESTAMP WITH TIME ZONE
+);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_expires ON user_sessions(expires_at);
 
 -- 2. Bảng lưu trữ người dùng Zalo tương tác với Bot
 CREATE TABLE IF NOT EXISTS zalo_users (
@@ -203,3 +221,18 @@ CREATE TABLE IF NOT EXISTS app_meta (
     value TEXT NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 13. Bật Row Level Security (RLS) trên toàn bộ bảng public để khóa hoàn toàn truy cập qua Supabase PostgREST (anon/authenticated)
+-- Backend Node.js kết nối qua role postgres (BYPASSRLS) nên không bị ảnh hưởng hiệu năng (0ms overhead).
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE zalo_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE query_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE response_cache ENABLE ROW LEVEL SECURITY;
+ALTER TABLE office_doc_imports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE office_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE zalo_activation_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE zalo_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_meta ENABLE ROW LEVEL SECURITY;

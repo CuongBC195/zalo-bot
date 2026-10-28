@@ -3,6 +3,8 @@
  * Quản trị cơ sở dữ liệu văn bản Đảng, Xác thực Admin, Quản lý Người dùng & Audit Logs
  */
 
+require('dotenv').config();
+
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const path = require('path');
@@ -13,7 +15,16 @@ const db = require('../db');
 const rag = require('../rag');
 const config = require('../config');
 const { initServices } = require('../bootstrap');
-const { generateToken, authMiddleware, requireRole } = require('./auth');
+const {
+  getClientIp,
+  isSecureRequest,
+  getCookieOptions,
+  createSessionToken,
+  verifyToken,
+  extractToken,
+  authMiddleware,
+  requireRole,
+} = require('./auth');
 
 const app = express();
 const PORT = process.env.ADMIN_PORT || 3000;
@@ -27,6 +38,13 @@ app.use((req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+  );
+  if (isSecureRequest(req)) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
   next();
 });
 
@@ -34,39 +52,50 @@ app.use((req, res, next) => {
 const loginAttempts = new Map();
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_TIME_MS = 15 * 60 * 1000;
+const DUMMY_BCRYPT_HASH = bcrypt.hashSync('dummy-timing-guard-zalo-bot', 10);
+
+function getRateLimitKeys(req) {
+  const keys = [`ip:${getClientIp(req)}`];
+  const username = typeof req.body?.username === 'string' ? req.body.username.trim().toLowerCase() : '';
+  if (username) keys.push(`user:${username}`);
+  return keys;
+}
 
 function loginRateLimiter(req, res, next) {
-  const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
-  const attempt = loginAttempts.get(clientIp);
-
-  if (attempt && attempt.count >= MAX_FAILED_ATTEMPTS) {
-    if (now - attempt.lastAttempt < LOCKOUT_TIME_MS) {
-      const waitMinutes = Math.ceil((LOCKOUT_TIME_MS - (now - attempt.lastAttempt)) / 60000);
-      return res.status(429).json({
-        ok: false,
-        error: `Phát hiện nhiều lần đăng nhập không thành công. Hệ thống tạm khóa truy cập trong ${waitMinutes} phút để phòng chống tấn công.`,
-      });
-    } else {
-      loginAttempts.delete(clientIp);
+  for (const key of getRateLimitKeys(req)) {
+    const attempt = loginAttempts.get(key);
+    if (attempt && attempt.count >= MAX_FAILED_ATTEMPTS) {
+      if (now - attempt.lastAttempt < LOCKOUT_TIME_MS) {
+        const waitMinutes = Math.ceil((LOCKOUT_TIME_MS - (now - attempt.lastAttempt)) / 60000);
+        return res.status(429).json({
+          ok: false,
+          error: `Phát hiện nhiều lần đăng nhập không thành công. Hệ thống tạm khóa truy cập trong ${waitMinutes} phút để phòng chống tấn công.`,
+        });
+      }
+      loginAttempts.delete(key);
     }
   }
   next();
 }
 
 function recordFailedLogin(req) {
-  const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
-  const attempt = loginAttempts.get(clientIp) || { count: 0, lastAttempt: now };
-  attempt.count += 1;
-  attempt.lastAttempt = now;
-  loginAttempts.set(clientIp, attempt);
+  for (const key of getRateLimitKeys(req)) {
+    const attempt = loginAttempts.get(key) || { count: 0, lastAttempt: now };
+    attempt.count += 1;
+    attempt.lastAttempt = now;
+    loginAttempts.set(key, attempt);
+  }
 }
 
 function clearFailedLogin(req) {
-  const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
-  loginAttempts.delete(clientIp);
+  for (const key of getRateLimitKeys(req)) {
+    loginAttempts.delete(key);
+  }
 }
+
+app._resetLoginRateLimiter = () => loginAttempts.clear();
 
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
@@ -77,40 +106,45 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ============================================================
 
 app.post('/api/auth/login', loginRateLimiter, async (req, res) => {
-  const { username, password } = req.body;
+  const username = typeof req.body?.username === 'string' ? req.body.username.trim() : '';
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
   if (!username || !password) {
     return res.status(400).json({ ok: false, error: 'Vui lòng nhập tên đăng nhập và mật khẩu.' });
   }
 
   try {
     const user = await db.getUserByUsername(username);
-    if (!user) {
-      return res.status(401).json({ ok: false, error: 'Tài khoản không tồn tại trên hệ thống.' });
+
+    if (user && user.locked_until && new Date(user.locked_until).getTime() > Date.now()) {
+      const waitMinutes = Math.max(1, Math.ceil((new Date(user.locked_until).getTime() - Date.now()) / 60000));
+      return res.status(429).json({
+        ok: false,
+        error: `Tài khoản đang tạm khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau ${waitMinutes} phút.`,
+      });
+    }
+
+    // Luôn chạy bcrypt.compare (kể cả khi không tìm thấy user) để chống dò tên tài khoản qua thời gian phản hồi
+    const isMatch = await bcrypt.compare(password, user ? user.password_hash : DUMMY_BCRYPT_HASH);
+    if (!user || !isMatch) {
+      recordFailedLogin(req);
+      if (user) {
+        await db.recordUserFailedLogin(user.username, MAX_FAILED_ATTEMPTS, LOCKOUT_TIME_MS);
+      }
+      return res.status(401).json({ ok: false, error: 'Tên đăng nhập hoặc mật khẩu không chính xác.' });
     }
 
     if (!user.is_active) {
       return res.status(403).json({ ok: false, error: 'Tài khoản này đã bị khóa. Vui lòng liên hệ quản trị viên cấp cao.' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) {
-      recordFailedLogin(req);
-      return res.status(401).json({ ok: false, error: 'Mật khẩu không chính xác.' });
-    }
-
     clearFailedLogin(req);
     await db.updateUserLastLogin(user.id);
-    const token = generateToken(user);
+    const { token, maxAge } = await createSessionToken(user, req);
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: 'strict',
-    });
+    res.cookie('token', token, getCookieOptions(req, maxAge));
 
     res.json({
       ok: true,
-      token,
       user: {
         id: user.id,
         username: user.username,
@@ -120,7 +154,8 @@ app.post('/api/auth/login', loginRateLimiter, async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    console.error('[Auth] Lỗi đăng nhập:', err.message);
+    res.status(500).json({ ok: false, error: 'Lỗi hệ thống khi đăng nhập.' });
   }
 });
 
@@ -128,8 +163,15 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
   res.json({ ok: true, user: req.user });
 });
 
-app.post('/api/auth/logout', (req, res) => {
-  res.clearCookie('token');
+app.post('/api/auth/logout', async (req, res) => {
+  try {
+    const token = extractToken(req);
+    const decoded = token ? verifyToken(token) : null;
+    if (decoded?.sid) {
+      await db.revokeUserSession(decoded.sid);
+    }
+  } catch (err) {}
+  res.clearCookie('token', { path: '/' });
   res.json({ ok: true, message: 'Đã đăng xuất.' });
 });
 
@@ -155,10 +197,14 @@ function getZaloApi() {
  */
 let warnedMissingWebhookSecret = false;
 function verifyWebhookSecret(req) {
-  const expected = config.zalo.webhookSecret;
+  const expected = config.zalo.webhookSecret || process.env.ZALO_WEBHOOK_SECRET || '';
   if (!expected) {
+    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+      console.error('[Bảo mật] Từ chối webhook vì chưa cấu hình ZALO_WEBHOOK_SECRET trên Production.');
+      return false;
+    }
     if (!warnedMissingWebhookSecret) {
-      console.warn('[Bảo mật] Chưa cấu hình ZALO_WEBHOOK_SECRET: webhook không được xác thực nguồn gửi.');
+      console.warn('[Bảo mật] Chưa cấu hình ZALO_WEBHOOK_SECRET: webhook không được xác thực nguồn gửi (chỉ cho phép ở môi trường dev).');
       warnedMissingWebhookSecret = true;
     }
     return true;
@@ -185,7 +231,7 @@ app.post('/api/webhook', async (req, res) => {
     res.json({ ok: true, result });
   } catch (err) {
     console.error('[Webhook] Lỗi xử lý update:', err.message);
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(500).json({ ok: false, error: 'Webhook processing error' });
   }
 });
 
@@ -203,6 +249,9 @@ app.get('/api/webhook', (req, res) => {
 // Có CRON_SECRET thì bắt buộc header "Authorization: Bearer <CRON_SECRET>" (Vercel tự gửi).
 app.get('/api/cron/keepalive', async (req, res) => {
   const secret = process.env.CRON_SECRET || '';
+  if (!secret && (process.env.VERCEL || process.env.NODE_ENV === 'production')) {
+    return res.status(401).json({ ok: false });
+  }
   if (secret) {
     const received = Buffer.from(String(req.headers.authorization || ''));
     const target = Buffer.from(`Bearer ${secret}`);
@@ -220,7 +269,12 @@ app.get('/api/cron/keepalive', async (req, res) => {
   }
 });
 
-app.get('/api/webhook/status', async (req, res) => {
+// ============================================================
+// BẢO VỆ CÁC ROUTE QUẢN TRỊ BẰNG AUTHMIDDLEWARE
+// ============================================================
+app.use('/api', authMiddleware);
+
+app.get('/api/webhook/status', requireRole('superadmin', 'admin'), async (req, res) => {
   try {
     const api = getZaloApi();
     const info = await api.getWebhookInfo();
@@ -229,11 +283,6 @@ app.get('/api/webhook/status', async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
-
-// ============================================================
-// BẢO VỆ CÁC ROUTE QUẢN TRỊ BẰNG AUTHMIDDLEWARE
-// ============================================================
-app.use('/api', authMiddleware);
 
 // Trạng thái cờ tính năng để giao diện hiển thị đúng (bảo trì / sẵn sàng)
 app.get('/api/features', (req, res) => {
@@ -275,7 +324,7 @@ app.put('/api/auth/change-password', async (req, res) => {
   if (!currentPassword || !newPassword) {
     return res.status(400).json({ ok: false, error: 'Vui lòng nhập mật khẩu hiện tại và mật khẩu mới.' });
   }
-  if (newPassword.length < 6) {
+  if (String(newPassword).length < 6) {
     return res.status(400).json({ ok: false, error: 'Mật khẩu mới phải có ít nhất 6 ký tự.' });
   }
 
@@ -290,10 +339,16 @@ app.put('/api/auth/change-password', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Mật khẩu hiện tại không chính xác.' });
     }
 
+    // updateUser sẽ tự động thu hồi toàn bộ phiên cũ trên mọi thiết bị
     await db.updateUser(user.id, { password: newPassword });
-    res.json({ ok: true, message: 'Đổi mật khẩu thành công! Mật khẩu mới đã được mã hóa an toàn.' });
+
+    // Cấp lại phiên mới cho thiết bị hiện tại để người dùng không bị văng ra
+    const { token, maxAge } = await createSessionToken(user, req);
+    res.cookie('token', token, getCookieOptions(req, maxAge));
+
+    res.json({ ok: true, message: 'Đổi mật khẩu thành công! Các phiên đăng nhập trên thiết bị khác đã được thu hồi.' });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(500).json({ ok: false, error: 'Không thể đổi mật khẩu.' });
   }
 });
 
@@ -352,24 +407,47 @@ app.get('/api/stats', async (req, res) => {
 // ============================================================
 // QUẢN LÝ TÀI KHOẢN HỆ THỐNG (CHỈ ADMIN MỚI CÓ QUYỀN)
 // ============================================================
+const ALLOWED_USER_ROLES = ['superadmin', 'admin', 'user'];
+
 app.get('/api/users', requireRole('superadmin', 'admin'), async (req, res) => {
   const users = await db.getAllUsers();
   res.json({ ok: true, users });
 });
 
 app.post('/api/users', requireRole('superadmin', 'admin'), async (req, res) => {
-  const { username, password, fullName, email, role } = req.body;
+  const { username, password, fullName, email, role } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ ok: false, error: 'Tên đăng nhập và mật khẩu là bắt buộc.' });
   }
+  if (String(password).length < 6) {
+    return res.status(400).json({ ok: false, error: 'Mật khẩu phải có ít nhất 6 ký tự.' });
+  }
+
+  const targetRole = role || 'user';
+  if (!ALLOWED_USER_ROLES.includes(targetRole)) {
+    return res.status(400).json({ ok: false, error: 'Vai trò phân quyền không hợp lệ.' });
+  }
+
+  if (req.user.role !== 'superadmin' && (targetRole === 'superadmin' || targetRole === 'admin')) {
+    return res.status(403).json({
+      ok: false,
+      error: 'Chỉ Quản trị tối cao (superadmin) mới có quyền tạo tài khoản quản trị.',
+    });
+  }
 
   try {
-    const existing = await db.getUserByUsername(username);
+    const existing = await db.getUserByUsername(String(username).trim());
     if (existing) {
       return res.status(400).json({ ok: false, error: 'Tên đăng nhập này đã được sử dụng.' });
     }
 
-    const user = await db.createUser({ username, password, fullName, email, role: role || 'user' });
+    const user = await db.createUser({
+      username: String(username).trim(),
+      password: String(password),
+      fullName,
+      email,
+      role: targetRole,
+    });
     res.json({ ok: true, message: 'Tạo tài khoản cán bộ thành công', user });
   } catch (err) {
     res.status(500).json({ ok: false, error: 'Không thể tạo tài khoản.' });
@@ -378,8 +456,50 @@ app.post('/api/users', requireRole('superadmin', 'admin'), async (req, res) => {
 
 app.put('/api/users/:id', requireRole('superadmin', 'admin'), async (req, res) => {
   const { id } = req.params;
+  const { fullName, email, role, isActive, password } = req.body || {};
+
+  if (role !== undefined && !ALLOWED_USER_ROLES.includes(role)) {
+    return res.status(400).json({ ok: false, error: 'Vai trò phân quyền không hợp lệ.' });
+  }
+  if (password !== undefined && password !== '' && String(password).length < 6) {
+    return res.status(400).json({ ok: false, error: 'Mật khẩu phải có ít nhất 6 ký tự.' });
+  }
+  if (Number(id) === Number(req.user.id) && isActive === false) {
+    return res.status(400).json({ ok: false, error: 'Không thể tự khóa tài khoản của chính mình.' });
+  }
+
   try {
-    const updated = await db.updateUser(id, req.body);
+    const targetUser = await db.getUserById(id);
+    if (!targetUser) {
+      return res.status(404).json({ ok: false, error: 'Không tìm thấy tài khoản.' });
+    }
+
+    if (req.user.role !== 'superadmin') {
+      const isEditingOtherAdmin =
+        targetUser.role === 'superadmin' ||
+        (targetUser.role === 'admin' && Number(targetUser.id) !== Number(req.user.id));
+      if (isEditingOtherAdmin) {
+        return res.status(403).json({
+          ok: false,
+          error: 'Bạn không có quyền chỉnh sửa tài khoản Quản trị tối cao hoặc Quản trị viên khác.',
+        });
+      }
+
+      if (role !== undefined && role !== targetUser.role && (role === 'superadmin' || role === 'admin')) {
+        return res.status(403).json({
+          ok: false,
+          error: 'Chỉ Quản trị tối cao (superadmin) mới có quyền nâng cấp lên vai trò quản trị.',
+        });
+      }
+    }
+
+    const updated = await db.updateUser(id, {
+      fullName,
+      email,
+      role,
+      isActive: typeof isActive === 'boolean' ? isActive : undefined,
+      password: password || undefined,
+    });
     res.json({ ok: true, message: 'Cập nhật tài khoản thành công', user: updated });
   } catch (err) {
     res.status(500).json({ ok: false, error: 'Không thể cập nhật tài khoản.' });
@@ -388,11 +508,23 @@ app.put('/api/users/:id', requireRole('superadmin', 'admin'), async (req, res) =
 
 app.delete('/api/users/:id', requireRole('superadmin', 'admin'), async (req, res) => {
   const { id } = req.params;
-  if (req.user.id === Number(id)) {
+  if (Number(req.user.id) === Number(id)) {
     return res.status(400).json({ ok: false, error: 'Không thể tự xóa tài khoản của chính mình.' });
   }
 
   try {
+    const targetUser = await db.getUserById(id);
+    if (!targetUser) {
+      return res.status(404).json({ ok: false, error: 'Không tìm thấy tài khoản.' });
+    }
+
+    if (req.user.role !== 'superadmin' && (targetUser.role === 'superadmin' || targetUser.role === 'admin')) {
+      return res.status(403).json({
+        ok: false,
+        error: 'Chỉ Quản trị tối cao (superadmin) mới có quyền xóa tài khoản quản trị.',
+      });
+    }
+
     await db.deleteUser(id);
     res.json({ ok: true, message: 'Đã xóa tài khoản cán bộ.' });
   } catch (err) {

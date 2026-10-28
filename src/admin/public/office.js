@@ -912,7 +912,10 @@
     btn.classList.add('is-busy');
     if (label) label.textContent = 'Đang xuất...';
     try {
-      const res = await fetch('/api/office-docs/export?' + buildQuery({ paged: false }), { credentials: 'same-origin' });
+      const res = await fetch('/api/office-docs/export?' + buildQuery({ paged: false }), {
+        credentials: 'same-origin',
+        headers: App.getDeviceKey ? { 'X-Device-Key': App.getDeviceKey() } : {},
+      });
       if (!res.ok) {
         let msg = `Xuất thất bại (HTTP ${res.status})`;
         try { msg = (await res.json()).error || msg; } catch (e) { /* không phải JSON */ }

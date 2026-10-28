@@ -329,16 +329,41 @@
   }
 
   // ============================================================
-  // API CLIENT
+  // API CLIENT & DEVICE BINDING
   // ============================================================
+  const DEVICE_KEY_STORAGE = 'zalo_admin_device_key';
+
+  function getDeviceKey(rotate = false) {
+    try {
+      let key = rotate ? null : localStorage.getItem(DEVICE_KEY_STORAGE);
+      if (!key || key.length < 32) {
+        const bytes = new Uint8Array(24);
+        if (window.crypto && window.crypto.getRandomValues) {
+          window.crypto.getRandomValues(bytes);
+        } else {
+          for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+        }
+        key = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+        localStorage.setItem(DEVICE_KEY_STORAGE, key);
+      }
+      return key;
+    } catch (e) {
+      return 'browser-local-device';
+    }
+  }
+
   async function apiRequest(endpoint, options = {}) {
     try {
+      if (endpoint === '/api/auth/login') {
+        getDeviceKey(true);
+      }
       const res = await fetch(endpoint, {
+        ...options,
         headers: {
           'Content-Type': 'application/json',
+          'X-Device-Key': getDeviceKey(),
           ...(options.headers || {}),
         },
-        ...options,
       });
 
       if (res.status === 401 && endpoint === '/api/auth/login') {
@@ -495,6 +520,9 @@
     if (!ok) return;
     try {
       await apiRequest('/api/auth/logout', { method: 'POST' });
+    } catch (e) {}
+    try {
+      localStorage.removeItem(DEVICE_KEY_STORAGE);
     } catch (e) {}
     showToast('Đã đăng xuất tài khoản.', 'info');
     showLoginScreen();
@@ -3239,6 +3267,7 @@
   // API dùng chung cho các module giao diện khác (office.js)
   window.AdminApp = {
     apiRequest,
+    getDeviceKey,
     showToast,
     showConfirmDialog,
     escapeHtml,

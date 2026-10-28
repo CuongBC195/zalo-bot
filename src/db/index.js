@@ -17,6 +17,8 @@ class DatabaseService {
 
     // Bộ nhớ đệm fallback khi chưa kết nối PostgreSQL
     this.localUsers = [];
+    this.localSessions = new Map();
+    this.sessionCache = new Map(); // Bộ đệm phiên đăng nhập (TTL 10s) giúp kiểm tra 0ms
     this.localZaloUsers = new Map();
     this.localQueryLogs = [];
     this.localResponseCache = new Map(); // Bộ đệm phản hồi nhanh giới hạn 500 mục
@@ -55,6 +57,8 @@ class DatabaseService {
         email: 'admin@party.gov.vn',
         role: 'superadmin',
         is_active: true,
+        failed_login_count: 0,
+        locked_until: null,
         created_at: new Date(),
         last_login: null,
       },
@@ -74,7 +78,9 @@ class DatabaseService {
       };
 
       if (isRemote || connectionString.includes('sslmode=require') || connectionString.includes('supabase')) {
-        poolConfig.ssl = { rejectUnauthorized: false };
+        poolConfig.ssl = {
+          rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true',
+        };
       }
 
       this.pool = new Pool(poolConfig);
@@ -253,6 +259,22 @@ class DatabaseService {
     return this.localUsers.find(u => u.username === username) || null;
   }
 
+  async getUserById(id) {
+    const numId = Number(id);
+    if (!Number.isFinite(numId)) return null;
+    const isOk = await this.checkConnection();
+    if (isOk) {
+      try {
+        const res = await this.pool.query('SELECT * FROM users WHERE id = $1', [numId]);
+        return res.rows[0] || null;
+      } catch (err) {
+        console.error('[Postgres] Lỗi getUserById:', err.message);
+      }
+    }
+
+    return this.localUsers.find(u => u.id === numId) || null;
+  }
+
   async getAllUsers() {
     const isOk = await this.checkConnection();
     if (isOk) {
@@ -284,13 +306,15 @@ class DatabaseService {
     }
 
     const newUser = {
-      id: Date.now(),
+      id: Date.now() + Math.floor(Math.random() * 1000),
       username,
       password_hash: passwordHash,
       full_name: fullName || username,
       email: email || '',
       role,
       is_active: true,
+      failed_login_count: 0,
+      locked_until: null,
       created_at: new Date(),
       last_login: null,
     };
@@ -301,6 +325,8 @@ class DatabaseService {
 
   async updateUser(id, { fullName, email, role, isActive, password }) {
     const isOk = await this.checkConnection();
+    const shouldRevokeSessions = Boolean(password || role !== undefined || isActive === false);
+    let updatedUser = null;
 
     if (isOk) {
       let query = `UPDATE users SET full_name = COALESCE($1, full_name), email = COALESCE($2, email), role = COALESCE($3, role), is_active = COALESCE($4, is_active)`;
@@ -316,23 +342,31 @@ class DatabaseService {
       query += ` WHERE id = $${params.length} RETURNING id, username, full_name, email, role, is_active, created_at`;
 
       const res = await this.pool.query(query, params);
-      return res.rows[0] || null;
+      updatedUser = res.rows[0] || null;
+    } else {
+      const user = this.localUsers.find(u => u.id === Number(id));
+      if (user) {
+        if (fullName !== undefined) user.full_name = fullName;
+        if (email !== undefined) user.email = email;
+        if (role !== undefined) user.role = role;
+        if (isActive !== undefined) user.is_active = isActive;
+        if (password) user.password_hash = bcrypt.hashSync(password, 10);
+        const { password_hash, ...safeUser } = user;
+        updatedUser = safeUser;
+      }
     }
 
-    const user = this.localUsers.find(u => u.id === Number(id));
-    if (user) {
-      if (fullName !== undefined) user.full_name = fullName;
-      if (email !== undefined) user.email = email;
-      if (role !== undefined) user.role = role;
-      if (isActive !== undefined) user.is_active = isActive;
-      if (password) user.password_hash = bcrypt.hashSync(password, 10);
-      const { password_hash, ...safeUser } = user;
-      return safeUser;
+    if (shouldRevokeSessions) {
+      await this.revokeAllUserSessions(id);
+    } else {
+      this._clearUserSessionCache(id);
     }
-    return null;
+
+    return updatedUser;
   }
 
   async deleteUser(id) {
+    await this.revokeAllUserSessions(id);
     const isOk = await this.checkConnection();
     if (isOk) {
       const res = await this.pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
@@ -351,11 +385,226 @@ class DatabaseService {
     const isOk = await this.checkConnection();
     if (isOk) {
       try {
-        await this.pool.query('UPDATE users SET last_login = NOW() WHERE id = $1', [id]);
-      } catch (err) {}
+        await this.pool.query(
+          'UPDATE users SET last_login = NOW(), failed_login_count = 0, locked_until = NULL WHERE id = $1',
+          [id]
+        );
+      } catch (err) {
+        await this.pool.query('UPDATE users SET last_login = NOW() WHERE id = $1', [id]).catch(() => {});
+      }
     } else {
       const user = this.localUsers.find(u => u.id === Number(id));
-      if (user) user.last_login = new Date();
+      if (user) {
+        user.last_login = new Date();
+        user.failed_login_count = 0;
+        user.locked_until = null;
+      }
+    }
+  }
+
+  async recordUserFailedLogin(username, maxAttempts = 5, lockoutMs = 15 * 60 * 1000) {
+    if (!username) return;
+    const isOk = await this.checkConnection();
+    const lockUntil = new Date(Date.now() + lockoutMs);
+
+    if (isOk) {
+      try {
+        await this.pool.query(
+          `UPDATE users
+           SET failed_login_count = COALESCE(failed_login_count, 0) + 1,
+               locked_until = CASE
+                 WHEN COALESCE(failed_login_count, 0) + 1 >= $2 THEN $3
+                 ELSE locked_until
+               END
+           WHERE username = $1`,
+          [username, maxAttempts, lockUntil]
+        );
+        return;
+      } catch (err) {
+        // Bỏ qua nếu cột chưa kịp migrate
+      }
+    }
+
+    const user = this.localUsers.find(u => u.username === username);
+    if (user) {
+      user.failed_login_count = (user.failed_login_count || 0) + 1;
+      if (user.failed_login_count >= maxAttempts) {
+        user.locked_until = lockUntil;
+      }
+    }
+  }
+
+  // ============================================================
+  // QUẢN LÝ PHIÊN ĐĂNG NHẬP WEB (USER SESSIONS & REVOCATION)
+  // ============================================================
+
+  _clearUserSessionCache(userId) {
+    const targetId = Number(userId);
+    for (const [sid, entry] of this.sessionCache.entries()) {
+      if (Number(entry.data?.user_id) === targetId) {
+        this.sessionCache.delete(sid);
+      }
+    }
+  }
+
+  _setSessionCache(sessionId, sessionData, ttlMs = 10000) {
+    if (this.sessionCache.size >= 1000) {
+      const oldestKey = this.sessionCache.keys().next().value;
+      this.sessionCache.delete(oldestKey);
+    }
+    this.sessionCache.set(sessionId, {
+      data: sessionData,
+      cacheExpiresAt: Date.now() + ttlMs,
+    });
+  }
+
+  async createUserSession({ sessionId, userId, uaHash, ipHash, ttlMs = 12 * 3600 * 1000 }) {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + ttlMs);
+
+    if (this.localSessions.size >= 2000) {
+      const oldestKey = this.localSessions.keys().next().value;
+      this.localSessions.delete(oldestKey);
+    }
+    this.localSessions.set(sessionId, {
+      session_id: sessionId,
+      user_id: Number(userId),
+      ua_hash: uaHash,
+      ip_hash: ipHash,
+      created_at: now,
+      last_active_at: now,
+      expires_at: expiresAt,
+      revoked_at: null,
+    });
+
+    const isOk = await this.checkConnection();
+    if (isOk) {
+      try {
+        await this.pool.query(
+          `INSERT INTO user_sessions (session_id, user_id, ua_hash, ip_hash, created_at, last_active_at, expires_at)
+           VALUES ($1, $2, $3, $4, NOW(), NOW(), $5)`,
+          [sessionId, Number(userId), uaHash, ipHash, expiresAt]
+        );
+        // Dọn nhẹ các phiên hết hạn hoặc đã thu hồi quá 1 ngày (bất đồng bộ, không chặn request)
+        this.pool.query(
+          `DELETE FROM user_sessions WHERE expires_at < NOW() OR (revoked_at IS NOT NULL AND revoked_at < NOW() - INTERVAL '1 day')`
+        ).catch(() => {});
+      } catch (err) {
+        console.warn('[Postgres] Lỗi createUserSession (dùng bộ nhớ dự phòng):', err.message);
+      }
+    }
+  }
+
+  async getValidUserSession(sessionId) {
+    if (!sessionId || typeof sessionId !== 'string') return null;
+
+    // 1. Kiểm tra bộ đệm phiên trong RAM (TTL 10s -> ~0ms)
+    const cached = this.sessionCache.get(sessionId);
+    if (cached) {
+      if (cached.cacheExpiresAt > Date.now() && new Date(cached.data.expires_at).getTime() > Date.now()) {
+        return cached.data;
+      }
+      this.sessionCache.delete(sessionId);
+    }
+
+    // 2. Truy vấn bảng user_sessions kết hợp bảng users trên PostgreSQL
+    const isOk = await this.checkConnection();
+    if (isOk) {
+      try {
+        const res = await this.pool.query(
+          `SELECT s.session_id, s.user_id, s.ua_hash, s.ip_hash, s.last_active_at, s.expires_at,
+                  u.username, u.full_name, u.email, u.role, u.is_active
+           FROM user_sessions s
+           JOIN users u ON u.id = s.user_id
+           WHERE s.session_id = $1
+             AND s.revoked_at IS NULL
+             AND s.expires_at > NOW()
+             AND u.is_active = TRUE`,
+          [sessionId]
+        );
+        if (!res.rows.length) return null;
+        const row = res.rows[0];
+        this._setSessionCache(sessionId, row, 10000);
+
+        // Chỉ cập nhật last_active_at tối đa 5 phút/lần dưới nền để không tốn I/O
+        if (Date.now() - new Date(row.last_active_at).getTime() > 5 * 60 * 1000) {
+          this.pool.query(
+            'UPDATE user_sessions SET last_active_at = NOW() WHERE session_id = $1',
+            [sessionId]
+          ).catch(() => {});
+        }
+        return row;
+      } catch (err) {
+        console.warn('[Postgres] Lỗi getValidUserSession (chuyển sang fallback):', err.message);
+      }
+    }
+
+    // 3. Fallback in-memory khi chạy offline / kiểm thử
+    const local = this.localSessions.get(sessionId);
+    if (!local || local.revoked_at || new Date(local.expires_at).getTime() <= Date.now()) {
+      return null;
+    }
+
+    const user = this.localUsers.find(u => u.id === Number(local.user_id));
+    if (!user || !user.is_active) {
+      return null;
+    }
+
+    const sessionData = {
+      session_id: local.session_id,
+      user_id: user.id,
+      ua_hash: local.ua_hash,
+      ip_hash: local.ip_hash,
+      last_active_at: local.last_active_at,
+      expires_at: local.expires_at,
+      username: user.username,
+      full_name: user.full_name,
+      email: user.email,
+      role: user.role,
+      is_active: user.is_active,
+    };
+    this._setSessionCache(sessionId, sessionData, 10000);
+    return sessionData;
+  }
+
+  async revokeUserSession(sessionId) {
+    if (!sessionId) return;
+    this.sessionCache.delete(sessionId);
+    const local = this.localSessions.get(sessionId);
+    if (local) {
+      local.revoked_at = new Date();
+      this.localSessions.delete(sessionId);
+    }
+
+    const isOk = await this.checkConnection();
+    if (isOk) {
+      try {
+        await this.pool.query(
+          'UPDATE user_sessions SET revoked_at = NOW() WHERE session_id = $1 AND revoked_at IS NULL',
+          [sessionId]
+        );
+      } catch (err) {}
+    }
+  }
+
+  async revokeAllUserSessions(userId) {
+    const targetId = Number(userId);
+    this._clearUserSessionCache(targetId);
+
+    for (const [sid, s] of this.localSessions.entries()) {
+      if (Number(s.user_id) === targetId) {
+        this.localSessions.delete(sid);
+      }
+    }
+
+    const isOk = await this.checkConnection();
+    if (isOk) {
+      try {
+        await this.pool.query(
+          'UPDATE user_sessions SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL',
+          [targetId]
+        );
+      } catch (err) {}
     }
   }
 
