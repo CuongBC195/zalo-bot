@@ -354,9 +354,6 @@
 
   async function apiRequest(endpoint, options = {}) {
     try {
-      if (endpoint === '/api/auth/login') {
-        getDeviceKey(true);
-      }
       const res = await fetch(endpoint, {
         ...options,
         headers: {

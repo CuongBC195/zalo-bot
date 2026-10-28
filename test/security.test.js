@@ -157,8 +157,40 @@ async function run() {
       assert.strictEqual(replayNoDeviceKey.status, 401, 'Phải chặn ngay cả khi cùng IP và cùng User-Agent nhưng khác Device Key');
     });
 
-    await test('Chép cookie sang mạng IP khác (khi bật TRUST_PROXY) bị chặn 401 ngay lập tức', async () => {
+    await test('Người dùng thật đổi mạng IP (Wi-Fi <-> 4G) hoặc trình duyệt tự nâng cấp bản vá nhỏ vẫn giữ nguyên phiên (200 OK)', async () => {
       process.env.TRUST_PROXY = 'true';
+      try {
+        app._resetLoginRateLimiter();
+        const dKey = 'device-key-roaming-001';
+
+        const loginRes = await req('POST', '/api/auth/login', {
+          body: { username: 'admin', password: process.env.ADMIN_PASSWORD || 'Admin@123456' },
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) Chrome/130.0.6723.58',
+            'X-Device-Key': dKey,
+            'X-Real-IP': '203.0.113.10',
+          },
+        });
+        assert.strictEqual(loginRes.status, 200);
+
+        // Chuyển sang mạng 4G (IP mới) và trình duyệt tự cập nhật minor version (.58 -> .70)
+        const roamingRes = await req('GET', '/api/auth/me', {
+          headers: {
+            Cookie: loginRes.cookieHeader,
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) Chrome/130.0.6723.70',
+            'X-Device-Key': dKey,
+            'X-Real-IP': '198.51.100.77',
+          },
+        });
+        assert.strictEqual(roamingRes.status, 200, 'Đổi IP hợp lệ trên cùng thiết bị không được làm văng phiên');
+      } finally {
+        delete process.env.TRUST_PROXY;
+      }
+    });
+
+    await test('Khi bật STRICT_SESSION_IP=true, đổi mạng IP bị chặn 401 ngay lập tức', async () => {
+      process.env.TRUST_PROXY = 'true';
+      process.env.STRICT_SESSION_IP = 'true';
       try {
         app._resetLoginRateLimiter();
         const ua = 'Mozilla/5.0 (X11; Linux x86_64) Chrome/130.0.0.0';
@@ -174,7 +206,7 @@ async function run() {
         });
         assert.strictEqual(loginRes.status, 200);
 
-        // Dùng từ IP khác dù có đủ User-Agent và X-Device-Key
+        // Dùng từ IP khác khi đang bật STRICT_SESSION_IP=true
         const replayDiffIp = await req('GET', '/api/auth/me', {
           headers: {
             Cookie: loginRes.cookieHeader,
@@ -183,9 +215,10 @@ async function run() {
             'X-Real-IP': '198.51.100.77',
           },
         });
-        assert.strictEqual(replayDiffIp.status, 401, 'Phải chặn khi địa chỉ IP thay đổi');
+        assert.strictEqual(replayDiffIp.status, 401, 'Phải chặn khi địa chỉ IP thay đổi ở chế độ STRICT_SESSION_IP=true');
       } finally {
         delete process.env.TRUST_PROXY;
+        delete process.env.STRICT_SESSION_IP;
       }
     });
 

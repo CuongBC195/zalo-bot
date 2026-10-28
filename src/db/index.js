@@ -587,6 +587,27 @@ class DatabaseService {
     }
   }
 
+  async updateSessionIp(sessionId, newIpHash) {
+    if (!sessionId || !newIpHash) return;
+    const cached = this.sessionCache.get(sessionId);
+    if (cached && cached.data) {
+      cached.data.ip_hash = newIpHash;
+    }
+    const local = this.localSessions.get(sessionId);
+    if (local) {
+      local.ip_hash = newIpHash;
+      local.last_active_at = new Date();
+    }
+
+    const isOk = await this.checkConnection();
+    if (isOk) {
+      this.pool.query(
+        'UPDATE user_sessions SET ip_hash = $2, last_active_at = NOW() WHERE session_id = $1 AND revoked_at IS NULL',
+        [sessionId, newIpHash]
+      ).catch(() => {});
+    }
+  }
+
   async revokeAllUserSessions(userId) {
     const targetId = Number(userId);
     this._clearUserSessionCache(targetId);

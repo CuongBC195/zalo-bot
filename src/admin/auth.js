@@ -74,15 +74,24 @@ function getClientIp(req) {
 }
 
 /**
+ * Chuẩn hóa chuỗi User-Agent chỉ lấy major version (ví dụ Chrome/130.0.6723.58 -> Chrome/130)
+ * để trình duyệt tự cập nhật bản vá nhỏ trong ngày không làm văng phiên.
+ */
+function normalizeUserAgent(ua) {
+  return String(ua || '')
+    .trim()
+    .replace(/\/(\d+)\.\d+(?:\.\d+)*/g, '/$1');
+}
+
+/**
  * Tính toán dấu vân tay ngữ cảnh phiên đăng nhập (Thiết bị/Trình duyệt + Mạng IP)
  */
 function computeContextHashes(req) {
-  const ua = String(req.headers?.['user-agent'] || '').trim();
-  const chUa = String(req.headers?.['sec-ch-ua'] || '').trim();
+  const ua = normalizeUserAgent(req.headers?.['user-agent']);
   const chPlatform = String(req.headers?.['sec-ch-ua-platform'] || '').trim();
   const deviceKey = String(req.headers?.['x-device-key'] || '').trim();
 
-  const uaHash = sha256Short(`${ua}|${chUa}|${chPlatform}|${deviceKey}`);
+  const uaHash = sha256Short(`${ua}|${chPlatform}|${deviceKey}`);
   const ipHash = sha256Short(getClientIp(req));
   return { uaHash, ipHash };
 }
@@ -183,8 +192,9 @@ async function authMiddleware(req, res, next) {
   // Kiểm tra ràng buộc Thiết bị (User-Agent + Device Key) và Mạng (IP)
   const { uaHash, ipHash } = computeContextHashes(req);
   const uaMismatch = session.ua_hash !== uaHash || (decoded.uah && decoded.uah !== uaHash);
-  const strictIp = process.env.STRICT_SESSION_IP !== 'false';
-  const ipMismatch = strictIp && (session.ip_hash !== ipHash || (decoded.iph && decoded.iph !== ipHash));
+  const ipChanged = Boolean(session.ip_hash && session.ip_hash !== ipHash);
+  const strictIp = process.env.STRICT_SESSION_IP === 'true';
+  const ipMismatch = strictIp && ipChanged;
 
   if (uaMismatch || ipMismatch) {
     await db.revokeUserSession(decoded.sid);
@@ -193,6 +203,11 @@ async function authMiddleware(req, res, next) {
       ok: false,
       error: 'Phát hiện phiên đăng nhập từ thiết bị hoặc mạng khác. Phiên làm việc đã bị thu hồi để bảo mật.',
     });
+  }
+
+  if (ipChanged) {
+    console.info(`[Security] Phiên của "${session.username}" chuyển mạng IP mới (giữ phiên vì khớp thiết bị).`);
+    db.updateSessionIp(session.session_id, ipHash).catch(() => {});
   }
 
   req.sessionId = session.session_id;
