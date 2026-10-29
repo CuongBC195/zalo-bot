@@ -167,8 +167,12 @@ class ZaloAPI {
 
   async setWebhook(url, secretToken) {
     try {
-      const token = secretToken || process.env.ZALO_WEBHOOK_SECRET || process.env.JWT_SECRET || 'zalo_dang_secret_2026';
-      const options = { secret_token: token };
+      const token =
+        secretToken ||
+        (process.env.ZALO_WEBHOOK_SECRET || '').trim() ||
+        config.zalo.deriveWebhookSecret(this.token) ||
+        (process.env.JWT_SECRET || '').trim();
+      const options = token ? { secret_token: token } : {};
       const result = await this.bot.setWebHook(url, options);
       return { ok: true, result };
     } catch (err) {

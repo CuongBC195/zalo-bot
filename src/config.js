@@ -2,6 +2,13 @@
  * Cấu hình hệ thống tập trung
  */
 require('dotenv').config();
+const crypto = require('crypto');
+
+function deriveWebhookSecret(botToken) {
+  const token = String(botToken || '').trim();
+  if (!token) return '';
+  return crypto.createHmac('sha256', 'zalo-bot-webhook-secret-v1').update(token).digest('hex').slice(0, 32);
+}
 
 const config = {
   // Zalo
@@ -11,8 +18,12 @@ const config = {
     pollingIntervalMs: Math.max(1000, parseInt(process.env.POLLING_INTERVAL_SECONDS || '3', 10) * 1000),
     longPollTimeoutSeconds: String(process.env.ZALO_LONG_POLL_TIMEOUT_SECONDS || '30'),
     deleteWebhookOnStart: process.env.DELETE_WEBHOOK_ON_START !== 'false',
-    // Chuỗi bí mật đã đăng ký qua setWebhook; Zalo gửi lại trong header X-Bot-Api-Secret-Token
-    webhookSecret: (process.env.ZALO_WEBHOOK_SECRET || '').trim(),
+    // Chuỗi bí mật đã đăng ký qua setWebhook; Zalo gửi lại trong header X-Bot-Api-Secret-Token.
+    // Nếu chưa đặt ZALO_WEBHOOK_SECRET riêng, tự dẫn xuất ổn định từ ZALO_BOT_TOKEN để đồng bộ giữa local và Vercel.
+    webhookSecret:
+      (process.env.ZALO_WEBHOOK_SECRET || '').trim() ||
+      deriveWebhookSecret(process.env.ZALO_BOT_TOKEN),
+    deriveWebhookSecret,
   },
 
   // Cờ bật/tắt tính năng

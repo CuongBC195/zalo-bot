@@ -197,10 +197,12 @@ function getZaloApi() {
  */
 let warnedMissingWebhookSecret = false;
 function verifyWebhookSecret(req) {
-  const expected = config.zalo.webhookSecret || process.env.ZALO_WEBHOOK_SECRET || '';
+  const explicit = (process.env.ZALO_WEBHOOK_SECRET || '').trim();
+  const derived = config.zalo.deriveWebhookSecret(process.env.ZALO_BOT_TOKEN || config.zalo.token);
+  const expected = explicit || config.zalo.webhookSecret || derived || '';
   if (!expected) {
     if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-      console.error('[Bảo mật] Từ chối webhook vì chưa cấu hình ZALO_WEBHOOK_SECRET trên Production.');
+      console.error('[Bảo mật] Từ chối webhook vì chưa cấu hình ZALO_WEBHOOK_SECRET hoặc ZALO_BOT_TOKEN trên Production.');
       return false;
     }
     if (!warnedMissingWebhookSecret) {
@@ -210,8 +212,13 @@ function verifyWebhookSecret(req) {
     return true;
   }
   const received = Buffer.from(String(req.headers['x-bot-api-secret-token'] || ''));
-  const target = Buffer.from(expected);
-  return received.length === target.length && crypto.timingSafeEqual(received, target);
+  const candidates = explicit
+    ? [explicit]
+    : Array.from(new Set([expected, derived, (process.env.JWT_SECRET || '').trim()].filter(Boolean)));
+  return candidates.some((secret) => {
+    const target = Buffer.from(secret);
+    return received.length === target.length && crypto.timingSafeEqual(received, target);
+  });
 }
 
 app.post('/api/webhook', async (req, res) => {
@@ -250,7 +257,10 @@ app.get('/api/webhook', (req, res) => {
 app.get('/api/cron/keepalive', async (req, res) => {
   const secret = process.env.CRON_SECRET || '';
   if (!secret && (process.env.VERCEL || process.env.NODE_ENV === 'production')) {
-    return res.status(401).json({ ok: false });
+    const isVercelCron = String(req.headers['user-agent'] || '').includes('vercel-cron/');
+    if (!isVercelCron) {
+      return res.status(401).json({ ok: false });
+    }
   }
   if (secret) {
     const received = Buffer.from(String(req.headers.authorization || ''));
