@@ -738,6 +738,11 @@
 
   async function checkWebhookStatus() {
     if (!webhookStatusBadge || !webhookStatusText) return;
+    if (!isAdminRole(state.currentUser && state.currentUser.role)) {
+      webhookStatusBadge.style.display = 'none';
+      return;
+    }
+    webhookStatusBadge.style.display = '';
     try {
       const res = await apiRequest('/api/webhook/status');
       if (res && res.ok && res.info) {

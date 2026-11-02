@@ -427,10 +427,30 @@ async function run() {
         ['GET', '/api/query-logs'],
         ['POST', '/api/cache/clear'],
         ['POST', '/api/seed-db'],
+        ['GET', '/api/documents'],
+        ['POST', '/api/rag-test', { query: 'test' }],
+        ['POST', '/api/pipeline-test', { query: 'test' }],
       ]) {
         const r = await req(m, p, { body, headers: clerkAuth });
         assert(denied(r), `Văn thư phải bị chặn ${m} ${p} (nhận ${r.status})`);
       }
+
+      // /api/stats chỉ trả trạng thái kết nối DB cho Văn thư / Cán bộ, không lộ số lượng tài khoản
+      const clerkStats = await req('GET', '/api/stats', { headers: clerkAuth });
+      assert.strictEqual(clerkStats.status, 200);
+      assert.strictEqual(clerkStats.data.stats, undefined, 'Không lộ stats cho Văn thư');
+
+      // Chặn username chứa ký tự lạ/XSS và mật khẩu quá dài (chống Bcrypt DoS)
+      const badUser = await req('POST', '/api/users', {
+        body: { username: '<script>x</script>', password: 'Abc@1234', role: 'user' },
+        headers: adminAuth,
+      });
+      assert.strictEqual(badUser.status, 400, 'Phải chặn username chứa ký tự không hợp lệ');
+      const longPwd = await req('POST', '/api/users', {
+        body: { username: 'valid_user_99', password: 'A'.repeat(200), role: 'user' },
+        headers: adminAuth,
+      });
+      assert.strictEqual(longPwd.status, 400, 'Phải chặn mật khẩu vượt quá 128 ký tự');
 
       // ---------- QUẢN TRỊ VIÊN: CHỈ QUẢN LÝ VĂN THƯ + CÁN BỘ ----------
       const mkClerk = await req('POST', '/api/users', { body: { username: 'rbac_new_clerk', password: 'Abc@1234', role: 'clerk' }, headers: adminAuth });

@@ -87,9 +87,9 @@ function normalizeUserAgent(ua) {
  * Tính toán dấu vân tay ngữ cảnh phiên đăng nhập (Thiết bị/Trình duyệt + Mạng IP)
  */
 function computeContextHashes(req) {
-  const ua = normalizeUserAgent(req.headers?.['user-agent']);
-  const chPlatform = String(req.headers?.['sec-ch-ua-platform'] || '').trim();
-  const deviceKey = String(req.headers?.['x-device-key'] || '').trim();
+  const ua = normalizeUserAgent(req.headers?.['user-agent']).slice(0, 512);
+  const chPlatform = String(req.headers?.['sec-ch-ua-platform'] || '').trim().slice(0, 64);
+  const deviceKey = String(req.headers?.['x-device-key'] || '').trim().slice(0, 128);
 
   const uaHash = sha256Short(`${ua}|${chPlatform}|${deviceKey}`);
   const ipHash = sha256Short(getClientIp(req));

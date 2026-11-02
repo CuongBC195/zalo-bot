@@ -114,6 +114,10 @@ app.post('/api/auth/login', loginRateLimiter, async (req, res) => {
   if (!username || !password) {
     return res.status(400).json({ ok: false, error: 'Vui lòng nhập tên đăng nhập và mật khẩu.' });
   }
+  if (username.length > 100 || password.length > 128) {
+    recordFailedLogin(req);
+    return res.status(401).json({ ok: false, error: 'Tên đăng nhập hoặc mật khẩu không chính xác.' });
+  }
 
   try {
     const user = await db.getUserByUsername(username);
@@ -293,7 +297,7 @@ app.get('/api/webhook/status', requireRole('superadmin', 'admin'), async (req, r
     const info = await api.getWebhookInfo();
     res.json({ ok: true, info });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(500).json({ ok: false, error: 'Không kiểm tra được trạng thái Webhook.' });
   }
 });
 
@@ -323,22 +327,25 @@ app.use('/api', require('./office-routes'));
 // HỒ SƠ CÁ NHÂN & ĐỔI MẬT KHẨU
 // ============================================================
 app.put('/api/auth/profile', async (req, res) => {
-  const { fullName, email } = req.body;
+  const rawName = req.body?.fullName;
+  const rawEmail = req.body?.email;
+  const fullName = typeof rawName === 'string' ? rawName.trim().slice(0, 100) : undefined;
+  const email = typeof rawEmail === 'string' ? rawEmail.trim().slice(0, 120) : undefined;
   try {
     const updated = await db.updateUser(req.user.id, { fullName, email });
     res.json({ ok: true, message: 'Cập nhật thông tin thành công!', user: updated });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(500).json({ ok: false, error: 'Không thể cập nhật thông tin hồ sơ.' });
   }
 });
 
 app.put('/api/auth/change-password', async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
+  const { currentPassword, newPassword } = req.body || {};
   if (!currentPassword || !newPassword) {
     return res.status(400).json({ ok: false, error: 'Vui lòng nhập mật khẩu hiện tại và mật khẩu mới.' });
   }
-  if (String(newPassword).length < 6) {
-    return res.status(400).json({ ok: false, error: 'Mật khẩu mới phải có ít nhất 6 ký tự.' });
+  if (String(newPassword).length < 6 || String(newPassword).length > 128 || String(currentPassword).length > 128) {
+    return res.status(400).json({ ok: false, error: 'Mật khẩu mới phải từ 6 đến 128 ký tự.' });
   }
 
   try {
@@ -369,6 +376,10 @@ app.put('/api/auth/change-password', async (req, res) => {
 app.get('/api/stats', async (req, res) => {
   try {
     const isDbConnected = await db.checkConnection();
+    // Văn thư và Cán bộ chỉ cần biết trạng thái kết nối DB trên thanh topbar, không lộ số lượng tài khoản
+    if (!ADMIN_ROLES.includes(req.user?.role)) {
+      return res.json({ ok: true, isDbConnected });
+    }
     let docs = [];
 
     if (isDbConnected) {
@@ -413,7 +424,7 @@ app.get('/api/stats', async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(500).json({ ok: false, error: 'Không tải được thống kê hệ thống.' });
   }
 });
 
@@ -421,6 +432,7 @@ app.get('/api/stats', async (req, res) => {
 // QUẢN LÝ TÀI KHOẢN HỆ THỐNG (CHỈ ADMIN MỚI CÓ QUYỀN)
 // ============================================================
 const ALLOWED_USER_ROLES = ALL_ROLES;
+const USERNAME_RE = /^[a-zA-Z0-9._-]{3,50}$/;
 const MANAGE_ROLE_DENIED =
   'Quản trị viên chỉ được quản lý tài khoản Văn thư và Cán bộ nghiệp vụ. Tài khoản quản trị do Quản trị tối cao phụ trách.';
 
@@ -434,8 +446,12 @@ app.post('/api/users', requireRole(...ADMIN_ROLES), async (req, res) => {
   if (!username || !password) {
     return res.status(400).json({ ok: false, error: 'Tên đăng nhập và mật khẩu là bắt buộc.' });
   }
-  if (String(password).length < 6) {
-    return res.status(400).json({ ok: false, error: 'Mật khẩu phải có ít nhất 6 ký tự.' });
+  const cleanUsername = String(username).trim();
+  if (!USERNAME_RE.test(cleanUsername)) {
+    return res.status(400).json({ ok: false, error: 'Tên đăng nhập từ 3-50 ký tự, chỉ gồm chữ, số, dấu chấm, gạch ngang hoặc gạch dưới.' });
+  }
+  if (String(password).length < 6 || String(password).length > 128) {
+    return res.status(400).json({ ok: false, error: 'Mật khẩu phải từ 6 đến 128 ký tự.' });
   }
 
   const targetRole = role || 'user';
@@ -448,16 +464,16 @@ app.post('/api/users', requireRole(...ADMIN_ROLES), async (req, res) => {
   }
 
   try {
-    const existing = await db.getUserByUsername(String(username).trim());
+    const existing = await db.getUserByUsername(cleanUsername);
     if (existing) {
       return res.status(400).json({ ok: false, error: 'Tên đăng nhập này đã được sử dụng.' });
     }
 
     const user = await db.createUser({
-      username: String(username).trim(),
+      username: cleanUsername,
       password: String(password),
-      fullName,
-      email,
+      fullName: typeof fullName === 'string' ? fullName.trim().slice(0, 100) : '',
+      email: typeof email === 'string' ? email.trim().slice(0, 120) : '',
       role: targetRole,
     });
     res.json({ ok: true, message: 'Tạo tài khoản cán bộ thành công', user });
@@ -473,8 +489,8 @@ app.put('/api/users/:id', requireRole(...ADMIN_ROLES), async (req, res) => {
   if (role !== undefined && !ALLOWED_USER_ROLES.includes(role)) {
     return res.status(400).json({ ok: false, error: 'Vai trò phân quyền không hợp lệ.' });
   }
-  if (password !== undefined && password !== '' && String(password).length < 6) {
-    return res.status(400).json({ ok: false, error: 'Mật khẩu phải có ít nhất 6 ký tự.' });
+  if (password !== undefined && password !== '' && (String(password).length < 6 || String(password).length > 128)) {
+    return res.status(400).json({ ok: false, error: 'Mật khẩu phải từ 6 đến 128 ký tự.' });
   }
   const isSelf = Number(id) === Number(req.user.id);
   if (isSelf && isActive === false) {
@@ -503,12 +519,12 @@ app.put('/api/users/:id', requireRole(...ADMIN_ROLES), async (req, res) => {
     }
 
     const updated = await db.updateUser(id, {
-      fullName,
-      email,
+      fullName: typeof fullName === 'string' ? fullName.trim().slice(0, 100) : undefined,
+      email: typeof email === 'string' ? email.trim().slice(0, 120) : undefined,
       // Chỉ truyền role khi thật sự đổi để không thu hồi phiên oan (UI luôn gửi kèm role hiện tại)
       role: role !== undefined && role !== targetUser.role ? role : undefined,
       isActive: typeof isActive === 'boolean' ? isActive : undefined,
-      password: password || undefined,
+      password: password ? String(password) : undefined,
     });
     res.json({ ok: true, message: 'Cập nhật tài khoản thành công', user: updated });
   } catch (err) {
@@ -584,7 +600,7 @@ app.post('/api/cache/clear', requireRole('superadmin', 'admin'), async (req, res
 // ============================================================
 // QUẢN LÝ VĂN BẢN (DOCUMENTS & ARTICLES)
 // ============================================================
-app.get('/api/documents', async (req, res) => {
+app.get('/api/documents', requireRole(...ADMIN_ROLES), async (req, res) => {
   const { category, search } = req.query;
   const isDbConnected = await db.checkConnection();
 
@@ -622,7 +638,7 @@ app.get('/api/documents', async (req, res) => {
   res.json({ ok: true, source: 'local_memory', documents: list });
 });
 
-app.get('/api/documents/:id', async (req, res) => {
+app.get('/api/documents/:id', requireRole(...ADMIN_ROLES), async (req, res) => {
   const { id } = req.params;
   const isDbConnected = await db.checkConnection();
 
@@ -807,7 +823,7 @@ app.post('/api/parse-raw', requireRole('superadmin', 'admin'), (req, res) => {
   res.json({ ok: true, count: articles.length, articles });
 });
 
-app.post('/api/rag-test', requireRegulationQa, async (req, res) => {
+app.post('/api/rag-test', requireRole(...ADMIN_ROLES), requireRegulationQa, async (req, res) => {
   const { query } = req.body;
   if (!query || !query.trim()) {
     return res.status(400).json({ ok: false, error: 'Vui lòng nhập câu hỏi thử nghiệm' });
@@ -832,7 +848,7 @@ app.post('/api/rag-test', requireRegulationQa, async (req, res) => {
 // ============================================================
 // THỬ NGHIỆM ĐIỀU PHỐI PIPELINE 7 TẦNG & RAG X-RAY
 // ============================================================
-app.post('/api/pipeline-test', requireRegulationQa, async (req, res) => {
+app.post('/api/pipeline-test', requireRole(...ADMIN_ROLES), requireRegulationQa, async (req, res) => {
   const { query, skipCache } = req.body;
   if (!query || !query.trim()) {
     return res.status(400).json({ ok: false, error: 'Vui lòng nhập câu hỏi kiểm thử.' });
