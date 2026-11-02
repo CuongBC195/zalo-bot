@@ -291,7 +291,7 @@ class DatabaseService {
     return this.localUsers.map(({ password_hash, ...u }) => u);
   }
 
-  async createUser({ username, password, fullName, email, role = 'admin' }) {
+  async createUser({ username, password, fullName, email, role = 'user' }) {
     const passwordHash = await bcrypt.hash(password, 10);
     const isOk = await this.checkConnection();
 

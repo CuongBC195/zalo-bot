@@ -24,6 +24,9 @@ const {
   extractToken,
   authMiddleware,
   requireRole,
+  ALL_ROLES,
+  ADMIN_ROLES,
+  canManageRole,
 } = require('./auth');
 
 const app = express();
@@ -417,14 +420,16 @@ app.get('/api/stats', async (req, res) => {
 // ============================================================
 // QUẢN LÝ TÀI KHOẢN HỆ THỐNG (CHỈ ADMIN MỚI CÓ QUYỀN)
 // ============================================================
-const ALLOWED_USER_ROLES = ['superadmin', 'admin', 'user'];
+const ALLOWED_USER_ROLES = ALL_ROLES;
+const MANAGE_ROLE_DENIED =
+  'Quản trị viên chỉ được quản lý tài khoản Văn thư và Cán bộ nghiệp vụ. Tài khoản quản trị do Quản trị tối cao phụ trách.';
 
-app.get('/api/users', requireRole('superadmin', 'admin'), async (req, res) => {
+app.get('/api/users', requireRole(...ADMIN_ROLES), async (req, res) => {
   const users = await db.getAllUsers();
   res.json({ ok: true, users });
 });
 
-app.post('/api/users', requireRole('superadmin', 'admin'), async (req, res) => {
+app.post('/api/users', requireRole(...ADMIN_ROLES), async (req, res) => {
   const { username, password, fullName, email, role } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ ok: false, error: 'Tên đăng nhập và mật khẩu là bắt buộc.' });
@@ -438,11 +443,8 @@ app.post('/api/users', requireRole('superadmin', 'admin'), async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Vai trò phân quyền không hợp lệ.' });
   }
 
-  if (req.user.role !== 'superadmin' && (targetRole === 'superadmin' || targetRole === 'admin')) {
-    return res.status(403).json({
-      ok: false,
-      error: 'Chỉ Quản trị tối cao (superadmin) mới có quyền tạo tài khoản quản trị.',
-    });
+  if (!canManageRole(req.user.role, targetRole)) {
+    return res.status(403).json({ ok: false, error: MANAGE_ROLE_DENIED });
   }
 
   try {
@@ -464,7 +466,7 @@ app.post('/api/users', requireRole('superadmin', 'admin'), async (req, res) => {
   }
 });
 
-app.put('/api/users/:id', requireRole('superadmin', 'admin'), async (req, res) => {
+app.put('/api/users/:id', requireRole(...ADMIN_ROLES), async (req, res) => {
   const { id } = req.params;
   const { fullName, email, role, isActive, password } = req.body || {};
 
@@ -474,7 +476,8 @@ app.put('/api/users/:id', requireRole('superadmin', 'admin'), async (req, res) =
   if (password !== undefined && password !== '' && String(password).length < 6) {
     return res.status(400).json({ ok: false, error: 'Mật khẩu phải có ít nhất 6 ký tự.' });
   }
-  if (Number(id) === Number(req.user.id) && isActive === false) {
+  const isSelf = Number(id) === Number(req.user.id);
+  if (isSelf && isActive === false) {
     return res.status(400).json({ ok: false, error: 'Không thể tự khóa tài khoản của chính mình.' });
   }
 
@@ -484,29 +487,26 @@ app.put('/api/users/:id', requireRole('superadmin', 'admin'), async (req, res) =
       return res.status(404).json({ ok: false, error: 'Không tìm thấy tài khoản.' });
     }
 
-    if (req.user.role !== 'superadmin') {
-      const isEditingOtherAdmin =
-        targetUser.role === 'superadmin' ||
-        (targetUser.role === 'admin' && Number(targetUser.id) !== Number(req.user.id));
-      if (isEditingOtherAdmin) {
-        return res.status(403).json({
-          ok: false,
-          error: 'Bạn không có quyền chỉnh sửa tài khoản Quản trị tối cao hoặc Quản trị viên khác.',
-        });
-      }
+    // Không ai tự đổi vai trò của chính mình (chống tự hạ quyền làm mất Quản trị tối cao cuối cùng)
+    if (isSelf && role !== undefined && role !== targetUser.role) {
+      return res.status(403).json({ ok: false, error: 'Không thể tự thay đổi vai trò của chính mình.' });
+    }
 
-      if (role !== undefined && role !== targetUser.role && (role === 'superadmin' || role === 'admin')) {
-        return res.status(403).json({
-          ok: false,
-          error: 'Chỉ Quản trị tối cao (superadmin) mới có quyền nâng cấp lên vai trò quản trị.',
-        });
+    // Tự sửa hồ sơ của mình (họ tên, email, mật khẩu) luôn được phép; sửa người khác phải đúng phạm vi quản lý
+    if (!isSelf) {
+      if (!canManageRole(req.user.role, targetUser.role)) {
+        return res.status(403).json({ ok: false, error: MANAGE_ROLE_DENIED });
+      }
+      if (role !== undefined && role !== targetUser.role && !canManageRole(req.user.role, role)) {
+        return res.status(403).json({ ok: false, error: MANAGE_ROLE_DENIED });
       }
     }
 
     const updated = await db.updateUser(id, {
       fullName,
       email,
-      role,
+      // Chỉ truyền role khi thật sự đổi để không thu hồi phiên oan (UI luôn gửi kèm role hiện tại)
+      role: role !== undefined && role !== targetUser.role ? role : undefined,
       isActive: typeof isActive === 'boolean' ? isActive : undefined,
       password: password || undefined,
     });
@@ -516,7 +516,7 @@ app.put('/api/users/:id', requireRole('superadmin', 'admin'), async (req, res) =
   }
 });
 
-app.delete('/api/users/:id', requireRole('superadmin', 'admin'), async (req, res) => {
+app.delete('/api/users/:id', requireRole(...ADMIN_ROLES), async (req, res) => {
   const { id } = req.params;
   if (Number(req.user.id) === Number(id)) {
     return res.status(400).json({ ok: false, error: 'Không thể tự xóa tài khoản của chính mình.' });
@@ -528,11 +528,8 @@ app.delete('/api/users/:id', requireRole('superadmin', 'admin'), async (req, res
       return res.status(404).json({ ok: false, error: 'Không tìm thấy tài khoản.' });
     }
 
-    if (req.user.role !== 'superadmin' && (targetUser.role === 'superadmin' || targetUser.role === 'admin')) {
-      return res.status(403).json({
-        ok: false,
-        error: 'Chỉ Quản trị tối cao (superadmin) mới có quyền xóa tài khoản quản trị.',
-      });
+    if (!canManageRole(req.user.role, targetUser.role)) {
+      return res.status(403).json({ ok: false, error: MANAGE_ROLE_DENIED });
     }
 
     await db.deleteUser(id);

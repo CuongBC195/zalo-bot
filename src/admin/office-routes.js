@@ -2,13 +2,13 @@
  * API quản trị luồng Tra cứu Sổ công văn.
  * Gắn sau authMiddleware. Phân quyền:
  *  - Mọi tài khoản đăng nhập: xem/tìm sổ (vai trò 'user' không thấy Ý kiến chuyển/chỉ đạo), thử câu hỏi.
- *  - admin/superadmin: tổng quan, nhập Excel, thêm/sửa/xóa từng văn bản, xem lịch sử nhập,
- *    cấp/sửa/xóa mã kích hoạt Zalo, cấp/thu quyền, sửa/xóa tài khoản Zalo.
+ *  - clerk (Văn thư) + admin/superadmin: tổng quan, nhập Excel, thêm/sửa từng văn bản, xem lịch sử nhập.
+ *  - Chỉ admin/superadmin: xóa văn bản, cấp/sửa/xóa mã kích hoạt Zalo, cấp/thu quyền, sửa/xóa tài khoản Zalo.
  */
 
 const express = require('express');
 const config = require('../config');
-const { requireRole } = require('./auth');
+const { requireRole, ADMIN_ROLES, DOC_EDITOR_ROLES } = require('./auth');
 const store = require('../office/store');
 const office = require('../office');
 const { parseRegisterWorkbook, ImportError, MAX_FILE_BYTES } = require('../office/importer');
@@ -20,20 +20,22 @@ const { readColumnFilters } = require('../office/column-filters');
 const { validateDocInput } = require('../office/doc-editor');
 
 const router = express.Router();
-const adminOnly = requireRole('superadmin', 'admin');
+const adminOnly = requireRole(...ADMIN_ROLES);
+const docEditors = requireRole(...DOC_EDITOR_ROLES);
 
 const INTERNAL_FIELDS = ['y_kien_chuyen', 'y_kien_chi_dao'];
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-function isAdmin(user) {
-  return user && (user.role === 'admin' || user.role === 'superadmin');
+/** Văn thư và quản trị được xem trường nội bộ (Ý kiến chuyển/chỉ đạo) vì là người nhập liệu */
+function canSeeInternal(user) {
+  return !!user && DOC_EDITOR_ROLES.includes(user.role);
 }
 
 /** Bỏ trường nội bộ / kỹ thuật trước khi trả về giao diện */
 function sanitizeDoc(doc, user) {
   if (!doc) return doc;
   const { search_norm, row_hash, import_id, _score, ...rest } = doc;
-  if (!isAdmin(user)) for (const f of INTERNAL_FIELDS) delete rest[f];
+  if (!canSeeInternal(user)) for (const f of INTERNAL_FIELDS) delete rest[f];
   return rest;
 }
 
@@ -229,7 +231,7 @@ router.get('/office-docs/export', async (req, res) => {
   }
 });
 
-router.get('/office-docs/imports', adminOnly, async (req, res) => {
+router.get('/office-docs/imports', docEditors, async (req, res) => {
   try {
     res.json({ ok: true, imports: await store.getImports({ limit: 30 }) });
   } catch (err) {
@@ -237,8 +239,8 @@ router.get('/office-docs/imports', adminOnly, async (req, res) => {
   }
 });
 
-/** Trang Tổng quan (admin): số liệu theo tháng, thể loại, văn bản mới, hạn xử lý, Zalo */
-router.get('/office-docs/dashboard', adminOnly, async (req, res) => {
+/** Trang Tổng quan (Văn thư + quản trị): số liệu theo tháng, thể loại, văn bản mới, hạn xử lý, Zalo */
+router.get('/office-docs/dashboard', docEditors, async (req, res) => {
   try {
     const [dashboard, overview] = await Promise.all([store.getDashboard(), store.getOverview()]);
     res.json({ ok: true, ...dashboard, overview, unitName: config.office.unitName });
@@ -261,7 +263,7 @@ router.get('/office-docs/:id', async (req, res) => {
 });
 
 // ------------------------------------------------------------
-// Thêm / sửa / xóa từng văn bản (admin). Excel vẫn là nguồn chuẩn: lần nhập sau ghi đè văn bản cùng Mã.
+// Thêm / sửa từng văn bản (Văn thư + quản trị), xóa (chỉ quản trị). Excel vẫn là nguồn chuẩn: lần nhập sau ghi đè văn bản cùng Mã.
 // ------------------------------------------------------------
 
 function invalidInput(res, errors) {
@@ -269,7 +271,7 @@ function invalidInput(res, errors) {
   return res.status(400).json({ ok: false, error: first, fields: errors });
 }
 
-router.post('/office-docs', adminOnly, async (req, res) => {
+router.post('/office-docs', docEditors, async (req, res) => {
   const v = validateDocInput(req.body);
   if (!v.ok) return invalidInput(res, v.errors);
   try {
@@ -287,7 +289,7 @@ router.post('/office-docs', adminOnly, async (req, res) => {
   }
 });
 
-router.put('/office-docs/:id', adminOnly, async (req, res) => {
+router.put('/office-docs/:id', docEditors, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'Mã không hợp lệ.' });
   try {
@@ -337,10 +339,10 @@ router.post('/office-docs/test-query', async (req, res) => {
 });
 
 // ------------------------------------------------------------
-// Nhập Excel (admin)
+// Nhập Excel (Văn thư + quản trị)
 // ------------------------------------------------------------
 
-router.post('/office-docs/import', adminOnly, async (req, res) => {
+router.post('/office-docs/import', docEditors, async (req, res) => {
   const { fileName, contentBase64, direction = 'auto', dryRun = true } = req.body || {};
   const name = typeof fileName === 'string' ? fileName.trim().slice(0, 255) : '';
   if (!/\.(xls|xlsx)$/i.test(name)) {
@@ -514,5 +516,6 @@ router.delete('/zalo-users/:zaloId', adminOnly, async (req, res) => {
 router._queryDocuments = queryDocuments;
 router._readFilters = readFilters;
 router._buildExportWorkbook = buildExportWorkbook;
+router._sanitizeDoc = sanitizeDoc;
 
 module.exports = router;

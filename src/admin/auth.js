@@ -242,7 +242,34 @@ function requireRole(...roles) {
   };
 }
 
+/**
+ * Ma trận phân quyền tài khoản Web Admin:
+ *  - superadmin (Quản trị tối cao): toàn quyền.
+ *  - admin (Quản trị viên): thêm/sửa/xóa sổ công văn, cấp quyền Zalo; chỉ quản lý tài khoản Văn thư + Cán bộ.
+ *  - clerk (Văn thư): thêm/sửa sổ công văn (kể cả nhập Excel), xem Tổng quan; KHÔNG xóa, KHÔNG quản lý tài khoản.
+ *  - user (Cán bộ nghiệp vụ): chỉ tra cứu.
+ */
+const ROLES = Object.freeze({ SUPERADMIN: 'superadmin', ADMIN: 'admin', CLERK: 'clerk', USER: 'user' });
+const ALL_ROLES = Object.freeze([ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.CLERK, ROLES.USER]);
+const ADMIN_ROLES = Object.freeze([ROLES.SUPERADMIN, ROLES.ADMIN]);
+const DOC_EDITOR_ROLES = Object.freeze([ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.CLERK]);
+/** Vai trò mà Quản trị viên (admin) được phép tạo / sửa / xóa */
+const ADMIN_MANAGEABLE_ROLES = Object.freeze([ROLES.CLERK, ROLES.USER]);
+
+/** Người thực hiện có được quản lý tài khoản mang vai trò targetRole không */
+function canManageRole(actorRole, targetRole) {
+  if (actorRole === ROLES.SUPERADMIN) return ALL_ROLES.includes(targetRole);
+  if (actorRole === ROLES.ADMIN) return ADMIN_MANAGEABLE_ROLES.includes(targetRole);
+  return false;
+}
+
 module.exports = {
+  ROLES,
+  ALL_ROLES,
+  ADMIN_ROLES,
+  DOC_EDITOR_ROLES,
+  ADMIN_MANAGEABLE_ROLES,
+  canManageRole,
   SESSION_TTL_MS,
   getClientIp,
   computeContextHashes,

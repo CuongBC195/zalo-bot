@@ -367,6 +367,108 @@ async function run() {
     });
 
     // ============================================================
+    // 3b. MA TRẬN PHÂN QUYỀN: QUẢN TRỊ TỐI CAO / QUẢN TRỊ VIÊN / VĂN THƯ / CÁN BỘ
+    // ============================================================
+    await test('Ma trận phân quyền: Văn thư chỉ thêm/sửa sổ; Quản trị viên thêm/sửa/xóa nhưng chỉ quản lý Văn thư + Cán bộ; Quản trị tối cao toàn quyền', async () => {
+      app._resetLoginRateLimiter();
+      const login = async (username, password, tag) => {
+        const headers = { 'User-Agent': `RBAC-${tag}`, 'X-Device-Key': `rbac-${tag}` };
+        const r = await req('POST', '/api/auth/login', { body: { username, password }, headers });
+        assert.strictEqual(r.status, 200, `Đăng nhập ${username} phải thành công`);
+        return { ...headers, Cookie: r.cookieHeader };
+      };
+      const denied = (r) => r.status === 403;
+      const allowed = (r) => r.status !== 401 && r.status !== 403;
+
+      const superAuth = await login('admin', process.env.ADMIN_PASSWORD || 'Admin@123456', 'super');
+      const adminA = await db.createUser({ username: 'rbac_admin_a', password: 'Admin@123', role: 'admin' });
+      const adminB = await db.createUser({ username: 'rbac_admin_b', password: 'Admin@123', role: 'admin' });
+      const clerk = await db.createUser({ username: 'rbac_clerk', password: 'Clerk@123', role: 'clerk' });
+      const viewer = await db.createUser({ username: 'rbac_user', password: 'User@1234', role: 'user' });
+      const superUser = await db.getUserByUsername('admin');
+
+      const adminAuth = await login('rbac_admin_a', 'Admin@123', 'admin');
+      const clerkAuth = await login('rbac_clerk', 'Clerk@123', 'clerk');
+      const userAuth = await login('rbac_user', 'User@1234', 'user');
+
+      // ---------- SỔ CÔNG VĂN ----------
+      // Thêm (body rỗng -> người có quyền nhận 400 do kiểm tra dữ liệu, người không quyền nhận 403)
+      for (const [who, auth] of [['superadmin', superAuth], ['admin', adminAuth], ['clerk', clerkAuth]]) {
+        const add = await req('POST', '/api/office-docs', { body: {}, headers: auth });
+        assert(allowed(add), `${who} phải được THÊM văn bản (nhận ${add.status})`);
+        const edit = await req('PUT', '/api/office-docs/1', { body: {}, headers: auth });
+        assert(allowed(edit), `${who} phải được SỬA văn bản (nhận ${edit.status})`);
+        const imp = await req('POST', '/api/office-docs/import', { body: { fileName: 'x.txt' }, headers: auth });
+        assert(allowed(imp), `${who} phải được NHẬP Excel (nhận ${imp.status})`);
+        const imports = await req('GET', '/api/office-docs/imports', { headers: auth });
+        assert(allowed(imports), `${who} phải xem được lịch sử nhập (nhận ${imports.status})`);
+        const dash = await req('GET', '/api/office-docs/dashboard', { headers: auth });
+        assert(allowed(dash), `${who} phải xem được Tổng quan (nhận ${dash.status})`);
+      }
+      // Xóa văn bản: chỉ quản trị
+      assert(allowed(await req('DELETE', '/api/office-docs/1', { headers: superAuth })), 'superadmin phải được XÓA văn bản');
+      assert(allowed(await req('DELETE', '/api/office-docs/1', { headers: adminAuth })), 'admin phải được XÓA văn bản');
+      assert(denied(await req('DELETE', '/api/office-docs/1', { headers: clerkAuth })), 'Văn thư KHÔNG được xóa văn bản');
+      // Cán bộ chỉ tra cứu
+      assert(denied(await req('POST', '/api/office-docs', { body: {}, headers: userAuth })), 'Cán bộ không được thêm');
+      assert(denied(await req('PUT', '/api/office-docs/1', { body: {}, headers: userAuth })), 'Cán bộ không được sửa');
+      assert(denied(await req('DELETE', '/api/office-docs/1', { headers: userAuth })), 'Cán bộ không được xóa');
+      assert(denied(await req('POST', '/api/office-docs/import', { body: { fileName: 'x.xlsx' }, headers: userAuth })), 'Cán bộ không được nhập Excel');
+
+      // ---------- VĂN THƯ KHÔNG ĐỤNG ĐƯỢC NGƯỜI DÙNG / ZALO / CẤU HÌNH ----------
+      for (const [m, p, body] of [
+        ['GET', '/api/users'],
+        ['POST', '/api/users', { username: 'x_clerk_new', password: 'Abc@1234', role: 'user' }],
+        ['PUT', `/api/users/${viewer.id}`, { fullName: 'hack' }],
+        ['DELETE', `/api/users/${viewer.id}`],
+        ['GET', '/api/zalo-users'],
+        ['GET', '/api/zalo-activation-codes'],
+        ['POST', '/api/zalo-activation-codes', { staffLabel: 'x' }],
+        ['GET', '/api/query-logs'],
+        ['POST', '/api/cache/clear'],
+        ['POST', '/api/seed-db'],
+      ]) {
+        const r = await req(m, p, { body, headers: clerkAuth });
+        assert(denied(r), `Văn thư phải bị chặn ${m} ${p} (nhận ${r.status})`);
+      }
+
+      // ---------- QUẢN TRỊ VIÊN: CHỈ QUẢN LÝ VĂN THƯ + CÁN BỘ ----------
+      const mkClerk = await req('POST', '/api/users', { body: { username: 'rbac_new_clerk', password: 'Abc@1234', role: 'clerk' }, headers: adminAuth });
+      assert.strictEqual(mkClerk.status, 200, 'admin phải tạo được Văn thư');
+      const mkUser = await req('POST', '/api/users', { body: { username: 'rbac_new_user', password: 'Abc@1234', role: 'user' }, headers: adminAuth });
+      assert.strictEqual(mkUser.status, 200, 'admin phải tạo được Cán bộ');
+      assert(denied(await req('POST', '/api/users', { body: { username: 'rbac_new_admin', password: 'Abc@1234', role: 'admin' }, headers: adminAuth })), 'admin KHÔNG được tạo admin');
+      assert(denied(await req('POST', '/api/users', { body: { username: 'rbac_new_super', password: 'Abc@1234', role: 'superadmin' }, headers: adminAuth })), 'admin KHÔNG được tạo superadmin');
+
+      assert.strictEqual((await req('PUT', `/api/users/${clerk.id}`, { body: { fullName: 'Văn thư mới' }, headers: adminAuth })).status, 200, 'admin sửa được Văn thư');
+      assert.strictEqual((await req('PUT', `/api/users/${mkUser.data.user.id}`, { body: { role: 'clerk' }, headers: adminAuth })).status, 200, 'admin đổi Cán bộ -> Văn thư được');
+      assert(denied(await req('PUT', `/api/users/${mkClerk.data.user.id}`, { body: { role: 'admin' }, headers: adminAuth })), 'admin KHÔNG được nâng Văn thư lên admin');
+      assert(denied(await req('PUT', `/api/users/${adminB.id}`, { body: { fullName: 'x' }, headers: adminAuth })), 'admin KHÔNG được sửa admin khác');
+      assert(denied(await req('PUT', `/api/users/${adminB.id}`, { body: { role: 'user' }, headers: adminAuth })), 'admin KHÔNG được hạ quyền admin khác');
+      assert(denied(await req('PUT', `/api/users/${superUser.id}`, { body: { isActive: false }, headers: adminAuth })), 'admin KHÔNG được khóa superadmin');
+      assert(denied(await req('PUT', `/api/users/${adminA.id}`, { body: { role: 'superadmin' }, headers: adminAuth })), 'admin KHÔNG được tự nâng quyền');
+      assert.strictEqual((await req('PUT', `/api/users/${adminA.id}`, { body: { fullName: 'Tự sửa tên' }, headers: adminAuth })).status, 200, 'admin tự sửa hồ sơ của mình được');
+      assert(denied(await req('DELETE', `/api/users/${adminB.id}`, { headers: adminAuth })), 'admin KHÔNG được xóa admin khác');
+      assert(denied(await req('DELETE', `/api/users/${superUser.id}`, { headers: adminAuth })), 'admin KHÔNG được xóa superadmin');
+      assert.strictEqual((await req('DELETE', `/api/users/${mkClerk.data.user.id}`, { headers: adminAuth })).status, 200, 'admin xóa được Văn thư');
+      assert.strictEqual((await req('DELETE', `/api/users/${mkUser.data.user.id}`, { headers: adminAuth })).status, 200, 'admin xóa được Cán bộ');
+
+      // ---------- QUẢN TRỊ TỐI CAO: TOÀN QUYỀN (trừ tự hạ quyền chính mình) ----------
+      const mkAdmin = await req('POST', '/api/users', { body: { username: 'rbac_super_made_admin', password: 'Abc@1234', role: 'admin' }, headers: superAuth });
+      assert.strictEqual(mkAdmin.status, 200, 'superadmin tạo được admin');
+      assert.strictEqual((await req('PUT', `/api/users/${adminB.id}`, { body: { role: 'clerk' }, headers: superAuth })).status, 200, 'superadmin đổi vai trò admin được');
+      assert.strictEqual((await req('DELETE', `/api/users/${mkAdmin.data.user.id}`, { headers: superAuth })).status, 200, 'superadmin xóa được admin');
+      assert(denied(await req('PUT', `/api/users/${superUser.id}`, { body: { role: 'user' }, headers: superAuth })), 'superadmin KHÔNG được tự hạ quyền (tránh mất Quản trị tối cao)');
+
+      // Văn thư được xem Ý kiến chuyển/chỉ đạo (người nhập liệu), Cán bộ thì không
+      const sampleDoc = { id: 1, so_ky_hieu: '1-CV/ĐU', y_kien_chuyen: 'nội bộ', y_kien_chi_dao: 'nội bộ' };
+      assert.strictEqual(officeRoutes._sanitizeDoc(sampleDoc, { role: 'clerk' }).y_kien_chuyen, 'nội bộ');
+      assert.strictEqual(officeRoutes._sanitizeDoc(sampleDoc, { role: 'user' }).y_kien_chuyen, undefined);
+
+      for (const u of [adminA, adminB, clerk, viewer]) await db.deleteUser(u.id);
+    });
+
+    // ============================================================
     // 4. CHỐNG BYPASS RATE LIMITER QUA X-FORWARDED-FOR & USERNAME ENUMERATION
     // ============================================================
     await test('Không thể giả mạo X-Forwarded-For để vượt qua Rate Limiter đăng nhập (chặn 429 ở lần thứ 6)', async () => {

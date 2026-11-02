@@ -319,11 +319,27 @@
     }
   }
 
+  // Phân quyền (đồng bộ với src/admin/auth.js; server vẫn kiểm tra lại mọi thao tác)
+  const ROLE_LABELS = {
+    superadmin: 'Quản trị tối cao',
+    admin: 'Quản trị viên',
+    clerk: 'Văn thư',
+    user: 'Cán bộ nghiệp vụ',
+  };
+  const isAdminRole = (role) => role === 'superadmin' || role === 'admin';
+  function canManageRoleUi(actorRole, targetRole) {
+    if (actorRole === 'superadmin') return Object.prototype.hasOwnProperty.call(ROLE_LABELS, targetRole);
+    if (actorRole === 'admin') return targetRole === 'clerk' || targetRole === 'user';
+    return false;
+  }
+
   function getRoleBadge(role) {
     if (role === 'superadmin') {
       return '<span class="category-badge cat-quy-dinh">Quản trị tối cao</span>';
     } else if (role === 'admin') {
       return '<span class="category-badge cat-the-thuc">Quản trị viên</span>';
+    } else if (role === 'clerk') {
+      return '<span class="category-badge cat-the-thuc">Văn thư</span>';
     }
     return '<span class="category-badge cat-van-thu">Cán bộ nghiệp vụ</span>';
   }
@@ -416,11 +432,11 @@
     mainApp.classList.remove('hidden');
 
     currentUserName.textContent = user.fullName || user.username;
-    currentUserRoleBadge.textContent = user.role === 'superadmin' ? 'Quản trị tối cao' : (user.role === 'admin' ? 'Quản trị viên' : 'Cán bộ');
+    currentUserRoleBadge.textContent = user.role === 'user' ? 'Cán bộ' : (ROLE_LABELS[user.role] || 'Cán bộ');
     userAvatarBadge.textContent = (user.fullName || user.username || 'CB').slice(0, 2).toUpperCase();
 
-    // Ẩn tab Quản Trị Cán Bộ nếu là tài khoản user thường
-    if (user.role === 'user') {
+    // Chỉ Quản trị tối cao / Quản trị viên thấy tab Quản Trị Cán Bộ (Văn thư và Cán bộ thì ẩn)
+    if (!isAdminRole(user.role)) {
       if (navItemUsers) navItemUsers.style.display = 'none';
       if (navAdminSectionTitle) navAdminSectionTitle.style.display = 'none';
     } else {
@@ -2644,6 +2660,11 @@
       const stt = startIdx + idx + 1;
       const isMe = state.currentUser && state.currentUser.id === u.id;
       const isActive = !!u.is_active;
+      // Được sửa: chính mình (hồ sơ) hoặc tài khoản trong phạm vi quản lý; khóa/xóa: không áp dụng cho chính mình
+      const actorRole = state.currentUser && state.currentUser.role;
+      const canManage = !isMe && canManageRoleUi(actorRole, u.role);
+      const canEdit = isMe || canManage;
+      const deniedTip = 'Tài khoản này do Quản trị tối cao quản lý';
 
       html += `
         <tr>
@@ -2666,13 +2687,13 @@
           </td>
           <td style="text-align: right;">
             <div class="table-actions">
-              <button type="button" class="action-icon-btn btn-icon-edit" data-tooltip="Chỉnh sửa thông tin & phân quyền cán bộ" data-action="edit-user" data-user-id="${u.id}">
+              <button type="button" class="action-icon-btn btn-icon-edit" data-tooltip="${canEdit ? 'Chỉnh sửa thông tin &amp; phân quyền cán bộ' : deniedTip}" data-action="edit-user" data-user-id="${u.id}" ${canEdit ? '' : 'disabled'}>
                 ${ICONS.edit}
               </button>
-              <button type="button" class="action-icon-btn ${isActive ? 'btn-icon-delete' : 'btn-icon-copy'}" data-tooltip="${isActive ? 'Khóa tài khoản cán bộ' : 'Mở khóa tài khoản cán bộ'}" data-action="toggle-user-active" data-user-id="${u.id}" data-active="${isActive}" ${isMe ? 'disabled' : ''}>
+              <button type="button" class="action-icon-btn ${isActive ? 'btn-icon-delete' : 'btn-icon-copy'}" data-tooltip="${canManage || isMe ? (isActive ? 'Khóa tài khoản cán bộ' : 'Mở khóa tài khoản cán bộ') : deniedTip}" data-action="toggle-user-active" data-user-id="${u.id}" data-active="${isActive}" ${canManage ? '' : 'disabled'}>
                 ${isActive ? ICONS.lock : ICONS.unlock}
               </button>
-              <button type="button" class="action-icon-btn btn-icon-delete" data-tooltip="Xóa tài khoản cán bộ" data-action="delete-user" data-user-id="${u.id}" ${isMe ? 'disabled' : ''}>
+              <button type="button" class="action-icon-btn btn-icon-delete" data-tooltip="${canManage || isMe ? 'Xóa tài khoản cán bộ' : deniedTip}" data-action="delete-user" data-user-id="${u.id}" ${canManage ? '' : 'disabled'}>
                 ${ICONS.delete}
               </button>
             </div>
@@ -2997,6 +3018,17 @@
   const modalPasswordHint = document.getElementById('modalPasswordHint');
   const modalIsActive = document.getElementById('modalIsActive');
 
+  /** Chỉ cho chọn vai trò trong phạm vi quản lý; tự sửa mình thì khóa ô vai trò */
+  function applyRoleOptions(editingSelf) {
+    const actorRole = state.currentUser && state.currentUser.role;
+    Array.from(modalRole.options).forEach((opt) => {
+      const allowed = canManageRoleUi(actorRole, opt.value) || (editingSelf && opt.value === modalRole.value);
+      opt.disabled = !allowed;
+      opt.hidden = !allowed;
+    });
+    modalRole.disabled = !!editingSelf;
+  }
+
   function openUserModal(user = null) {
     if (user) {
       userModalTitle.textContent = 'Chỉnh Sửa Thông Tin Cán Bộ';
@@ -3006,6 +3038,7 @@
       modalFullName.value = user.full_name || '';
       modalEmail.value = user.email || '';
       modalRole.value = user.role || 'user';
+      applyRoleOptions(!!state.currentUser && state.currentUser.id === user.id);
       modalPassword.value = '';
       modalPassword.required = false;
       modalPasswordReq.style.display = 'none';
@@ -3019,6 +3052,7 @@
       modalFullName.value = '';
       modalEmail.value = '';
       modalRole.value = 'user';
+      applyRoleOptions(false);
       modalPassword.value = '';
       modalPassword.required = true;
       modalPasswordReq.style.display = 'inline';
@@ -3134,7 +3168,7 @@
     if (state.currentUser) {
       const u = state.currentUser;
       const dName = u.fullName || u.username || 'Cán bộ';
-      const roleText = u.role === 'superadmin' ? 'Quản trị tối cao' : (u.role === 'admin' ? 'Quản trị viên' : 'Cán bộ');
+      const roleText = u.role === 'user' ? 'Cán bộ' : (ROLE_LABELS[u.role] || 'Cán bộ');
 
       if (profileUsernameDisplay) profileUsernameDisplay.value = u.username || '';
       if (profileTagUsername) profileTagUsername.textContent = '@' + (u.username || 'admin');

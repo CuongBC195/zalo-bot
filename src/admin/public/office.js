@@ -4,7 +4,7 @@
  *  - admin:login      -> phân luồng giao diện theo vai trò và cờ tính năng
  *  - admin:viewchange -> tải dữ liệu khi mở từng trang của Sổ công văn:
  *      view-office-dashboard (admin) | view-office | view-office-chat
- *      view-office-manage | view-office-import | view-office-zalo (admin)
+ *      view-office-manage | view-office-import (Văn thư + admin) | view-office-zalo (admin)
  */
 (function () {
   'use strict';
@@ -39,8 +39,10 @@
     deadlineDate: ['deadlineFrom', 'deadlineTo'],
   };
   const emptyFilters = () => Object.fromEntries(FILTER_KEYS.map((k) => [k, '']));
-  /** Các trang chỉ admin mở được (cán bộ bị đưa về Tra cứu) */
-  const ADMIN_VIEWS = ['view-office-dashboard', 'view-office-manage', 'view-office-import', 'view-office-zalo'];
+  /** Các trang chỉ quản trị mở được (Văn thư và cán bộ bị đưa về Tra cứu) */
+  const ADMIN_VIEWS = ['view-office-zalo', 'view-logs', 'view-users'];
+  /** Các trang Văn thư + quản trị mở được (cán bộ bị đưa về Tra cứu) */
+  const EDITOR_VIEWS = ['view-office-dashboard', 'view-office-manage', 'view-office-import'];
 
   const state = {
     user: null,
@@ -75,6 +77,8 @@
   };
 
   const isAdmin = () => !!state.user && (state.user.role === 'admin' || state.user.role === 'superadmin');
+  /** Văn thư (clerk) + quản trị: thêm/sửa sổ, nhập Excel, xem Tổng quan. Xóa văn bản chỉ quản trị. */
+  const canEditDocs = () => isAdmin() || (!!state.user && state.user.role === 'clerk');
 
   // ============================================================
   // TIỆN ÍCH
@@ -545,7 +549,11 @@
   // ============================================================
   function applyRoleVisibility() {
     const admin = isAdmin();
+    const editor = canEditDocs();
     document.querySelectorAll('.nav-admin-only').forEach((el) => { el.style.display = admin ? '' : 'none'; });
+    document.querySelectorAll('.nav-editor-only').forEach((el) => { el.style.display = editor ? '' : 'none'; });
+    // Lối tắt sang Cấp quyền Zalo trên Tổng quan chỉ dành cho quản trị
+    ['dashGoZalo', 'dashGoZaloUsers'].forEach((id) => { const el = $(id); if (el) el.style.display = admin ? '' : 'none'; });
     // Cán bộ (user) chỉ tra cứu sổ công văn
     document.querySelectorAll('.nav-regulation').forEach((el) => { el.style.display = admin ? '' : 'none'; });
     ['btnClearAiCache', 'btnSeedDb'].forEach((id) => { const el = $(id); if (el) el.style.display = admin ? '' : 'none'; });
@@ -2105,7 +2113,7 @@
         <td class="sticky-action-col">
           <div class="row-actions">
             <button type="button" class="action-icon-btn btn-icon-edit" data-edit="${Number(d.id)}" aria-label="Sửa ${esc(d.so_ky_hieu || 'văn bản')}" title="Sửa">${ICONS.edit}</button>
-            <button type="button" class="action-icon-btn btn-icon-delete" data-delete="${Number(d.id)}" data-label="${esc(d.so_ky_hieu || d.source_id || '')}" aria-label="Xóa ${esc(d.so_ky_hieu || 'văn bản')}" title="Xóa">${ICONS.trash}</button>
+            ${isAdmin() ? `<button type="button" class="action-icon-btn btn-icon-delete" data-delete="${Number(d.id)}" data-label="${esc(d.so_ky_hieu || d.source_id || '')}" aria-label="Xóa ${esc(d.so_ky_hieu || 'văn bản')}" title="Xóa">${ICONS.trash}</button>` : ''}
           </div>
         </td>
       </tr>`).join('');
@@ -2415,7 +2423,8 @@
 
   document.addEventListener('admin:viewchange', (e) => {
     const viewId = e.detail && e.detail.viewId;
-    if (ADMIN_VIEWS.includes(viewId) && !isAdmin()) { App.switchView('view-office'); return; }
+    if (ADMIN_VIEWS.includes(viewId) && !isAdmin()) { App.switchView(canEditDocs() ? 'view-office-dashboard' : 'view-office'); return; }
+    if (EDITOR_VIEWS.includes(viewId) && !canEditDocs()) { App.switchView('view-office'); return; }
     switch (viewId) {
       case 'view-office-dashboard':
         loadDashboard();

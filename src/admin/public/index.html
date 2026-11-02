@@ -231,7 +231,7 @@
       <nav class="sidebar-nav">
         <div class="nav-section-title">Sổ Công Văn</div>
 
-        <button class="nav-item nav-admin-only" data-view="view-office-dashboard" id="navItemOfficeDashboard">
+        <button class="nav-item nav-editor-only" data-view="view-office-dashboard" id="navItemOfficeDashboard">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
             <rect x="3" y="3" width="7" height="9" rx="1.5"></rect>
             <rect x="14" y="3" width="7" height="5" rx="1.5"></rect>
@@ -256,9 +256,9 @@
           <span>Hỏi Đáp Như Zalo</span>
         </button>
 
-        <div class="nav-section-title nav-admin-only">Quản Trị Sổ</div>
+        <div class="nav-section-title nav-editor-only">Quản Trị Sổ</div>
 
-        <button class="nav-item nav-admin-only" data-view="view-office-manage" id="navItemOfficeManage">
+        <button class="nav-item nav-editor-only" data-view="view-office-manage" id="navItemOfficeManage">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
@@ -267,7 +267,7 @@
           <span>Quản Lý Văn Bản</span>
         </button>
 
-        <button class="nav-item nav-admin-only" data-view="view-office-import" id="navItemOfficeImport">
+        <button class="nav-item nav-editor-only" data-view="view-office-import" id="navItemOfficeImport">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="17 8 12 3 7 8"></polyline>
@@ -1750,6 +1750,7 @@ Hướng dẫn này quy định về thể thức...
                 <option value="">Tất cả vai trò</option>
                 <option value="superadmin">Quản trị tối cao (superadmin)</option>
                 <option value="admin">Quản trị viên (admin)</option>
+                <option value="clerk">Văn thư (clerk)</option>
                 <option value="user">Cán bộ nghiệp vụ (user)</option>
               </select>
 
@@ -2220,6 +2221,7 @@ Hướng dẫn này quy định về thể thức...
             <label class="form-label" for="modalRole">Vai trò phân quyền <span class="req">*</span></label>
             <select id="modalRole" class="form-control" required>
               <option value="user">Cán bộ nghiệp vụ (user)</option>
+              <option value="clerk">Văn thư (clerk)</option>
               <option value="admin">Quản trị viên (admin)</option>
               <option value="superadmin">Quản trị tối cao (superadmin)</option>
             </select>
