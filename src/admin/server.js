@@ -51,8 +51,36 @@ app.use((req, res, next) => {
   next();
 });
 
-// Rate Limiter chống Brute-Force đăng nhập (5 lần sai -> khóa tạm thời 15 phút)
-const loginAttempts = new Map();
+// Chống CSRF lớp 2 (ngoài SameSite=Strict): request ghi dữ liệu từ trình duyệt phải đến từ chính domain này.
+// Request không có Origin (Postman, curl, Zalo, Vercel Cron) không do trình duyệt khác site gửi nên vẫn cho qua.
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+const EXTRA_ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+function isSameOrigin(req) {
+  if (req.headers['sec-fetch-site'] === 'cross-site') return false;
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  if (EXTRA_ALLOWED_ORIGINS.includes(origin)) return true;
+  let originHost;
+  try {
+    originHost = new URL(origin).host;
+  } catch (e) {
+    return false; // Origin: null hoặc giá trị lạ
+  }
+  const hosts = [req.headers.host, req.headers['x-forwarded-host']].filter(Boolean);
+  return hosts.includes(originHost);
+}
+
+app.use('/api', (req, res, next) => {
+  if (SAFE_METHODS.has(req.method) || req.path === '/webhook' || isSameOrigin(req)) return next();
+  return res.status(403).json({ ok: false, error: 'Yêu cầu bị từ chối: nguồn gửi không hợp lệ.' });
+});
+
+// Rate Limiter chống Brute-Force đăng nhập (5 lần sai -> khóa tạm thời 15 phút).
+// Bộ đếm lưu trong PostgreSQL để dùng chung giữa các instance Vercel.
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_TIME_MS = 15 * 60 * 1000;
 const DUMMY_BCRYPT_HASH = bcrypt.hashSync('dummy-timing-guard-zalo-bot', 10);
@@ -64,43 +92,36 @@ function getRateLimitKeys(req) {
   return keys;
 }
 
-function loginRateLimiter(req, res, next) {
-  const now = Date.now();
-  for (const key of getRateLimitKeys(req)) {
-    const attempt = loginAttempts.get(key);
-    if (attempt && attempt.count >= MAX_FAILED_ATTEMPTS) {
-      if (now - attempt.lastAttempt < LOCKOUT_TIME_MS) {
-        const waitMinutes = Math.ceil((LOCKOUT_TIME_MS - (now - attempt.lastAttempt)) / 60000);
-        return res.status(429).json({
-          ok: false,
-          error: `Phát hiện nhiều lần đăng nhập không thành công. Hệ thống tạm khóa truy cập trong ${waitMinutes} phút để phòng chống tấn công.`,
-        });
-      }
-      loginAttempts.delete(key);
-    }
+async function loginRateLimiter(req, res, next) {
+  const remainingMs = await db.getLoginLockoutMs(getRateLimitKeys(req), MAX_FAILED_ATTEMPTS, LOCKOUT_TIME_MS);
+  if (remainingMs > 0) {
+    const waitMinutes = Math.max(1, Math.ceil(remainingMs / 60000));
+    return res.status(429).json({
+      ok: false,
+      error: `Phát hiện nhiều lần đăng nhập không thành công. Hệ thống tạm khóa truy cập trong ${waitMinutes} phút để phòng chống tấn công.`,
+    });
   }
   next();
 }
 
 function recordFailedLogin(req) {
-  const now = Date.now();
-  for (const key of getRateLimitKeys(req)) {
-    const attempt = loginAttempts.get(key) || { count: 0, lastAttempt: now };
-    attempt.count += 1;
-    attempt.lastAttempt = now;
-    loginAttempts.set(key, attempt);
-  }
+  return db.recordLoginFailure(getRateLimitKeys(req), LOCKOUT_TIME_MS);
 }
 
 function clearFailedLogin(req) {
-  for (const key of getRateLimitKeys(req)) {
-    loginAttempts.delete(key);
-  }
+  return db.clearLoginFailures(getRateLimitKeys(req));
 }
 
-app._resetLoginRateLimiter = () => loginAttempts.clear();
+app._resetLoginRateLimiter = () => db.resetLoginRateLimits();
 
-app.use(express.json({ limit: '10mb' }));
+// Chỉ route nhận file Excel / nội dung văn bản dài mới được gửi body lớn; còn lại (đăng nhập, webhook...) tối đa 100kb.
+const LARGE_BODY_PATHS = ['/api/office-docs/import', '/api/documents'];
+const jsonLargeBody = express.json({ limit: '10mb' });
+const jsonDefaultBody = express.json({ limit: '100kb' });
+app.use((req, res, next) => {
+  const isLarge = LARGE_BODY_PATHS.some((p) => req.path === p || req.path.startsWith(`${p}/`));
+  return (isLarge ? jsonLargeBody : jsonDefaultBody)(req, res, next);
+});
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -115,7 +136,7 @@ app.post('/api/auth/login', loginRateLimiter, async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Vui lòng nhập tên đăng nhập và mật khẩu.' });
   }
   if (username.length > 100 || password.length > 128) {
-    recordFailedLogin(req);
+    await recordFailedLogin(req);
     return res.status(401).json({ ok: false, error: 'Tên đăng nhập hoặc mật khẩu không chính xác.' });
   }
 
@@ -133,7 +154,7 @@ app.post('/api/auth/login', loginRateLimiter, async (req, res) => {
     // Luôn chạy bcrypt.compare (kể cả khi không tìm thấy user) để chống dò tên tài khoản qua thời gian phản hồi
     const isMatch = await bcrypt.compare(password, user ? user.password_hash : DUMMY_BCRYPT_HASH);
     if (!user || !isMatch) {
-      recordFailedLogin(req);
+      await recordFailedLogin(req);
       if (user) {
         await db.recordUserFailedLogin(user.username, MAX_FAILED_ATTEMPTS, LOCKOUT_TIME_MS);
       }
@@ -144,7 +165,7 @@ app.post('/api/auth/login', loginRateLimiter, async (req, res) => {
       return res.status(403).json({ ok: false, error: 'Tài khoản này đã bị khóa. Vui lòng liên hệ quản trị viên cấp cao.' });
     }
 
-    clearFailedLogin(req);
+    await clearFailedLogin(req);
     await db.updateUserLastLogin(user.id);
     const { token, maxAge } = await createSessionToken(user, req);
 

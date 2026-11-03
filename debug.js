@@ -1,5 +1,5 @@
 /**
- * Debug script - kiểm tra Zalo Bot API qua adapter node-zalo-bot.
+ * Debug script - kiểm tra Zalo Bot API qua adapter src/zalo/api.js.
  * Chạy: node debug.js
  */
 

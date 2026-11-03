@@ -34,6 +34,14 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_expires ON user_sessions(expires_at);
 
+-- 1c. Bộ đếm đăng nhập sai theo IP / tên đăng nhập (dùng chung giữa các instance, khóa đã băm SHA-256)
+CREATE TABLE IF NOT EXISTS login_rate_limits (
+    key VARCHAR(64) PRIMARY KEY,
+    fail_count INTEGER NOT NULL DEFAULT 0,
+    last_attempt TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_login_rate_limits_last ON login_rate_limits(last_attempt);
+
 -- 2. Bảng lưu trữ người dùng Zalo tương tác với Bot
 CREATE TABLE IF NOT EXISTS zalo_users (
     id SERIAL PRIMARY KEY,
@@ -228,6 +236,7 @@ ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE login_rate_limits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE zalo_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE query_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE response_cache ENABLE ROW LEVEL SECURITY;

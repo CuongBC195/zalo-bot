@@ -349,22 +349,30 @@
   // ============================================================
   const DEVICE_KEY_STORAGE = 'zalo_admin_device_key';
 
+  let memoryDeviceKey = null;
+
+  function randomDeviceKey() {
+    const bytes = new Uint8Array(24);
+    if (window.crypto && window.crypto.getRandomValues) {
+      window.crypto.getRandomValues(bytes);
+    } else {
+      for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+    }
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
   function getDeviceKey(rotate = false) {
     try {
       let key = rotate ? null : localStorage.getItem(DEVICE_KEY_STORAGE);
       if (!key || key.length < 32) {
-        const bytes = new Uint8Array(24);
-        if (window.crypto && window.crypto.getRandomValues) {
-          window.crypto.getRandomValues(bytes);
-        } else {
-          for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
-        }
-        key = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+        key = randomDeviceKey();
         localStorage.setItem(DEVICE_KEY_STORAGE, key);
       }
       return key;
     } catch (e) {
-      return 'browser-local-device';
+      // localStorage bị chặn: giữ khóa ngẫu nhiên trong bộ nhớ trang, không dùng chuỗi cố định chung cho mọi máy
+      if (rotate || !memoryDeviceKey) memoryDeviceKey = randomDeviceKey();
+      return memoryDeviceKey;
     }
   }
 

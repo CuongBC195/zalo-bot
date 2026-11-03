@@ -549,6 +549,38 @@ async function run() {
     // ============================================================
     // 6. CHỐNG EXCEL FORMULA INJECTION KHI XUẤT SỔ CÔNG VĂN
     // ============================================================
+    await test('Chặn request ghi dữ liệu từ site khác (Origin / Sec-Fetch-Site) và giới hạn body 100kb', async () => {
+      app._resetLoginRateLimiter();
+      const loginBody = { username: 'admin', password: process.env.ADMIN_PASSWORD || 'Admin@123456' };
+
+      const crossOrigin = await req('POST', '/api/auth/login', {
+        body: loginBody,
+        headers: { Origin: 'https://evil.example.com' },
+      });
+      assert.strictEqual(crossOrigin.status, 403, 'POST từ Origin khác phải bị chặn 403');
+
+      const crossSite = await req('POST', '/api/auth/logout', { headers: { 'Sec-Fetch-Site': 'cross-site' } });
+      assert.strictEqual(crossSite.status, 403, 'Sec-Fetch-Site: cross-site phải bị chặn 403');
+
+      const nullOrigin = await req('POST', '/api/auth/login', { body: loginBody, headers: { Origin: 'null' } });
+      assert.strictEqual(nullOrigin.status, 403, 'Origin: null phải bị chặn 403');
+
+      const sameOrigin = await req('POST', '/api/auth/login', { body: loginBody, headers: { Origin: base } });
+      assert.strictEqual(sameOrigin.status, 200, 'POST cùng Origin phải được phép');
+
+      const noOrigin = await req('POST', '/api/auth/login', { body: loginBody });
+      assert.strictEqual(noOrigin.status, 200, 'Client không phải trình duyệt (không có Origin) vẫn dùng được API');
+
+      const crossGet = await req('GET', '/api/auth/status', { headers: { Origin: 'https://evil.example.com' } });
+      assert.notStrictEqual(crossGet.status, 403, 'GET không bị chặn bởi kiểm tra Origin');
+
+      const hugeLogin = await req('POST', '/api/auth/login', {
+        body: { username: 'admin', password: 'x'.repeat(200 * 1024) },
+      });
+      assert.strictEqual(hugeLogin.status, 413, 'Body > 100kb ở route đăng nhập phải bị từ chối 413');
+      app._resetLoginRateLimiter();
+    });
+
     await test('Vô hiệu hóa công thức độc hại (=, +, -, @) khi xuất file Excel Sổ công văn', async () => {
       const maliciousDocs = [
         {

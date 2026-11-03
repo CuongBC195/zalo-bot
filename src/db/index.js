@@ -18,6 +18,7 @@ class DatabaseService {
     // Bộ nhớ đệm fallback khi chưa kết nối PostgreSQL
     this.localUsers = [];
     this.localSessions = new Map();
+    this.localLoginLimits = new Map(); // Bộ đếm đăng nhập sai khi chưa có PostgreSQL
     this.sessionCache = new Map(); // Bộ đệm phiên đăng nhập (TTL 10s) giúp kiểm tra 0ms
     this.localZaloUsers = new Map();
     this.localQueryLogs = [];
@@ -431,6 +432,95 @@ class DatabaseService {
       if (user.failed_login_count >= maxAttempts) {
         user.locked_until = lockUntil;
       }
+    }
+  }
+
+  // ============================================================
+  // GIỚI HẠN ĐĂNG NHẬP SAI THEO IP / TÊN ĐĂNG NHẬP
+  // Lưu trong PostgreSQL để mọi instance Vercel dùng chung bộ đếm (Map trong RAM mất khi cold start).
+  // Khóa được băm SHA-256 để không lưu IP thô.
+  // ============================================================
+
+  _loginLimitKeys(keys) {
+    return keys.map((k) => crypto.createHash('sha256').update(String(k)).digest('hex'));
+  }
+
+  /** Số ms còn bị khóa (0 = không bị khóa) nếu bất kỳ khóa nào đã sai >= maxAttempts trong cửa sổ lockoutMs. */
+  async getLoginLockoutMs(keys, maxAttempts, lockoutMs) {
+    const hashed = this._loginLimitKeys(keys);
+    if (await this.checkConnection()) {
+      try {
+        const { rows } = await this.pool.query(
+          `SELECT CEIL(EXTRACT(EPOCH FROM (MAX(last_attempt) + $3 * INTERVAL '1 millisecond' - NOW())) * 1000) AS remaining
+           FROM login_rate_limits
+           WHERE key = ANY($1) AND fail_count >= $2 AND last_attempt > NOW() - $3 * INTERVAL '1 millisecond'`,
+          [hashed, maxAttempts, lockoutMs]
+        );
+        return Math.max(0, Number(rows[0]?.remaining) || 0);
+      } catch (err) {
+        // Bảng chưa kịp migrate: dùng bộ đếm trong RAM
+      }
+    }
+
+    const now = Date.now();
+    let remaining = 0;
+    for (const key of hashed) {
+      const entry = this.localLoginLimits.get(key);
+      if (!entry) continue;
+      if (now - entry.last >= lockoutMs) {
+        this.localLoginLimits.delete(key);
+      } else if (entry.count >= maxAttempts) {
+        remaining = Math.max(remaining, lockoutMs - (now - entry.last));
+      }
+    }
+    return remaining;
+  }
+
+  /** Ghi một lần đăng nhập sai; bộ đếm tự về 1 nếu lần sai trước đã quá cửa sổ lockoutMs. */
+  async recordLoginFailure(keys, lockoutMs) {
+    const hashed = this._loginLimitKeys(keys);
+    if (await this.checkConnection()) {
+      try {
+        await this.pool.query(
+          `INSERT INTO login_rate_limits (key, fail_count, last_attempt)
+           SELECT k, 1, NOW() FROM unnest($1::text[]) AS k
+           ON CONFLICT (key) DO UPDATE SET
+             fail_count = CASE
+               WHEN login_rate_limits.last_attempt <= NOW() - $2 * INTERVAL '1 millisecond' THEN 1
+               ELSE login_rate_limits.fail_count + 1
+             END,
+             last_attempt = NOW()`,
+          [hashed, lockoutMs]
+        );
+        if (Math.random() < 0.05) {
+          this.pool.query(`DELETE FROM login_rate_limits WHERE last_attempt < NOW() - INTERVAL '1 day'`).catch(() => {});
+        }
+        return;
+      } catch (err) {
+        // Bảng chưa kịp migrate: dùng bộ đếm trong RAM
+      }
+    }
+
+    const now = Date.now();
+    for (const key of hashed) {
+      const entry = this.localLoginLimits.get(key);
+      const count = entry && now - entry.last < lockoutMs ? entry.count + 1 : 1;
+      this.localLoginLimits.set(key, { count, last: now });
+    }
+  }
+
+  async clearLoginFailures(keys) {
+    const hashed = this._loginLimitKeys(keys);
+    for (const key of hashed) this.localLoginLimits.delete(key);
+    if (await this.checkConnection()) {
+      await this.pool.query('DELETE FROM login_rate_limits WHERE key = ANY($1)', [hashed]).catch(() => {});
+    }
+  }
+
+  async resetLoginRateLimits() {
+    this.localLoginLimits.clear();
+    if (await this.checkConnection()) {
+      await this.pool.query('DELETE FROM login_rate_limits').catch(() => {});
     }
   }
 
