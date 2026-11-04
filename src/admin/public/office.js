@@ -58,6 +58,7 @@
     currentDoc: null,
     lastFocus: null,
     importFile: null,
+    importPayload: null, // file đã nén + base64, dùng lại giữa bước Kiểm tra và Ghi
     importPreviewOk: false,
     chatBusy: false,
     exporting: false,
@@ -1539,7 +1540,26 @@
     });
   }
 
+  // Nén gzip trước khi gửi: file .xls nhỏ đi ~75-80%, vì đường upload lên Vercel có lúc chỉ ~15KB/s.
+  // Nén 1 lần, dùng lại cho cả bước Kiểm tra và bước Ghi. Trình duyệt không có CompressionStream -> gửi nguyên file.
+  async function buildImportPayload(file) {
+    if (state.importPayload && state.importPayload.file === file) return state.importPayload;
+    let payload = null;
+    if (typeof CompressionStream === 'function' && typeof file.stream === 'function') {
+      try {
+        const gz = await new Response(file.stream().pipeThrough(new CompressionStream('gzip'))).blob();
+        payload = { file, contentBase64: await readFileBase64(gz), encoding: 'gzip' };
+      } catch (_) {
+        payload = null;
+      }
+    }
+    if (!payload) payload = { file, contentBase64: await readFileBase64(file), encoding: null };
+    state.importPayload = payload;
+    return payload;
+  }
+
   function selectImportFile(file) {
+    state.importPayload = null;
     state.importPreviewOk = false;
     $('btnOfficeCommit').disabled = true;
     $('officeImportReport').classList.add('hidden');
@@ -1602,10 +1622,16 @@
     }
     setBusy(btn, true, dryRun ? 'Đang kiểm tra...' : 'Đang ghi...');
     try {
-      const contentBase64 = await readFileBase64(state.importFile);
+      const payload = await buildImportPayload(state.importFile);
       const res = await apiRequest('/api/office-docs/import', {
         method: 'POST',
-        body: JSON.stringify({ fileName: state.importFile.name, contentBase64, direction: $('officeImportDirection').value, dryRun }),
+        body: JSON.stringify({
+          fileName: state.importFile.name,
+          contentBase64: payload.contentBase64,
+          ...(payload.encoding ? { encoding: payload.encoding } : {}),
+          direction: $('officeImportDirection').value,
+          dryRun,
+        }),
       });
       renderImportReport(res);
       if (dryRun) {
@@ -1615,6 +1641,7 @@
       } else {
         showToast(`Đã nhập sổ: ${fmtNumber(res.inserted)} mới, ${fmtNumber(res.updated)} cập nhật.`, 'success');
         state.importFile = null;
+        state.importPayload = null;
         state.importPreviewOk = false;
         $('officeFileInput').value = '';
         $('officeFileName').textContent = 'Kéo thả file vào đây hoặc bấm để chọn';
