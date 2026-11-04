@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { extractDocNumbers, extractDocSignatures } = require('../rag/abbreviations');
+const { buildArticleSearchQuery, finalizeArticleRows } = require('./article-search');
 
 class DatabaseService {
   constructor() {
@@ -1170,161 +1170,10 @@ class DatabaseService {
     if (!isOk) return null;
 
     try {
-      // Tách các từ khóa >= 2 ký tự và nối bằng toán tử OR (|) cho to_tsquery
-      const cleanWords = queryStr
-        .toLowerCase()
-        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-        .split(/\s+/)
-        .filter(w => w.length >= 2);
-
-      if (!cleanWords.length) return [];
-      const tsQueryStr = cleanWords.join(' | ');
-
-      // Tìm số hiệu văn bản và chữ ký loại văn bản trong câu hỏi bằng hàm chuẩn dùng chung
-      const docNumbers = extractDocNumbers(queryStr);
-      const docSignatures = extractDocSignatures(queryStr);
-
-      let numberClause = '0.0';
-      const params = [tsQueryStr, `%${queryStr.trim()}%`];
-
-      if (docNumbers.length > 0) {
-        const conds = [];
-        for (const num of docNumbers) {
-          params.push(num);
-          const pIdx = params.length;
-          // Khớp số hiệu trong mã văn bản, hoặc trong tiêu đề/nội dung điều khoản (đặc biệt cho Công văn 561-CV/CLT, 457-CV/CLT)
-          conds.push(`d.document_code ~ ('(^|[^0-9])0*' || $${pIdx} || '([^0-9]|$)')`);
-          conds.push(`a.title ~ ('(^|[^0-9])0*' || $${pIdx} || '([^0-9]|$)')`);
-          conds.push(`a.content ~ ('(^|[^0-9])0*' || $${pIdx} || '([^0-9]|$)')`);
-        }
-        if (conds.length > 0) {
-          numberClause = `CASE WHEN (${conds.join(' OR ')}) THEN 30.0 ELSE 0.0 END`;
-        }
-      }
-
-      // 1.1 Phân biệt tiền tố loại văn bản (HD vs QĐ vs CT vs CV) để tránh va chạm số 24 và 50
-      let sigBonusClause = '';
-      if (docSignatures.length > 0) {
-        const sigConds = [];
-        for (const sig of docSignatures) {
-          if (sig.type) {
-            params.push(`%${sig.number}-${sig.type}%`);
-            const pIdx = params.length;
-            params.push(sig.number);
-            const numIdx = params.length;
-            sigConds.push(`
-              CASE 
-                WHEN d.document_code ILIKE $${pIdx} OR a.title ILIKE $${pIdx} OR (d.document_code = 'KHUNG-PHAN-LOAI-VPTW' AND a.content ILIKE $${pIdx}) THEN 25.0
-                WHEN d.document_code ~ ('(^|[^0-9])0*' || $${numIdx} || '([^0-9]|$)') THEN -15.0
-                ELSE 0.0
-              END
-            `);
-          }
-        }
-        if (sigConds.length > 0) {
-          sigBonusClause = `${sigConds.join(' + ')} + `;
-        }
-      }
-
-      // Tăng trọng số đặc thù cho từ khóa "xóa tên"
-      const isXoaTen = /x[oó]a\s*t[eê]n/i.test(queryStr) || /xoa\s*ten/i.test(queryStr);
-      const xoaTenClause = isXoaTen
-        ? `CASE WHEN a.title ILIKE '%xóa tên%' OR a.title ILIKE '%xoa ten%' THEN 15.0 WHEN a.content ILIKE '%xóa tên%' OR a.content ILIKE '%xoa ten%' THEN 8.0 ELSE 0.0 END + `
-        : '';
-
-      // Tăng trọng số cho các câu hỏi về giai đoạn chỉnh lý hoặc xử lý tài liệu loại ra
-      const isGiaiDoan = /giai\s*[đd]o[aạ]n/i.test(queryStr);
-      const giaiDoanClause = isGiaiDoan
-        ? `CASE WHEN a.title ILIKE '%giai đoạn%' THEN 15.0 ELSE 0.0 END + `
-        : '';
-
-      const isLoaiRa = /lo[aạ]i\s*ra/i.test(queryStr);
-      const loaiRaClause = isLoaiRa
-        ? `CASE WHEN a.title ILIKE '%loại ra%' THEN 15.0 WHEN a.content ILIKE '%loại ra%' THEN 8.0 ELSE 0.0 END + `
-        : '';
-
-      // Tăng trọng số ưu tiên đặc biệt cho KHUNG-PHAN-LOAI-VPTW khi câu hỏi hỏi về khung/phương án phân loại
-      const isKhungPlQuery = /(khung\s*ph[aâ]n\s*lo[aạ]i|ph[uư][oơ]ng\s*[aá]n\s*ph[aâ]n\s*lo[aạ]i)/i.test(queryStr);
-      const khungPlClause = isKhungPlQuery
-        ? `CASE WHEN d.document_code = 'KHUNG-PHAN-LOAI-VPTW' THEN 18.0 ELSE 0.0 END + `
-        : '';
-
-      // Lấy dư số lượng để sau đó áp dụng Diversity Cap chống 1 văn bản độc chiếm topK
-      const fetchLimit = Math.max(topK * 3, 24);
-      params.push(fetchLimit);
-      const limitParamIdx = params.length;
-
-      const searchSql = `
-        SELECT 
-          a.id,
-          a.article_number as "articleNumber",
-          a.title,
-          a.content,
-          d.document_code as "documentCode",
-          d.document_name as "documentName",
-          d.issuer,
-          d.issue_date as "issueDate",
-          d.category,
-          d.status,
-          d.description,
-          ts_rank_cd(a.tsv, to_tsquery('simple', $1)) +
-          ${numberClause} +
-          ${sigBonusClause}
-          ${xoaTenClause}
-          ${giaiDoanClause}
-          ${loaiRaClause}
-          ${khungPlClause}
-          CASE WHEN a.article_number = '0' THEN 8.0 ELSE 0.0 END +
-          CASE WHEN d.document_name ILIKE $2 THEN 10.0 ELSE 0.0 END +
-          CASE 
-            WHEN d.status ILIKE '%Hết hiệu lực%' THEN -10.0 
-            WHEN d.status ILIKE '%Còn hiệu lực%' THEN 10.0 
-            ELSE 0.0 
-          END as rank
-        FROM articles a
-        JOIN documents d ON a.document_id = d.id
-        WHERE 
-          a.tsv @@ to_tsquery('simple', $1)
-          OR a.title ILIKE $2
-          OR a.content ILIKE $2
-          OR a.full_text ILIKE $2
-          OR (${numberClause} > 0)
-          ${isXoaTen ? "OR a.title ILIKE '%xóa tên%' OR a.content ILIKE '%xóa tên%'" : ''}
-        ORDER BY rank DESC, a.id ASC
-        LIMIT $${limitParamIdx}
-      `;
-
-      const res = await this.pool.query(searchSql, params);
-
-      // Diversity Cap thông minh: Cho phép lấy tối đa 6 điều khoản cho KHUNG-PHAN-LOAI-VPTW hoặc văn bản đơn lẻ
-      const validDocNums = docNumbers.filter(n => !(parseInt(n, 10) > 1900 && parseInt(n, 10) < 2100));
-      const isKhungPhanLoai = /(khung\s*ph[aâ]n\s*lo[aạ]i|ph[uư][oơ]ng\s*[aá]n\s*ph[aâ]n\s*lo[aạ]i)/i.test(queryStr);
-      const isSingleDocQuery = validDocNums.length === 1;
-
-      const docCount = {};
-      const finalRows = [];
-      for (const row of res.rows) {
-        const code = row.documentCode;
-        docCount[code] = (docCount[code] || 0) + 1;
-        let maxCap = 3;
-        if (code === 'KHUNG-PHAN-LOAI-VPTW' && isKhungPhanLoai) {
-          maxCap = 6;
-        } else if (isSingleDocQuery) {
-          maxCap = 6;
-        }
-        if (docCount[code] <= maxCap) {
-          finalRows.push(row);
-        }
-        if (finalRows.length >= topK) break;
-      }
-
-      return finalRows.map(row => {
-        const descPart = row.description ? ` ${row.description}` : '';
-        return {
-          ...row,
-          fullText: `${row.documentCode} ${row.documentName}${descPart} - Điều ${row.articleNumber}: ${row.title}. ${row.content}`,
-        };
-      });
+      const plan = buildArticleSearchQuery(queryStr, { topK });
+      if (!plan) return [];
+      const res = await this.pool.query(plan.text, plan.values);
+      return finalizeArticleRows(res.rows, plan, topK);
     } catch (err) {
       console.warn('[Postgres] Lỗi searchArticles:', err.message);
       return null;
