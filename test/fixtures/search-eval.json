@@ -1,0 +1,29 @@
+{
+  "description": "Bộ đánh giá thứ hạng tìm điều khoản (scripts/eval-search.js). expect: các điều khoản chấp nhận được, dạng 'MÃ#điều' hoặc 'MÃ#*' (bất kỳ điều nào của văn bản). Nhãn gắn theo dữ liệu bảng articles trên production (11/2026).",
+  "cases": [
+    { "id": "TM-smoke", "source": "test/smoke.test.js", "query": "Thẩm quyền ký T/M và K/T trong văn bản Đảng quy định ra sao?", "expect": ["05-HD/VPTW#6"] },
+    { "id": "TM-uat-TC01", "source": "scripts/run-uat.js TC01", "query": "Thẩm quyền ký thay mặt (T/M), ký thay (K/T) và quy chuẩn chữ ký số trên văn bản điện tử của Đảng hiện nay được thực hiện theo văn bản nào?", "expect": ["05-HD/VPTW#6", "05-HD/VPTW#7"] },
+    { "id": "TM-unhappy-UT02", "source": "scripts/run-unhappy-uat.js UT02", "query": "vptw quy định ký t/m, k/t, t/l, t/u khác nhau ntn trong vb đảng?", "expect": ["05-HD/VPTW#6"] },
+    { "id": "dau-giap-lai-UT05", "source": "scripts/run-unhappy-uat.js UT05", "query": "Văn bản giấy từ 2 trang trở lên in 1 mặt hoặc 3 trang trở lên in 2 mặt thì đóng dấu giáp lai tối đa mấy tờ 1 dấu và đóng dấu treo ở đâu?", "expect": ["05-HD/VPTW#8"] },
+    { "id": "con-dau-UT-sqli", "source": "scripts/run-unhappy-uat.js (câu SQLi, đã bỏ phần tấn công)", "query": "Quy định về con dấu trong văn bản Đảng?", "expect": ["05-HD/VPTW#8"] },
+    { "id": "phong-luu-tru-TC03", "source": "scripts/run-uat.js TC03", "query": "Tài liệu thuộc Phông lưu trữ Đảng Cộng sản Việt Nam gồm mấy nhóm và thời hạn nộp lưu hồ sơ vào Lưu trữ hiện hành là bao lâu?", "expect": ["383-QĐ/TW#1", "383-QĐ/TW#2", "06-HD/VPTW#8"] },
+    { "id": "nop-luu-06", "source": "scripts/run-unhappy-uat.js", "query": "Thời hạn nộp lưu hồ sơ vào Lưu trữ hiện hành theo Hướng dẫn 06-HD/VPTW là bao lâu?", "expect": ["06-HD/VPTW#8"] },
+    { "id": "tuoi-vao-dang-TC04", "source": "scripts/run-uat.js TC04", "query": "Tuổi đời và trình độ học vấn của người vào Đảng hiện nay quy định thế nào?", "expect": ["208-QĐ/TW#1", "01-HD/TW#1", "02-HD/TW#1"] },
+    { "id": "ho-so-ket-nap-TC05", "source": "scripts/run-uat.js TC05", "query": "Hồ sơ xét kết nạp người vào Đảng gồm những giấy tờ gì và phải thẩm tra lý lịch những ai?", "expect": ["02-HD/TW#2", "01-HD/TW#3.4", "01-HD/TW#3.2", "208-QĐ/TW#3"] },
+    { "id": "sinh-hoat-chi-bo-TC06", "source": "scripts/run-uat.js TC06", "query": "Quy trình các bước sinh hoạt chi bộ định kỳ hằng tháng và khung tiêu chí chấm điểm chất lượng sinh hoạt chi bộ?", "expect": ["42-HD/BTCTW#3", "42-HD/BTCTW#5"] },
+    { "id": "dang-phi-bhxh-TC07", "source": "scripts/run-uat.js TC07", "query": "Mức đóng đảng phí hằng tháng của đảng viên tham gia BHXH bắt buộc năm 2026 là bao nhiêu?", "expect": ["01-QĐ/TW#2"] },
+    { "id": "dang-phi-huu-UT07", "source": "scripts/run-unhappy-uat.js UT07", "query": "Đảng viên nghỉ hưu đóng đảng phí 0,5% hay 1%? Còn học sinh sinh viên đóng bao nhiêu tiền 1 tháng?", "expect": ["01-QĐ/TW#3"] },
+    { "id": "danh-bac-TC08", "source": "scripts/run-uat.js TC08", "query": "Đảng viên tham gia đánh bạc hoặc can thiệp để vợ con đi du lịch bằng nguồn tài trợ của doanh nghiệp thì vi phạm quy định nào về những điều đảng viên không được làm?", "expect": ["207-QĐ/TW#18", "207-QĐ/TW#17"] },
+    { "id": "ke-khai-tai-san-UT06", "source": "scripts/run-unhappy-uat.js UT06", "query": "Đảng viên kê khai tài sản thu nhập không trung thực, mở tài khoản ở nước ngoài trái phép hoặc nhận hối lộ, chạy chức chạy quyền thì vi phạm điều mấy của Quy định 207?", "expect": ["207-QĐ/TW#5", "207-QĐ/TW#4"] },
+    { "id": "chuan-muc-144-TC09", "source": "scripts/run-uat.js TC09", "query": "5 chuẩn mực đạo đức cách mạng của cán bộ, đảng viên trong giai đoạn mới theo Quy định 144-QĐ/TW gồm những nội dung gì?", "expect": ["144-QĐ/TW#*"] },
+    { "id": "ky-luat-chi-bo-TC10", "source": "scripts/run-uat.js TC10", "query": "Chi bộ có thẩm quyền quyết định khai trừ đảng viên hoặc cách chức không? Thời hiệu kỷ luật khiển trách và cảnh cáo là bao nhiêu năm?", "expect": ["21-QĐ/TW#3", "21-QĐ/TW#5"] },
+    { "id": "van-phong-299-TC11", "source": "scripts/run-uat.js TC11", "query": "Chức năng, nhiệm vụ của Văn phòng Đảng ủy xã theo Quy định 299-QĐ/TW năm 2025?", "expect": ["299-QĐ/TW#1"] },
+    { "id": "du-bi-UT01", "source": "scripts/run-unhappy-uat.js UT01", "query": "cho hỏi đv dự bị có đc biểu quyết, ứng cử và bầu cử ko? thời gian dự bị là bn tháng?", "expect": ["208-QĐ/TW#2", "208-QĐ/TW#3"] },
+    { "id": "xoa-ten-UT04", "source": "scripts/run-unhappy-uat.js UT04", "query": "đảng viên tự ý bỏ sinh hoạt đảng hoặc khg đóng đp 3 tháng trong năm thì bị kĩ luật xóa tên ko?", "expect": ["208-QĐ/TW#5", "01-HD/TW#11", "02-HD/TW#6"] },
+    { "id": "chuyen-shd-UT03", "source": "scripts/run-unhappy-uat.js UT03 (có dấu)", "query": "Thủ tục chuyển sinh hoạt đảng tạm thời khi đi công tác xa từ 3 tháng đến dưới 12 tháng như thế nào?", "expect": ["01-HD/TW#10.2", "01-HD/TW#10.3", "208-QĐ/TW#4"] },
+    { "id": "chinh-ly-50-AR04", "source": "scripts/run-archiving-uat.js AR04", "query": "Quy trình chỉnh lý tài liệu phông lưu trữ cơ quan Đảng, Mặt trận Tổ quốc và các đoàn thể theo Hướng dẫn 50-HD/VPTW gồm mấy giai đoạn, cụ thể là những công việc gì và xử lý tài liệu loại ra thế nào?", "expect": ["50-HD/VPTW#3", "50-HD/VPTW#4", "50-HD/VPTW#7", "50-HD/VPTW#8"] },
+    { "id": "so-dang-ky-24-AR01", "source": "scripts/run-archiving-uat.js AR01", "query": "Theo Hướng dẫn số 24-HD/VPTW ngày 03/10/2026 (thay thế Hướng dẫn 35-HD/VPTW năm 2010), thời hạn lưu trữ đối với Sổ đăng ký văn bản đi, Sổ đăng ký văn bản đến và Sổ đăng ký văn bản mật được quy định là bao nhiêu năm?", "expect": ["24-HD/VPTW#*"] },
+    { "id": "kiem-diem-366", "source": "bổ sung (Quy định 366)", "query": "Kiểm điểm cuối năm xếp loại chất lượng đảng viên gồm mấy mức?", "expect": ["366-QĐ/TW#4"] },
+    { "id": "khong-dau-TC12", "source": "scripts/run-uat.js TC12 (không dấu)", "query": "dang vien du bi co quyen bieu quyet, ung cu va bau cu khong?", "expect": ["208-QĐ/TW#2"] }
+  ]
+}
