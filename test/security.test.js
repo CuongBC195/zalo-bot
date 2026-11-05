@@ -415,6 +415,25 @@ async function run() {
       assert(denied(await req('DELETE', '/api/office-docs/1', { headers: userAuth })), 'Cán bộ không được xóa');
       assert(denied(await req('POST', '/api/office-docs/import', { body: { fileName: 'x.xlsx' }, headers: userAuth })), 'Cán bộ không được nhập Excel');
 
+      // ---------- NHẬP EXCEL NÉN GZIP (giảm dung lượng upload) ----------
+      {
+        const zlib = require('zlib');
+        const xls = require('fs').readFileSync(require('path').join(__dirname, 'fixtures', 'so-van-ban-den.xls'));
+        const send = (body) => req('POST', '/api/office-docs/import', { body: { fileName: 'den.xls', dryRun: true, ...body }, headers: superAuth });
+        const plain = await send({ contentBase64: xls.toString('base64') });
+        const gz = await send({ contentBase64: zlib.gzipSync(xls).toString('base64'), encoding: 'gzip' });
+        assert.strictEqual(plain.status, 200, `nhập file thường phải đạt (nhận ${plain.status})`);
+        assert.strictEqual(gz.status, 200, `nhập file nén gzip phải đạt (nhận ${gz.status})`);
+        assert.strictEqual(gz.data.accepted, plain.data.accepted, 'file nén và file thường phải cho cùng kết quả');
+        assert(gz.data.accepted > 0);
+        const broken = await send({ contentBase64: Buffer.from('không phải gzip').toString('base64'), encoding: 'gzip' });
+        assert.strictEqual(broken.status, 400, 'file nén hỏng phải bị từ chối 400');
+        const bomb = await send({ contentBase64: zlib.gzipSync(Buffer.alloc(9 * 1024 * 1024)).toString('base64'), encoding: 'gzip' });
+        assert.strictEqual(bomb.status, 413, 'giải nén vượt 8MB phải bị từ chối 413');
+        const badEnc = await send({ contentBase64: xls.toString('base64'), encoding: 'br' });
+        assert.strictEqual(badEnc.status, 400, 'kiểu nén lạ phải bị từ chối');
+      }
+
       // ---------- VĂN THƯ KHÔNG ĐỤNG ĐƯỢC NGƯỜI DÙNG / ZALO / CẤU HÌNH ----------
       for (const [m, p, body] of [
         ['GET', '/api/users'],

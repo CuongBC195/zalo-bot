@@ -7,6 +7,7 @@
  */
 
 const express = require('express');
+const zlib = require('zlib');
 const config = require('../config');
 const { requireRole, ADMIN_ROLES, DOC_EDITOR_ROLES } = require('./auth');
 const store = require('../office/store');
@@ -343,7 +344,7 @@ router.post('/office-docs/test-query', async (req, res) => {
 // ------------------------------------------------------------
 
 router.post('/office-docs/import', docEditors, async (req, res) => {
-  const { fileName, contentBase64, direction = 'auto', dryRun = true } = req.body || {};
+  const { fileName, contentBase64, direction = 'auto', dryRun = true, encoding = null } = req.body || {};
   const name = typeof fileName === 'string' ? fileName.trim().slice(0, 255) : '';
   if (!/\.(xls|xlsx)$/i.test(name)) {
     return res.status(400).json({ ok: false, error: 'Chỉ nhận file .xls hoặc .xlsx xuất từ phần mềm quản lý văn bản.' });
@@ -357,9 +358,24 @@ router.post('/office-docs/import', docEditors, async (req, res) => {
   if (!['auto', 'den', 'di'].includes(direction)) {
     return res.status(400).json({ ok: false, error: 'Loại sổ không hợp lệ.' });
   }
+  if (encoding !== null && encoding !== 'gzip') {
+    return res.status(400).json({ ok: false, error: 'Kiểu nén file không hợp lệ.' });
+  }
 
   try {
-    const buffer = Buffer.from(contentBase64.replace(/^data:[^,]*,/, ''), 'base64');
+    let buffer = Buffer.from(contentBase64.replace(/^data:[^,]*,/, ''), 'base64');
+    // Trình duyệt nén gzip trước khi gửi (file .xls giảm ~75-80%): đường upload lên Vercel có lúc chỉ ~15KB/s.
+    // Giới hạn kích thước SAU giải nén để file nén độc hại không làm tràn bộ nhớ.
+    if (encoding === 'gzip') {
+      try {
+        buffer = zlib.gunzipSync(buffer, { maxOutputLength: MAX_FILE_BYTES });
+      } catch (err) {
+        if (err.code === 'ERR_BUFFER_TOO_LARGE' || err instanceof RangeError) {
+          return res.status(413).json({ ok: false, error: 'File vượt quá 8MB.' });
+        }
+        return res.status(400).json({ ok: false, error: 'File nén bị hỏng, vui lòng chọn lại file.' });
+      }
+    }
     const parsed = parseRegisterWorkbook(buffer, { direction });
     const summary = await store.saveImport({ parsed, fileName: name, user: req.user, dryRun: dryRun !== false });
     if (dryRun === false) office.invalidateOverview();
